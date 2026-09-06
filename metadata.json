@@ -1,0 +1,6 @@
+{
+  "name": "Sricore Solutions",
+  "description": "Technology solutions, software development, hardware/IoT, AI/ML, and research services.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
