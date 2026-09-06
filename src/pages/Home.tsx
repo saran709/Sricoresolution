@@ -236,18 +236,21 @@ export default function Home() {
               title="Automated Quality Inspection System"
               category="AI/ML & Hardware"
               description="A computer vision-based inspection line using high-speed cameras and custom edge AI hardware for real-time defect detection."
+              imageUrl="https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&q=80&w=800"
               href="/projects/quality-inspection"
             />
             <ProjectCard 
               title="Smart Factory IoT Dashboard"
               category="Software & IoT"
               description="Centralized monitoring platform aggregating data from thousands of industrial sensors with predictive maintenance alerts."
+              imageUrl="https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&q=80&w=800"
               href="/projects/iot-dashboard"
             />
             <ProjectCard 
               title="Healthcare Data Management API"
               category="Software Solutions"
               description="Secure, compliant microservices architecture for managing patient records and integrating with legacy hospital systems."
+              imageUrl="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=800"
               href="/projects/health-api"
             />
           </div>

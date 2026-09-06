@@ -1,17 +1,11 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
-  LayoutDashboard, 
-  Users, 
-  Briefcase, 
-  MessageSquare, 
-  Settings, 
-  LogOut, 
-  Menu, 
-  X,
-  FileText,
-  Shield,
-  GraduationCap
+  LayoutDashboard, Users, Briefcase, MessageSquare, 
+  Settings, LogOut, Menu, X, FileText, Shield, 
+  GraduationCap, Building2, UserPlus, BookOpen, 
+  CheckSquare, CreditCard, Receipt, Clock, CalendarDays, 
+  ShoppingCart, Bell, LayoutTemplate, Activity, FolderKanban, FileSpreadsheet
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { auth } from '../../lib/firebase';
@@ -31,22 +25,62 @@ export function AdminLayout() {
 
   const navCategories = [
     {
-      title: 'Overview',
+      title: 'Dashboard',
       items: [
-        { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
+        { name: 'Overview', path: '/admin', icon: LayoutDashboard },
       ]
     },
     {
-      title: 'Requests & Projects',
+      title: 'Organization',
       items: [
-        { name: 'Project Requests', path: '/admin/project-requests', icon: Briefcase },
-        { name: 'Intern Requests', path: '/admin/intern-requests', icon: GraduationCap },
+        { name: 'Employees', path: '/admin/employees', icon: Users },
+        { name: 'Departments', path: '/admin/departments', icon: Building2 },
+        { name: 'Mentors', path: '/admin/mentors', icon: BookOpen },
+        { name: 'Interns', path: '/admin/interns', icon: GraduationCap },
+        { name: 'Candidates', path: '/admin/candidates', icon: UserPlus },
+        { name: 'Clients', path: '/admin/clients', icon: Building2 },
       ]
     },
     {
-      title: 'Administration',
+      title: 'Projects & Work',
       items: [
-        { name: 'User Management', path: '/admin/users', icon: Users },
+        { name: 'Projects', path: '/admin/projects', icon: Briefcase },
+        { name: 'Internships', path: '/admin/internships', icon: BookOpen },
+        { name: 'Enquiries', path: '/admin/enquiries', icon: MessageSquare },
+        { name: 'Tasks', path: '/admin/tasks', icon: CheckSquare },
+      ]
+    },
+    {
+      title: 'Finance',
+      items: [
+        { name: 'Payments', path: '/admin/finance/payments', icon: CreditCard },
+        { name: 'Invoices', path: '/admin/finance/invoices', icon: Receipt },
+        { name: 'Receipts', path: '/admin/finance/receipts', icon: FileText },
+        { name: 'Refunds', path: '/admin/finance/refunds', icon: CreditCard },
+      ]
+    },
+    {
+      title: 'Operations',
+      items: [
+        { name: 'Documents', path: '/admin/documents', icon: FolderKanban },
+        { name: 'Attendance', path: '/admin/attendance', icon: Clock },
+        { name: 'Leave', path: '/admin/leave', icon: CalendarDays },
+        { name: 'Vendors', path: '/admin/vendors', icon: ShoppingCart },
+      ]
+    },
+    {
+      title: 'Communication',
+      items: [
+        { name: 'Notifications', path: '/admin/notifications', icon: Bell },
+        { name: 'Website Content', path: '/admin/website', icon: LayoutTemplate },
+      ]
+    },
+    {
+      title: 'System',
+      items: [
+        { name: 'Reports', path: '/admin/reports', icon: FileSpreadsheet },
+        { name: 'Audit Logs', path: '/admin/audit-logs', icon: Activity },
+        { name: 'Settings', path: '/admin/settings', icon: Settings },
       ]
     }
   ];
@@ -69,7 +103,7 @@ export function AdminLayout() {
         )}
       >
         <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between h-16 px-6 border-b border-slate-200">
+          <div className="flex items-center justify-between h-16 px-6 border-b border-slate-200 shrink-0">
             <Link to="/" className="flex items-center gap-2">
               <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center">
                 <div className="w-3 h-3 border-2 border-white rotate-45"></div>
@@ -115,7 +149,7 @@ export function AdminLayout() {
             ))}
           </div>
 
-          <div className="p-4 border-t border-slate-200">
+          <div className="p-4 border-t border-slate-200 shrink-0">
             <div className="flex items-center gap-3 mb-4 px-3 py-2 bg-slate-50 rounded-lg border border-slate-100">
               <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm">
                 {userProfile?.firstName?.charAt(0) || 'A'}
@@ -140,7 +174,7 @@ export function AdminLayout() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="flex items-center h-16 px-4 sm:px-6 lg:px-8 border-b border-slate-200 bg-white shadow-sm z-10 lg:hidden">
+        <header className="flex items-center h-16 px-4 sm:px-6 lg:px-8 border-b border-slate-200 bg-white shadow-sm z-10 lg:hidden shrink-0">
           <button
             onClick={() => setIsSidebarOpen(true)}
             className="text-slate-500 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 rounded-md p-2 -ml-2"
@@ -148,7 +182,9 @@ export function AdminLayout() {
             <Menu className="w-6 h-6" />
           </button>
           <div className="flex-1 ml-4 flex justify-end">
-            {/* Top right actions could go here */}
+            <div className="flex items-center gap-4">
+              <Bell className="w-5 h-5 text-slate-400" />
+            </div>
           </div>
         </header>
 

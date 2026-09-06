@@ -8,18 +8,18 @@ import { logActivity } from '../../lib/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
-export default function ProjectRequests() {
+export default function Enquiries() {
   const { userProfile } = useAuth();
   const navigate = useNavigate();
-  const [enquiries, setProjectRequests] = useState<Enquiry[]>([]);
+  const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    fetchProjectRequests();
+    fetchEnquiries();
   }, []);
 
-  const fetchProjectRequests = async () => {
+  const fetchEnquiries = async () => {
     setLoading(true);
     try {
       const q = query(collection(db, 'project_requests'), orderBy('createdAt', 'desc'));
@@ -28,7 +28,7 @@ export default function ProjectRequests() {
       snapshot.forEach(doc => {
         items.push({ id: doc.id, ...doc.data() } as Enquiry);
       });
-      setProjectRequests(items);
+      setEnquiries(items);
     } catch (error) {
       console.error("Error fetching enquiries:", error);
     } finally {
@@ -41,7 +41,7 @@ export default function ProjectRequests() {
       await updateDoc(doc(db, 'project_requests', id), {
         status: newStatus
       });
-      setProjectRequests(enquiries.map(e => e.id === id ? { ...e, status: newStatus as any } : e));
+      setEnquiries(enquiries.map(e => e.id === id ? { ...e, status: newStatus as any } : e));
     } catch (error) {
       console.error("Failed to update status", error);
     }
@@ -80,7 +80,7 @@ export default function ProjectRequests() {
         status: 'CONVERTED'
       });
       
-      setProjectRequests(enquiries.map(e => e.id === enquiry.id ? { ...e, status: 'CONVERTED' as any } : e));
+      setEnquiries(enquiries.map(e => e.id === enquiry.id ? { ...e, status: 'CONVERTED' as any } : e));
       
       if (userProfile?.uid) {
         await logActivity(
@@ -98,7 +98,7 @@ export default function ProjectRequests() {
     }
   };
 
-  const filteredProjectRequests = enquiries.filter(e => 
+  const filteredEnquiries = enquiries.filter(e => 
     `${e.firstName} ${e.lastName} ${e.company} ${e.email}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -106,7 +106,7 @@ export default function ProjectRequests() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">ProjectRequests</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Enquiries</h1>
           <p className="text-sm text-slate-500">Manage client project enquiries</p>
         </div>
       </div>
@@ -144,14 +144,14 @@ export default function ProjectRequests() {
                     </div>
                   </td>
                 </tr>
-              ) : filteredProjectRequests.length === 0 ? (
+              ) : filteredEnquiries.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-8 text-center text-slate-500">
                     No enquiries found.
                   </td>
                 </tr>
               ) : (
-                filteredProjectRequests.map((enq) => (
+                filteredEnquiries.map((enq) => (
                   <tr key={enq.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="font-medium text-slate-900">{enq.firstName} {enq.lastName}</div>

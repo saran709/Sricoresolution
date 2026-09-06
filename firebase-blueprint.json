@@ -3,6 +3,8 @@
   "roles": [
     "ADMINISTRATOR",
     "EMPLOYEE",
+    "MENTOR",
+    "INTERN",
     "CLIENT",
     "CANDIDATE"
   ],
@@ -14,11 +16,28 @@
       "fields": {
         "email": "string",
         "role": "string",
+        "firstName": "string?",
+        "lastName": "string?",
+        "phone": "string?",
+        "department": "string?",
+        "designation": "string?",
+        "status": "string?",
         "createdAt": "timestamp"
       }
     },
     {
-      "name": "project_requests",
+      "name": "departments",
+      "purpose": "Company departments",
+      "access": "Admin full access, read-only for employees",
+      "fields": {
+        "name": "string",
+        "headId": "string?",
+        "status": "string",
+        "createdAt": "timestamp"
+      }
+    },
+    {
+      "name": "enquiries",
       "purpose": "Stores project requests submitted by clients",
       "access": "Public create; Read/update for submitter and admins",
       "fields": {
@@ -27,6 +46,19 @@
         "email": "string",
         "service": "string",
         "message": "string",
+        "status": "string",
+        "assignedTo": "string?",
+        "createdAt": "timestamp"
+      }
+    },
+    {
+      "name": "internships",
+      "purpose": "Internship programs available",
+      "access": "Public read, Admin manage",
+      "fields": {
+        "title": "string",
+        "description": "string",
+        "duration": "string",
         "status": "string",
         "createdAt": "timestamp"
       }
@@ -42,6 +74,96 @@
         "lastName": "string",
         "email": "string",
         "status": "string",
+        "createdAt": "timestamp"
+      }
+    },
+    {
+      "name": "projects",
+      "purpose": "Active client and internal projects",
+      "access": "Admin, Employees assigned, Client owner",
+      "fields": {
+        "name": "string",
+        "description": "string",
+        "clientId": "string?",
+        "leadId": "string?",
+        "status": "string",
+        "deadline": "timestamp?",
+        "createdAt": "timestamp"
+      }
+    },
+    {
+      "name": "tasks",
+      "purpose": "Tasks for projects or internal work",
+      "access": "Admin, Assignee, Project Lead",
+      "fields": {
+        "title": "string",
+        "description": "string?",
+        "projectId": "string?",
+        "assigneeId": "string?",
+        "status": "string",
+        "priority": "string",
+        "dueDate": "timestamp?",
+        "createdAt": "timestamp"
+      }
+    },
+    {
+      "name": "payments",
+      "purpose": "Financial transactions",
+      "access": "Admin, Client owner",
+      "fields": {
+        "amount": "number",
+        "currency": "string",
+        "status": "string",
+        "clientId": "string",
+        "projectId": "string?",
+        "createdAt": "timestamp"
+      }
+    },
+    {
+      "name": "invoices",
+      "purpose": "Billing invoices",
+      "access": "Admin, Client owner",
+      "fields": {
+        "invoiceNumber": "string",
+        "amount": "number",
+        "status": "string",
+        "clientId": "string",
+        "dueDate": "timestamp",
+        "createdAt": "timestamp"
+      }
+    },
+    {
+      "name": "documents",
+      "purpose": "Secure file metadata",
+      "access": "Admin, Owner, Role-based",
+      "fields": {
+        "title": "string",
+        "url": "string",
+        "ownerId": "string",
+        "accessLevel": "string",
+        "createdAt": "timestamp"
+      }
+    },
+    {
+      "name": "auditLogs",
+      "purpose": "System audit trail",
+      "access": "Admin read only, System create",
+      "fields": {
+        "action": "string",
+        "userId": "string",
+        "resourceType": "string",
+        "resourceId": "string",
+        "createdAt": "timestamp"
+      }
+    },
+    {
+      "name": "settings",
+      "purpose": "Company global settings",
+      "access": "Admin full access",
+      "fields": {
+        "companyName": "string",
+        "email": "string",
+        "phone": "string",
         "createdAt": "timestamp"
       }
     }

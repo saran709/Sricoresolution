@@ -34,10 +34,10 @@ const Dashboard = React.lazy(() => import('./pages/dashboard/Dashboard'));
 
 // Admin Pages
 const AdminDashboard = React.lazy(() => import('./pages/admin/Dashboard'));
-const AdminEmployees = React.lazy(() => import('./pages/admin/Users'));
-const AdminEnquiries = React.lazy(() => import('./pages/admin/ProjectRequests'));
+const AdminEmployees = React.lazy(() => import('./pages/admin/Employees'));
+const AdminEnquiries = React.lazy(() => import('./pages/admin/Enquiries'));
 const AdminProjects = React.lazy(() => import('./pages/admin/Projects'));
-const AdminInternships = React.lazy(() => import('./pages/admin/InternRequests'));
+const AdminInternships = React.lazy(() => import('./pages/admin/Internships'));
 const AdminClients = React.lazy(() => import('./pages/admin/Clients'));
 const AdminTasks = React.lazy(() => import('./pages/admin/Tasks'));
 const AdminAudit = React.lazy(() => import('./pages/admin/Audit'));
@@ -66,12 +66,34 @@ export function AppRouter() {
           }>
             <Route index element={<AdminDashboard />} />
             
-            <Route path="project-requests" element={<AdminEnquiries />} />
-            <Route path="intern-requests" element={<AdminInternships />} />
+            <Route path="employees" element={<AdminEmployees />} />
+            <Route path="departments" element={<PagePlaceholder title="Departments" />} />
+            <Route path="mentors" element={<PagePlaceholder title="Mentors" />} />
+            <Route path="interns" element={<PagePlaceholder title="Interns" />} />
+            <Route path="candidates" element={<PagePlaceholder title="Candidates" />} />
+            <Route path="clients" element={<AdminClients />} />
             
-            <Route path="users" element={<AdminEmployees />} />
+            <Route path="projects" element={<AdminProjects />} />
+            <Route path="internships" element={<AdminInternships />} />
+            <Route path="enquiries" element={<AdminEnquiries />} />
+            <Route path="tasks" element={<AdminTasks />} />
             
-            <Route path="settings" element={<PagePlaceholder title="Admin Settings" />} />
+            <Route path="finance/payments" element={<AdminPayments />} />
+            <Route path="finance/invoices" element={<AdminInvoices />} />
+            <Route path="finance/receipts" element={<PagePlaceholder title="Receipts" />} />
+            <Route path="finance/refunds" element={<PagePlaceholder title="Refunds" />} />
+            
+            <Route path="documents" element={<AdminDocuments />} />
+            
+            <Route path="attendance" element={<PagePlaceholder title="Attendance" />} />
+            <Route path="leave" element={<PagePlaceholder title="Leave" />} />
+            <Route path="vendors" element={<PagePlaceholder title="Vendors" />} />
+            
+            <Route path="notifications" element={<PagePlaceholder title="Notifications" />} />
+            <Route path="website" element={<AdminContent />} />
+            <Route path="reports" element={<PagePlaceholder title="Reports" />} />
+            <Route path="audit-logs" element={<AdminAudit />} />
+            <Route path="settings" element={<PagePlaceholder title="Settings" />} />
           </Route>
 
           {/* Main Application Routes */}
