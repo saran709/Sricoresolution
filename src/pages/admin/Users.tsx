@@ -37,7 +37,7 @@ export default function Employees() {
     try {
       const q = query(
         collection(db, 'users'),
-        where('role', 'in', ['EMPLOYEE', 'MENTOR', 'ADMINISTRATOR'])
+        
       );
       const snapshot = await getDocs(q);
       const emps: User[] = [];

@@ -41,7 +41,7 @@ export default function Enquiry() {
     };
     
     try {
-      await addDoc(collection(db, 'enquiries'), data);
+      await addDoc(collection(db, 'project_requests'), data);
       setIsSuccess(true);
     } catch (err) {
       console.error("Error submitting enquiry:", err);

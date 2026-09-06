@@ -19,7 +19,7 @@ export default function ClientDashboard() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [documents, setDocuments] = useState<AppDocument[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'enquiries' | 'support' | 'invoices' | 'documents'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'project_requests' | 'support' | 'invoices' | 'documents'>('overview');
   
   const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
   const [showNewTicketForm, setShowNewTicketForm] = useState(false);
@@ -29,7 +29,7 @@ export default function ClientDashboard() {
 
     const fetchData = async () => {
       try {
-        const enqQuery = query(collection(db, 'enquiries'), where('clientId', '==', userProfile.uid));
+        const enqQuery = query(collection(db, 'project_requests'), where('clientId', '==', userProfile.uid));
         const enqSnap = await getDocs(enqQuery);
         setEnquiries(enqSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Enquiry)));
 
@@ -104,7 +104,7 @@ export default function ClientDashboard() {
       <div className="flex space-x-1 bg-white p-1 rounded-lg border border-slate-200 w-fit overflow-x-auto">
         <button onClick={() => setActiveTab('overview')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'overview' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>Overview</button>
         <button onClick={() => setActiveTab('projects')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'projects' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>My Projects</button>
-        <button onClick={() => setActiveTab('enquiries')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'enquiries' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>Enquiries</button>
+        <button onClick={() => setActiveTab('project_requests')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'project_requests' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>Enquiries</button>
         <button onClick={() => setActiveTab('invoices')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'invoices' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>Invoices</button>
         <button onClick={() => setActiveTab('documents')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'documents' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>Documents</button>
         <button onClick={() => setActiveTab('support')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'support' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>Support</button>
@@ -123,7 +123,7 @@ export default function ClientDashboard() {
               </div>
             </div>
             
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 cursor-pointer hover:border-blue-300 transition-colors" onClick={() => setActiveTab('enquiries')}>
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 cursor-pointer hover:border-blue-300 transition-colors" onClick={() => setActiveTab('project_requests')}>
               <div className="p-4 rounded-lg bg-blue-50 text-blue-600">
                 <MessageSquare className="w-6 h-6" />
               </div>
@@ -226,7 +226,7 @@ export default function ClientDashboard() {
         </div>
       )}
 
-      {activeTab === 'enquiries' && (
+      {activeTab === 'project_requests' && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
             <h2 className="font-semibold text-slate-800">My Enquiries</h2>

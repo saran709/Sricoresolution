@@ -4,8 +4,7 @@ export const APP_CONFIG = {
     tagline: 'Technology Solutions & Services',
     description: 'A premier technology partner offering comprehensive solutions in software, hardware, AI/ML, and research.',
     contact: {
-      email: 'contact@sricoresolutions.com',
-      phone: '+1 (555) 123-4567',
+      email: 'sricoresolution@gmail.com',
       address: '123 Innovation Drive, Tech Park, City, Country',
     },
     socials: {

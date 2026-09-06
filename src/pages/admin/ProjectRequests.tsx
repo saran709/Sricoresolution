@@ -8,27 +8,27 @@ import { logActivity } from '../../lib/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
-export default function Enquiries() {
+export default function ProjectRequests() {
   const { userProfile } = useAuth();
   const navigate = useNavigate();
-  const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
+  const [enquiries, setProjectRequests] = useState<Enquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    fetchEnquiries();
+    fetchProjectRequests();
   }, []);
 
-  const fetchEnquiries = async () => {
+  const fetchProjectRequests = async () => {
     setLoading(true);
     try {
-      const q = query(collection(db, 'enquiries'), orderBy('createdAt', 'desc'));
+      const q = query(collection(db, 'project_requests'), orderBy('createdAt', 'desc'));
       const snapshot = await getDocs(q);
       const items: Enquiry[] = [];
       snapshot.forEach(doc => {
         items.push({ id: doc.id, ...doc.data() } as Enquiry);
       });
-      setEnquiries(items);
+      setProjectRequests(items);
     } catch (error) {
       console.error("Error fetching enquiries:", error);
     } finally {
@@ -38,10 +38,10 @@ export default function Enquiries() {
 
   const handleStatusChange = async (id: string, newStatus: string) => {
     try {
-      await updateDoc(doc(db, 'enquiries', id), {
+      await updateDoc(doc(db, 'project_requests', id), {
         status: newStatus
       });
-      setEnquiries(enquiries.map(e => e.id === id ? { ...e, status: newStatus as any } : e));
+      setProjectRequests(enquiries.map(e => e.id === id ? { ...e, status: newStatus as any } : e));
     } catch (error) {
       console.error("Failed to update status", error);
     }
@@ -76,11 +76,11 @@ export default function Enquiries() {
       const docRef = await addDoc(collection(db, 'projects'), newProjectData);
       
       // Update enquiry status
-      await updateDoc(doc(db, 'enquiries', enquiry.id!), {
+      await updateDoc(doc(db, 'project_requests', enquiry.id!), {
         status: 'CONVERTED'
       });
       
-      setEnquiries(enquiries.map(e => e.id === enquiry.id ? { ...e, status: 'CONVERTED' as any } : e));
+      setProjectRequests(enquiries.map(e => e.id === enquiry.id ? { ...e, status: 'CONVERTED' as any } : e));
       
       if (userProfile?.uid) {
         await logActivity(
@@ -98,7 +98,7 @@ export default function Enquiries() {
     }
   };
 
-  const filteredEnquiries = enquiries.filter(e => 
+  const filteredProjectRequests = enquiries.filter(e => 
     `${e.firstName} ${e.lastName} ${e.company} ${e.email}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -106,7 +106,7 @@ export default function Enquiries() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Enquiries</h1>
+          <h1 className="text-2xl font-bold text-slate-900">ProjectRequests</h1>
           <p className="text-sm text-slate-500">Manage client project enquiries</p>
         </div>
       </div>
@@ -144,14 +144,14 @@ export default function Enquiries() {
                     </div>
                   </td>
                 </tr>
-              ) : filteredEnquiries.length === 0 ? (
+              ) : filteredProjectRequests.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-8 text-center text-slate-500">
                     No enquiries found.
                   </td>
                 </tr>
               ) : (
-                filteredEnquiries.map((enq) => (
+                filteredProjectRequests.map((enq) => (
                   <tr key={enq.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="font-medium text-slate-900">{enq.firstName} {enq.lastName}</div>

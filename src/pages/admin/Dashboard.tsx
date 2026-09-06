@@ -42,7 +42,7 @@ export default function AdminDashboard() {
           getCountFromServer(query(collection(db, 'users'), where('role', '==', 'MENTOR'))),
           getCountFromServer(query(collection(db, 'users'), where('role', '==', 'CLIENT'))),
           getCountFromServer(query(collection(db, 'projects'), where('status', '==', 'active'))),
-          getCountFromServer(query(collection(db, 'enquiries'), where('status', 'in', ['NEW']))),
+          getCountFromServer(query(collection(db, 'project_requests'), where('status', 'in', ['NEW']))),
           getCountFromServer(query(collection(db, 'internship_applications'), where('status', '==', 'pending'))),
           getCountFromServer(query(collection(db, 'payments'), where('status', '==', 'pending')))
         ]);

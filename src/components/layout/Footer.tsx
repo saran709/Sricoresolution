@@ -59,11 +59,6 @@ export function Footer() {
                   {APP_CONFIG.company.contact.email}
                 </a>
               </p>
-              <p>
-                <a href={`tel:${APP_CONFIG.company.contact.phone}`} className="hover:text-white transition-colors">
-                  {APP_CONFIG.company.contact.phone}
-                </a>
-              </p>
             </address>
           </div>
         </div>

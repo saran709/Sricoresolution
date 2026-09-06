@@ -34,59 +34,19 @@ export function AdminLayout() {
       title: 'Overview',
       items: [
         { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
-        { name: 'Reports', path: '/admin/reports', icon: FileText },
-        { name: 'Audit Logs', path: '/admin/audit', icon: Shield },
       ]
     },
     {
-      title: 'Organization',
+      title: 'Requests & Projects',
       items: [
-        { name: 'Departments', path: '/admin/departments', icon: Briefcase },
-        { name: 'Employees', path: '/admin/employees', icon: Users },
-        { name: 'Mentors', path: '/admin/mentors', icon: GraduationCap },
+        { name: 'Project Requests', path: '/admin/project-requests', icon: Briefcase },
+        { name: 'Intern Requests', path: '/admin/intern-requests', icon: GraduationCap },
       ]
     },
     {
-      title: 'Business Operations',
+      title: 'Administration',
       items: [
-        { name: 'Enquiries', path: '/admin/enquiries', icon: MessageSquare },
-        { name: 'Clients', path: '/admin/clients', icon: Users },
-        { name: 'Projects', path: '/admin/projects', icon: Briefcase },
-        { name: 'Tasks', path: '/admin/tasks', icon: FileText },
-        { name: 'Support Tickets', path: '/admin/support', icon: MessageSquare },
-        { name: 'Payments', path: '/admin/payments', icon: Briefcase },
-        { name: 'Invoices', path: '/admin/invoices', icon: FileText },
-      ]
-    },
-    {
-      title: 'Internship Program',
-      items: [
-        { name: 'Programs', path: '/admin/internships', icon: GraduationCap },
-        { name: 'Candidates', path: '/admin/candidates', icon: Users },
-        { name: 'Interns', path: '/admin/interns', icon: GraduationCap },
-      ]
-    },
-    {
-      title: 'Operations',
-      items: [
-        { name: 'Attendance', path: '/admin/attendance', icon: Users },
-        { name: 'Leave Requests', path: '/admin/leaves', icon: FileText },
-        { name: 'Documents', path: '/admin/documents', icon: FileText },
-        { name: 'Vendors', path: '/admin/vendors', icon: Briefcase },
-      ]
-    },
-    {
-      title: 'Communication',
-      items: [
-        { name: 'Announcements', path: '/admin/announcements', icon: MessageSquare },
-        { name: 'Notifications', path: '/admin/notifications', icon: MessageSquare },
-        { name: 'Website Content', path: '/admin/content', icon: FileText },
-      ]
-    },
-    {
-      title: 'System',
-      items: [
-        { name: 'Settings', path: '/admin/settings', icon: Settings },
+        { name: 'User Management', path: '/admin/users', icon: Users },
       ]
     }
   ];

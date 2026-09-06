@@ -47,15 +47,6 @@ export default function Contact() {
                   </div>
                 </div>
                 <div className="flex items-start">
-                  <Phone className="w-6 h-6 text-blue-600 mt-1 flex-shrink-0" />
-                  <div className="ml-4">
-                    <h4 className="text-sm font-semibold text-slate-900">Phone</h4>
-                    <a href={`tel:${APP_CONFIG.company.contact.phone}`} className="text-slate-600 hover:text-blue-600 transition-colors">
-                      {APP_CONFIG.company.contact.phone}
-                    </a>
-                  </div>
-                </div>
-                <div className="flex items-start">
                   <MapPin className="w-6 h-6 text-blue-600 mt-1 flex-shrink-0" />
                   <div className="ml-4">
                     <h4 className="text-sm font-semibold text-slate-900">Office</h4>
