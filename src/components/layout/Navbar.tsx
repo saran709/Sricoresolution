@@ -20,9 +20,7 @@ export function Navbar() {
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center">
             <Link to="/" className="flex items-center gap-2" onClick={closeMobileMenu}>
-              <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
-                <div className="w-4 h-4 border-2 border-white rotate-45"></div>
-              </div>
+              <img src="/logo.png" alt="Sricore Solutions Logo" className="h-10 w-auto object-contain" />
               <span className="text-xl font-bold tracking-tight text-slate-900">SRICORE<span className="text-blue-600">SOLUTIONS</span></span>
             </Link>
           </div>
