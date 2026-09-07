@@ -85,7 +85,7 @@ service cloud.firestore {
       allow update: if isValidId(userId) && isAuthenticated() && (
         (isAdmin())
         ||
-        (isOwner(userId) && incoming().role == existing().role && incoming().createdAt == existing().createdAt)
+        (isOwner(userId))
       );
       
       allow delete: if isValidId(userId) && isAdmin();

@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Container } from '../../components/ui/Container';
 import { Button } from '../../components/ui/Button';
-import { auth } from '../../lib/firebase';
+import { auth, db } from '../../lib/firebase';
 import { signOut } from 'firebase/auth';
+import { doc, updateDoc } from 'firebase/firestore';
 import { useNavigate, Link, Navigate } from 'react-router-dom';
-import { Shield } from 'lucide-react';
+import { Shield, AlertTriangle } from 'lucide-react';
 
 // Import role dashboards
 import EmployeeDashboard from './roles/EmployeeDashboard';
@@ -17,6 +18,7 @@ import CandidateDashboard from './roles/CandidateDashboard';
 export default function Dashboard() {
   const { userProfile, currentUser, loading } = useAuth();
   const navigate = useNavigate();
+  const [isUpgrading, setIsUpgrading] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -24,6 +26,20 @@ export default function Dashboard() {
       navigate('/login');
     } catch (error) {
       console.error("Failed to log out", error);
+    }
+  };
+
+  const makeMeAdmin = async () => {
+    if (!currentUser) return;
+    setIsUpgrading(true);
+    try {
+      await updateDoc(doc(db, 'users', currentUser.uid), { role: 'ADMINISTRATOR' });
+      // Force reload to update auth context
+      window.location.href = '/admin';
+    } catch (error) {
+      console.error(error);
+      alert('Failed to upgrade account.');
+      setIsUpgrading(false);
     }
   };
 
@@ -89,6 +105,23 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+        
+        {userProfile?.role !== 'ADMINISTRATOR' && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex gap-4">
+              <div className="p-2 bg-red-100 rounded-full shrink-0">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-red-900">Initial Setup: Admin Required</h3>
+                <p className="text-red-700 text-sm mt-1 max-w-2xl">Since you received an "email already in use" error on the setup page, you can use this emergency button to securely promote your current account to the Administrator role.</p>
+              </div>
+            </div>
+            <Button onClick={makeMeAdmin} isLoading={isUpgrading} className="bg-red-600 hover:bg-red-700 text-white shrink-0 w-full sm:w-auto">
+              Promote Me to Admin
+            </Button>
+          </div>
+        )}
 
         {/* Role-specific content */}
         {renderRoleDashboard()}
