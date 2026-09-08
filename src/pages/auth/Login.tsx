@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { googleSignIn } from '../../lib/auth';
-import { auth } from '../../lib/firebase';
+import { auth, db } from '../../lib/firebase';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Container } from '../../components/ui/Container';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
@@ -18,11 +19,27 @@ export default function Login() {
   const from = location.state?.from?.pathname || '/dashboard';
 
   
+  
   const handleGoogleSignIn = async () => {
     setError('');
     setLoading(true);
     try {
-      await googleSignIn();
+      const result = await googleSignIn();
+      if (result?.user) {
+        // Create user profile if it doesn't exist
+        const userRef = doc(db, 'users', result.user.uid);
+        const userSnap = await getDoc(userRef);
+        if (!userSnap.exists()) {
+          await setDoc(userRef, {
+            email: result.user.email,
+            firstName: result.user.displayName?.split(' ')[0] || '',
+            lastName: result.user.displayName?.split(' ').slice(1).join(' ') || '',
+            role: 'CANDIDATE', // default role
+            createdAt: serverTimestamp(),
+            status: 'active'
+          });
+        }
+      }
       navigate(from, { replace: true });
     } catch (err: any) {
       console.error(err);
@@ -31,6 +48,7 @@ export default function Login() {
       setLoading(false);
     }
   };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +75,7 @@ export default function Login() {
           </h2>
           <p className="mt-2 text-center text-sm text-slate-600">
             Or{' '}
-            <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
+            <Link to="/register" className="font-medium text-amber-600 hover:text-amber-500 transition-colors">
               create a new candidate account
             </Link>
           </p>
@@ -122,7 +140,7 @@ export default function Login() {
                 id="remember-me"
                 name="remember-me"
                 type="checkbox"
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded"
+                className="h-4 w-4 text-amber-600 focus:ring-amber-500 border-slate-300 rounded"
               />
               <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-900">
                 Remember me
@@ -130,7 +148,7 @@ export default function Login() {
             </div>
 
             <div className="text-sm">
-              <Link to="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
+              <Link to="/forgot-password" className="font-medium text-amber-600 hover:text-amber-500">
                 Forgot your password?
               </Link>
             </div>

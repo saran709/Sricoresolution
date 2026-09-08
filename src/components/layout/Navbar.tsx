@@ -21,7 +21,7 @@ export function Navbar() {
           <div className="flex items-center">
             <Link to="/" className="flex items-center gap-2" onClick={closeMobileMenu}>
               <img src="/logo.png" alt="Sricore Solutions Logo" className="h-10 w-auto object-contain" />
-              <span className="text-xl font-bold tracking-tight text-slate-900">SRICORE<span className="text-blue-600">SOLUTIONS</span></span>
+              <span className="text-xl font-bold tracking-tight text-slate-900">SRICORE<span className="text-amber-600">SOLUTIONS</span></span>
             </Link>
           </div>
 
@@ -42,8 +42,8 @@ export function Navbar() {
                             key={child.name}
                             to={child.href}
                             className={cn(
-                              "block px-4 py-2 text-sm text-slate-600 hover:text-blue-600 hover:bg-slate-50",
-                              location.pathname === child.href && "text-blue-600 bg-slate-50"
+                              "block px-4 py-2 text-sm text-slate-600 hover:text-amber-600 hover:bg-slate-50",
+                              location.pathname === child.href && "text-amber-600 bg-slate-50"
                             )}
                           >
                             {child.name}
@@ -63,8 +63,8 @@ export function Navbar() {
                   className={cn(
                     "px-3 py-2 text-sm font-medium rounded-md transition-colors",
                     isActive 
-                      ? "text-blue-600 border-b-2 border-blue-600 rounded-none" 
-                      : "text-slate-600 hover:text-blue-600 hover:bg-slate-50"
+                      ? "text-amber-600 border-b-2 border-amber-600 rounded-none" 
+                      : "text-slate-600 hover:text-amber-600 hover:bg-slate-50"
                   )}
                 >
                   {item.name}
@@ -85,7 +85,7 @@ export function Navbar() {
             ) : (
               <Link 
                 to="/login" 
-                className="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded text-slate-600 hover:text-blue-600 transition-colors"
+                className="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded text-slate-600 hover:text-amber-600 transition-colors"
               >
                 Sign In
               </Link>
@@ -93,7 +93,7 @@ export function Navbar() {
             
             <Link 
               to="/tell-us-your-problem" 
-              className="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
+              className="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded bg-amber-600 text-white hover:bg-amber-700 transition-colors shadow-sm"
             >
               TELL US YOUR PROBLEM
             </Link>
@@ -169,7 +169,7 @@ export function Navbar() {
               <Link
                 to="/tell-us-your-problem"
                 onClick={closeMobileMenu}
-                className="block w-full text-center px-4 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700"
+                className="block w-full text-center px-4 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-amber-600 hover:bg-amber-700"
               >
                 TELL US YOUR PROBLEM
               </Link>

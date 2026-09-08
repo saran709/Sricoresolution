@@ -122,8 +122,8 @@ export default function ClientDashboard() {
               </div>
             </div>
             
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 cursor-pointer hover:border-blue-300 transition-colors" onClick={() => setActiveTab('solution_requests')}>
-              <div className="p-4 rounded-lg bg-blue-50 text-blue-600">
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 cursor-pointer hover:border-amber-300 transition-colors" onClick={() => setActiveTab('solution_requests')}>
+              <div className="p-4 rounded-lg bg-amber-50 text-amber-600">
                 <ShieldCheck className="w-6 h-6" />
               </div>
               <div>
@@ -153,13 +153,13 @@ export default function ClientDashboard() {
             </div>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-4">
             <div>
-              <h3 className="text-lg font-bold text-blue-900">Have a new problem to solve?</h3>
-              <p className="text-blue-700">Submit a new solution request to our engineering team.</p>
+              <h3 className="text-lg font-bold text-amber-900">Have a new problem to solve?</h3>
+              <p className="text-amber-700">Submit a new solution request to our engineering team.</p>
             </div>
             <Link to="/tell-us-your-problem">
-              <Button className="bg-blue-600 hover:bg-blue-700">Tell Us Your Problem</Button>
+              <Button className="bg-amber-600 hover:bg-amber-700">Tell Us Your Problem</Button>
             </Link>
           </div>
         </>
@@ -173,7 +173,7 @@ export default function ClientDashboard() {
                 <div className="p-6 border-b border-slate-100 bg-slate-900 text-white">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-semibold uppercase tracking-wider mb-3">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-semibold uppercase tracking-wider mb-3">
                         <Zap className="w-3 h-3" />
                         Project Passport
                       </div>
@@ -191,10 +191,10 @@ export default function ClientDashboard() {
                   <div className="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
                     {/* Simulated Milestones */}
                     <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                      <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-blue-600 text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-amber-600 text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
                         <CheckCircle className="w-5 h-5" />
                       </div>
-                      <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-4 rounded-xl border border-blue-100 shadow-sm">
+                      <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-4 rounded-xl border border-amber-100 shadow-sm">
                         <div className="flex items-center justify-between mb-1">
                           <h4 className="font-bold text-slate-900">Discovery Phase</h4>
                           <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Completed</span>
@@ -258,7 +258,7 @@ export default function ClientDashboard() {
                   <li key={req.id} className="p-6 hover:bg-slate-50 transition-colors">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-medium text-slate-900 text-lg">{req.requestId}</h3>
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${req.status === 'NEW' ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-800'}`}>
+                      <span className={`text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${req.status === 'NEW' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-800'}`}>
                         {req.status}
                       </span>
                     </div>
@@ -338,7 +338,7 @@ export default function ClientDashboard() {
                 {documents.map(doc => (
                   <li key={doc.id} className="p-4 hover:bg-slate-50 flex justify-between items-center">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-50 text-blue-600 rounded">
+                      <div className="p-2 bg-amber-50 text-amber-600 rounded">
                         <FileText className="w-5 h-5" />
                       </div>
                       <div>
@@ -379,7 +379,7 @@ export default function ClientDashboard() {
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     Related Project (Optional)
                   </label>
-                  <select name="projectId" className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+                  <select name="projectId" className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-colors">
                     <option value="">-- None --</option>
                     {projects.map(p => (
                       <option key={p.id} value={p.id}>{p.name}</option>
@@ -400,7 +400,7 @@ export default function ClientDashboard() {
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     Priority
                   </label>
-                  <select name="priority" className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+                  <select name="priority" className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-colors">
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
                     <option value="high">High</option>
@@ -427,7 +427,7 @@ export default function ClientDashboard() {
                         <span className={`text-xs px-2 py-1 rounded-full font-bold uppercase tracking-wider
                           ${ticket.priority === 'critical' ? 'bg-red-100 text-red-700' :
                             ticket.priority === 'high' ? 'bg-orange-100 text-orange-700' :
-                            ticket.priority === 'medium' ? 'bg-blue-100 text-blue-700' :
+                            ticket.priority === 'medium' ? 'bg-amber-100 text-amber-700' :
                             'bg-slate-100 text-slate-700'}`}
                         >
                           {ticket.priority}
@@ -435,7 +435,7 @@ export default function ClientDashboard() {
                         <span className={`text-xs px-3 py-1.5 rounded-full font-medium
                           ${ticket.status === 'open' ? 'bg-amber-100 text-amber-700' :
                             ticket.status === 'resolved' || ticket.status === 'closed' ? 'bg-emerald-100 text-emerald-700' :
-                            'bg-blue-100 text-blue-700'}`}
+                            'bg-amber-100 text-amber-700'}`}
                         >
                           {ticket.status.replace('_', ' ').toUpperCase()}
                         </span>

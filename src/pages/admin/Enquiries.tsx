@@ -185,7 +185,7 @@ export default function Enquiries() {
               placeholder="Search enquiries..." 
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -244,7 +244,7 @@ export default function Enquiries() {
                       <select 
                         value={enq.status}
                         onChange={(e) => handleStatusChange(enq.id!, e.target.value)}
-                        className="text-sm border border-slate-300 rounded-md px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="text-sm border border-slate-300 rounded-md px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                         disabled={enq.status === 'CONVERTED'}
                       >
                         <option value="NEW">New</option>
@@ -262,7 +262,7 @@ export default function Enquiries() {
                           onClick={() => convertToProject(enq)} 
                           size="sm" 
                           variant="outline"
-                          className="flex items-center gap-1 bg-white border-blue-200 text-blue-700 hover:bg-blue-50"
+                          className="flex items-center gap-1 bg-white border-amber-200 text-amber-700 hover:bg-amber-50"
                         >
                           Convert <ArrowRightCircle className="w-3.5 h-3.5" />
                         </Button>
@@ -282,7 +282,7 @@ export default function Enquiries() {
           <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
             <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
               <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                <Mail className="w-5 h-5 text-blue-600" />
+                <Mail className="w-5 h-5 text-amber-600" />
                 Reply via Gmail
               </h2>
               <button onClick={() => setReplyModalOpen(false)} className="text-slate-400 hover:text-slate-500">
@@ -332,7 +332,7 @@ export default function Enquiries() {
               <Button variant="outline" onClick={() => setReplyModalOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleSendReply} isLoading={sendingEmail} className="bg-blue-600 hover:bg-blue-700">
+              <Button onClick={handleSendReply} isLoading={sendingEmail} className="bg-amber-600 hover:bg-amber-700">
                 Send Email
               </Button>
             </div>

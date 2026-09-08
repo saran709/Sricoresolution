@@ -78,7 +78,7 @@ export default function AdminDashboard() {
   }, []);
 
   const statCards = [
-    { name: 'Active Employees', value: stats.activeEmployees, total: stats.employees, icon: Users, color: 'bg-blue-500', link: '/admin/employees' },
+    { name: 'Active Employees', value: stats.activeEmployees, total: stats.employees, icon: Users, color: 'bg-amber-500', link: '/admin/employees' },
     { name: 'Mentors', value: stats.mentors, total: null, icon: Users, color: 'bg-indigo-500', link: '/admin/mentors' },
     { name: 'Interns', value: stats.interns, total: null, icon: GraduationCap, color: 'bg-teal-500', link: '/admin/interns' },
     { name: 'Clients', value: stats.clients, total: null, icon: Users, color: 'bg-cyan-500', link: '/admin/clients' },
@@ -129,10 +129,10 @@ export default function AdminDashboard() {
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-6 border-b border-slate-200 flex justify-between items-center">
             <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-blue-600" />
+              <Clock className="w-5 h-5 text-amber-600" />
               Recent Activities
             </h2>
-            <Link to="/admin/audit" className="text-sm font-medium text-blue-600 hover:text-blue-700">View All</Link>
+            <Link to="/admin/audit" className="text-sm font-medium text-amber-600 hover:text-amber-700">View All</Link>
           </div>
           <div className="p-0">
             {activities.length > 0 ? (
@@ -165,7 +165,7 @@ export default function AdminDashboard() {
               <AlertCircle className="w-5 h-5 text-amber-500" />
               Tasks Requiring Attention
             </h2>
-            <Link to="/admin/tasks" className="text-sm font-medium text-blue-600 hover:text-blue-700">View All</Link>
+            <Link to="/admin/tasks" className="text-sm font-medium text-amber-600 hover:text-amber-700">View All</Link>
           </div>
           <div className="p-0">
             {tasks.length > 0 ? (
@@ -179,7 +179,7 @@ export default function AdminDashboard() {
                       </div>
                       <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium 
                         ${task.status === 'TODO' ? 'bg-slate-100 text-slate-800' : ''}
-                        ${task.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' : ''}
+                        ${task.status === 'IN_PROGRESS' ? 'bg-amber-100 text-amber-800' : ''}
                         ${task.status === 'BLOCKED' ? 'bg-red-100 text-red-800' : ''}
                         ${task.status === 'REVIEW' ? 'bg-amber-100 text-amber-800' : ''}
                       `}>

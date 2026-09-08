@@ -4,7 +4,7 @@ import { Container } from '../../components/ui/Container';
 import { Button } from '../../components/ui/Button';
 import { auth, db } from '../../lib/firebase';
 import { signOut } from 'firebase/auth';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { useNavigate, Link, Navigate } from 'react-router-dom';
 import { Shield, AlertTriangle } from 'lucide-react';
 
@@ -33,7 +33,7 @@ export default function Dashboard() {
     if (!currentUser) return;
     setIsUpgrading(true);
     try {
-      await updateDoc(doc(db, 'users', currentUser.uid), { role: 'ADMINISTRATOR' });
+      await setDoc(doc(db, 'users', currentUser.uid), { role: 'ADMINISTRATOR' }, { merge: true });
       // Force reload to update auth context
       window.location.href = '/admin';
     } catch (error) {
@@ -91,7 +91,7 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-4">
               <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider
-                ${userProfile?.role === 'CLIENT' ? 'bg-blue-100 text-blue-800' :
+                ${userProfile?.role === 'CLIENT' ? 'bg-amber-100 text-amber-800' :
                   userProfile?.role === 'EMPLOYEE' ? 'bg-indigo-100 text-indigo-800' :
                   userProfile?.role === 'MENTOR' ? 'bg-purple-100 text-purple-800' :
                   userProfile?.role === 'INTERN' ? 'bg-emerald-100 text-emerald-800' :

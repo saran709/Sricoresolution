@@ -144,7 +144,7 @@ export default function AdminProjects() {
               placeholder="Search projects by name..." 
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
             />
           </div>
           
@@ -153,7 +153,7 @@ export default function AdminProjects() {
             <select
               value={filterType}
               onChange={e => setFilterType(e.target.value)}
-              className="border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
             >
               <option value="all">All Types</option>
               <option value="commercial">Commercial Workflow</option>
@@ -205,7 +205,7 @@ export default function AdminProjects() {
                           <span className={`uppercase text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full
                             ${project.status === 'active' ? 'bg-emerald-100 text-emerald-700' :
                               project.status === 'on_hold' ? 'bg-amber-100 text-amber-700' :
-                              project.status === 'completed' ? 'bg-blue-100 text-blue-700' :
+                              project.status === 'completed' ? 'bg-amber-100 text-amber-700' :
                               'bg-red-100 text-red-700'}`}
                           >
                             {project.status.replace('_', ' ')}
@@ -216,7 +216,7 @@ export default function AdminProjects() {
                         <select 
                           value={project.stage || stageOptions[0].value}
                           onChange={(e) => handleStageChange(project, e.target.value as ProjectStage)}
-                          className="text-sm border border-slate-300 rounded-md px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-full max-w-[200px]"
+                          className="text-sm border border-slate-300 rounded-md px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 w-full max-w-[200px]"
                         >
                           {stageOptions.map(stage => (
                             <option key={stage.value} value={stage.value}>

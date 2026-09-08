@@ -11,7 +11,7 @@ export default function Internships() {
   const programs = AVAILABLE_INTERNSHIPS;
 
   const domains = [
-    { title: "Software Development", icon: <Code className="w-6 h-6" />, color: "bg-blue-50 text-blue-600" },
+    { title: "Software Development", icon: <Code className="w-6 h-6" />, color: "bg-amber-50 text-amber-600" },
     { title: "Hardware & IoT", icon: <Cpu className="w-6 h-6" />, color: "bg-emerald-50 text-emerald-600" },
     { title: "AI & Machine Learning", icon: <Brain className="w-6 h-6" />, color: "bg-purple-50 text-purple-600" },
     { title: "Research & Analysis", icon: <Briefcase className="w-6 h-6" />, color: "bg-orange-50 text-orange-600" }
@@ -34,7 +34,7 @@ export default function Internships() {
             </p>
             <Link 
               to="/internships/apply" 
-              className="inline-flex items-center justify-center px-6 py-3 text-base font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center justify-center px-6 py-3 text-base font-medium rounded-md bg-amber-600 text-white hover:bg-amber-700 transition-colors"
             >
               Apply for Internship
             </Link>
@@ -80,7 +80,7 @@ export default function Internships() {
                 
                 <div className="flex flex-wrap gap-2 mb-6">
                   {program.technologies.slice(0, 4).map((tech, i) => (
-                    <span key={i} className="text-xs font-medium px-2 py-1 bg-blue-50 text-blue-700 rounded-md">
+                    <span key={i} className="text-xs font-medium px-2 py-1 bg-amber-50 text-amber-700 rounded-md">
                       {tech}
                     </span>
                   ))}
@@ -90,7 +90,7 @@ export default function Internships() {
                   <span className="text-sm font-semibold text-slate-900">₹{program.fees.toLocaleString()}</span>
                   <button 
                     onClick={() => handleApply(program.id)} 
-                    className="inline-flex items-center font-semibold text-blue-600 hover:text-blue-700 transition-colors cursor-pointer"
+                    className="inline-flex items-center font-semibold text-amber-600 hover:text-amber-700 transition-colors cursor-pointer"
                   >
                     Apply Now <ArrowRight className="w-4 h-4 ml-1" />
                   </button>

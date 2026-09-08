@@ -132,7 +132,7 @@ export default function AdminPayments() {
         
         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
+            <div className="p-3 bg-amber-50 text-amber-600 rounded-lg">
               <RefreshCw className="w-6 h-6" />
             </div>
             <div>
@@ -182,7 +182,7 @@ export default function AdminPayments() {
               placeholder="Search by Payment ID, Order ID, or Purpose..." 
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
           </div>
         </div>

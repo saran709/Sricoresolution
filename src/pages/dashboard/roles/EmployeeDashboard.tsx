@@ -180,8 +180,8 @@ export default function EmployeeDashboard() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 cursor-pointer hover:border-blue-300 transition-colors" onClick={() => setActiveTab('projects')}>
-              <div className="p-4 rounded-lg bg-blue-50 text-blue-600">
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 cursor-pointer hover:border-amber-300 transition-colors" onClick={() => setActiveTab('projects')}>
+              <div className="p-4 rounded-lg bg-amber-50 text-amber-600">
                 <Briefcase className="w-6 h-6" />
               </div>
               <div>
@@ -234,9 +234,9 @@ export default function EmployeeDashboard() {
                       <select 
                         value={task.status}
                         onChange={(e) => updateTaskStatus(task.id!, e.target.value)}
-                        className={`text-sm font-medium border rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500
+                        className={`text-sm font-medium border rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-500
                           ${task.status === 'COMPLETED' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' :
-                            task.status === 'IN_PROGRESS' ? 'border-blue-200 bg-blue-50 text-blue-700' :
+                            task.status === 'IN_PROGRESS' ? 'border-amber-200 bg-amber-50 text-amber-700' :
                             task.status === 'REVIEW' ? 'border-amber-200 bg-amber-50 text-amber-700' :
                             task.status === 'BLOCKED' ? 'border-red-200 bg-red-50 text-red-700' :
                             'border-slate-200 bg-white text-slate-700'}`}
@@ -274,7 +274,7 @@ export default function EmployeeDashboard() {
                   <li key={project.id} className="p-6 hover:bg-slate-50 transition-colors">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="text-lg font-medium text-slate-900">{project.name}</h3>
-                      <span className={`text-xs px-3 py-1 rounded-full font-medium bg-blue-100 text-blue-700`}>
+                      <span className={`text-xs px-3 py-1 rounded-full font-medium bg-amber-100 text-amber-700`}>
                         {project.status.toUpperCase()}
                       </span>
                     </div>

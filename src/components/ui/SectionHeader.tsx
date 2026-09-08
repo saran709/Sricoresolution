@@ -13,7 +13,7 @@ export function SectionHeader({ title, description, align = 'center', className,
   return (
     <div className={cn('mb-12 md:mb-16', align === 'center' ? 'text-center' : 'text-left', className)}>
       {badge && (
-        <span className="inline-block py-1 px-3 rounded-full bg-blue-50 text-blue-700 text-sm font-bold uppercase tracking-wider mb-4">
+        <span className="inline-block py-1 px-3 rounded-full bg-amber-50 text-amber-700 text-sm font-bold uppercase tracking-wider mb-4">
           {badge}
         </span>
       )}

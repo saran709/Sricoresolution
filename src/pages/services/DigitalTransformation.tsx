@@ -11,7 +11,7 @@ export default function DigitalTransformation() {
       <section className="bg-slate-900 text-white py-24 relative overflow-hidden">
         <Container>
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-sm font-semibold mb-6 border border-blue-500/30">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-sm font-semibold mb-6 border border-amber-500/30">
               <Layers className="w-4 h-4" />
               SRICORE DIGITAL TRANSFORMATION
             </div>
@@ -23,7 +23,7 @@ export default function DigitalTransformation() {
             </p>
             <div className="flex flex-wrap gap-4">
               <Link to="/tell-us-your-problem">
-                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white border-0">
+                <Button size="lg" className="bg-amber-600 hover:bg-amber-700 text-white border-0">
                   Transform My Process
                 </Button>
               </Link>
@@ -56,7 +56,7 @@ export default function DigitalTransformation() {
               <h3 className="text-2xl font-bold text-slate-900 mb-6">The Sricore Alternative</h3>
               <div className="space-y-6">
                 <div className="flex gap-4">
-                  <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center shrink-0">
+                  <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center shrink-0">
                     <Database className="w-6 h-6" />
                   </div>
                   <div>
@@ -65,7 +65,7 @@ export default function DigitalTransformation() {
                   </div>
                 </div>
                 <div className="flex gap-4">
-                  <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center shrink-0">
+                  <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center shrink-0">
                     <Smartphone className="w-6 h-6" />
                   </div>
                   <div>
@@ -74,7 +74,7 @@ export default function DigitalTransformation() {
                   </div>
                 </div>
                 <div className="flex gap-4">
-                  <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center shrink-0">
+                  <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center shrink-0">
                     <Laptop className="w-6 h-6" />
                   </div>
                   <div>
@@ -89,7 +89,7 @@ export default function DigitalTransformation() {
       </section>
 
       {/* Workflow */}
-      <section className="py-24 bg-blue-900 text-white">
+      <section className="py-24 bg-amber-900 text-white">
         <Container>
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold mb-4">Our Transformation Journey</h2>
@@ -97,22 +97,22 @@ export default function DigitalTransformation() {
           
           <div className="flex flex-col md:flex-row items-center justify-center gap-4 text-center">
             <div className="p-4">
-              <div className="font-bold text-blue-300 mb-2">01</div>
+              <div className="font-bold text-amber-300 mb-2">01</div>
               <h3 className="font-semibold">Process Analysis</h3>
             </div>
-            <ArrowRight className="hidden md:block w-6 h-6 text-blue-500" />
+            <ArrowRight className="hidden md:block w-6 h-6 text-amber-500" />
             <div className="p-4">
-              <div className="font-bold text-blue-300 mb-2">02</div>
+              <div className="font-bold text-amber-300 mb-2">02</div>
               <h3 className="font-semibold">Digitalization Plan</h3>
             </div>
-            <ArrowRight className="hidden md:block w-6 h-6 text-blue-500" />
+            <ArrowRight className="hidden md:block w-6 h-6 text-amber-500" />
             <div className="p-4">
-              <div className="font-bold text-blue-300 mb-2">03</div>
+              <div className="font-bold text-amber-300 mb-2">03</div>
               <h3 className="font-semibold">Application Build</h3>
             </div>
-            <ArrowRight className="hidden md:block w-6 h-6 text-blue-500" />
+            <ArrowRight className="hidden md:block w-6 h-6 text-amber-500" />
             <div className="p-4">
-              <div className="font-bold text-blue-300 mb-2">04</div>
+              <div className="font-bold text-amber-300 mb-2">04</div>
               <h3 className="font-semibold">Deployment & Support</h3>
             </div>
           </div>

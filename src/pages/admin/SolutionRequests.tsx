@@ -35,7 +35,7 @@ export default function SolutionRequests() {
   };
 
   const statusColors: any = {
-    'NEW': 'bg-blue-100 text-blue-800',
+    'NEW': 'bg-amber-100 text-amber-800',
     'TRIAGE': 'bg-yellow-100 text-yellow-800',
     'DISCOVERY': 'bg-purple-100 text-purple-800',
     'FEASIBILITY': 'bg-indigo-100 text-indigo-800',
@@ -74,7 +74,7 @@ export default function SolutionRequests() {
               <input 
                 type="text" 
                 placeholder="Search requests..." 
-                className="w-full pl-9 pr-4 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
+                className="w-full pl-9 pr-4 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-600 focus:border-amber-600"
               />
             </div>
           </div>
@@ -90,7 +90,7 @@ export default function SolutionRequests() {
                   onClick={() => setSelectedRequest(req)}
                   className={`w-full text-left p-4 rounded-lg transition-colors border ${
                     selectedRequest?.id === req.id 
-                      ? 'bg-blue-50 border-blue-200' 
+                      ? 'bg-amber-50 border-amber-200' 
                       : 'bg-white border-slate-100 hover:border-slate-300'
                   }`}
                 >
@@ -157,10 +157,10 @@ export default function SolutionRequests() {
               {/* The Problem */}
               <div>
                 <h3 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-blue-600" />
+                  <Shield className="w-5 h-5 text-amber-600" />
                   The Problem
                 </h3>
-                <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-5 text-slate-700 whitespace-pre-wrap leading-relaxed">
+                <div className="bg-amber-50/50 border border-amber-100 rounded-xl p-5 text-slate-700 whitespace-pre-wrap leading-relaxed">
                   {selectedRequest.problem}
                 </div>
               </div>
@@ -222,7 +222,7 @@ export default function SolutionRequests() {
               
               {/* Actions */}
               <div className="pt-6 border-t border-slate-200 flex flex-wrap gap-3">
-                <Button variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50">Start Discovery Case</Button>
+                <Button variant="outline" className="text-amber-600 border-amber-200 hover:bg-amber-50">Start Discovery Case</Button>
                 <Button variant="outline">Assess Readiness</Button>
                 <Button variant="outline">Schedule Follow-up</Button>
                 <div className="flex-1"></div>

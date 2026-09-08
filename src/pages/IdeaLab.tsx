@@ -127,7 +127,7 @@ export default function IdeaLab() {
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">Timeline</label>
                 <select 
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-white"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-600 focus:border-amber-600 bg-white"
                   value={formData.timeline}
                   onChange={e => setFormData({...formData, timeline: e.target.value})}
                 >
@@ -141,7 +141,7 @@ export default function IdeaLab() {
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">Budget Range</label>
                 <select 
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-white"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-600 focus:border-amber-600 bg-white"
                   value={formData.budget}
                   onChange={e => setFormData({...formData, budget: e.target.value})}
                 >

@@ -177,7 +177,7 @@ export default function Employees() {
               placeholder="Search employees..." 
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -225,7 +225,7 @@ export default function Employees() {
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold
                         ${emp.role === 'ADMINISTRATOR' ? 'bg-purple-100 text-purple-800' : 
-                          emp.role === 'MENTOR' ? 'bg-blue-100 text-blue-800' : 
+                          emp.role === 'MENTOR' ? 'bg-amber-100 text-amber-800' : 
                           'bg-emerald-100 text-emerald-800'}`}
                       >
                         {emp.role}
@@ -240,7 +240,7 @@ export default function Employees() {
                     <td className="px-6 py-4 text-right">
                       <button 
                         onClick={() => openEditModal(emp)}
-                        className="text-blue-600 hover:text-blue-900 font-medium text-sm inline-flex items-center gap-1 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors"
+                        className="text-amber-600 hover:text-amber-900 font-medium text-sm inline-flex items-center gap-1 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-lg transition-colors"
                       >
                         <Edit2 className="w-3.5 h-3.5" /> Edit
                       </button>
@@ -307,7 +307,7 @@ export default function Employees() {
                   <select 
                     value={formData.role}
                     onChange={(e) => setFormData({...formData, role: e.target.value as UserRole})}
-                    className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                   >
                     <option value="EMPLOYEE">Employee</option>
                     <option value="MENTOR">Mentor</option>
@@ -327,7 +327,7 @@ export default function Employees() {
                 <select 
                   value={formData.departmentId}
                   onChange={(e) => setFormData({...formData, departmentId: e.target.value})}
-                  className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 >
                   <option value="">Select Department...</option>
                   <option value="Software">Software Development</option>
@@ -346,7 +346,7 @@ export default function Employees() {
                   id="isActive"
                   checked={formData.isActive}
                   onChange={(e) => setFormData({...formData, isActive: e.target.checked})}
-                  className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                  className="w-4 h-4 text-amber-600 rounded border-slate-300 focus:ring-amber-500"
                 />
                 <label htmlFor="isActive" className="text-sm font-medium text-slate-700">
                   Account is Active

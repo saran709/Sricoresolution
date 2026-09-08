@@ -56,7 +56,7 @@ export default function ProjectRescue() {
               <p className="text-slate-600">The application frequently crashes, scales poorly, or fails to handle real-world operational loads.</p>
             </div>
             <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
-              <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-6">
+              <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center mb-6">
                 <ShieldAlert className="w-6 h-6" />
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3">Broken Prototypes</h3>
@@ -81,7 +81,7 @@ export default function ProjectRescue() {
                 { step: '5', title: 'Testing & Deployment', desc: 'Rigorous testing followed by secure deployment to production.' },
               ].map((item, i) => (
                 <div key={i} className="flex gap-6">
-                  <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center shrink-0">
+                  <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-700 font-bold flex items-center justify-center shrink-0">
                     {item.step}
                   </div>
                   <div>

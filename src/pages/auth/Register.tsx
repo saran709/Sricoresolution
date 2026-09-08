@@ -62,7 +62,7 @@ export default function Register() {
           </h2>
           <p className="mt-2 text-center text-sm text-slate-600">
             Already have an account?{' '}
-            <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
+            <Link to="/login" className="font-medium text-amber-600 hover:text-amber-500 transition-colors">
               Sign in here
             </Link>
           </p>
@@ -127,7 +127,7 @@ export default function Register() {
             <select 
               value={role}
               onChange={(e) => setRole(e.target.value as UserRole)}
-              className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+              className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-colors"
             >
               <option value="CANDIDATE">Candidate / Student</option>
               <option value="CLIENT">Client / Business Partner</option>

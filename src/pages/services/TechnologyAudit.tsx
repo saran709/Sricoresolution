@@ -40,7 +40,7 @@ export default function TechnologyAudit() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
-              <Server className="w-8 h-8 text-blue-600 mb-4" />
+              <Server className="w-8 h-8 text-amber-600 mb-4" />
               <h3 className="text-xl font-bold text-slate-900 mb-2">Architecture & Codebase</h3>
               <p className="text-slate-600">We analyze your codebase for maintainability, technical debt, framework lifecycle, and structural integrity.</p>
             </div>

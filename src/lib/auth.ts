@@ -2,6 +2,7 @@ import { GoogleAuthProvider, signInWithPopup, User } from 'firebase/auth';
 import { auth } from './firebase';
 
 const provider = new GoogleAuthProvider();
+provider.setCustomParameters({ prompt: 'select_account consent' });
 
 // Request Workspace scopes
 provider.addScope('https://mail.google.com/');

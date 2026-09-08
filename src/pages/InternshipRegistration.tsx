@@ -160,7 +160,7 @@ export default function InternshipRegistration() {
               Thank you for applying to the {selectedProgram?.title || 'Internship'} program. Our HR team will review your application and contact you for the next steps.
             </p>
             <div className="flex gap-4 justify-center">
-              <Link to="/dashboard" className="inline-flex items-center justify-center px-6 py-3 font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors">
+              <Link to="/dashboard" className="inline-flex items-center justify-center px-6 py-3 font-medium rounded-md bg-amber-600 text-white hover:bg-amber-700 transition-colors">
                 Go to Dashboard
               </Link>
             </div>
@@ -212,12 +212,12 @@ export default function InternshipRegistration() {
           />
           <div className="bg-white p-8 md:p-10 rounded-3xl border border-slate-200 shadow-xl mt-12">
             {!currentUser && (
-               <div className="mb-8 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+               <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-center justify-between">
                  <div>
-                   <h4 className="font-semibold text-blue-900">Already have an account?</h4>
-                   <p className="text-sm text-blue-700">Sign in to save your application and track its progress.</p>
+                   <h4 className="font-semibold text-amber-900">Already have an account?</h4>
+                   <p className="text-sm text-amber-700">Sign in to save your application and track its progress.</p>
                  </div>
-                 <Link to={`/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`} className="px-4 py-2 bg-white text-blue-700 font-medium rounded-md shadow-sm border border-blue-200 hover:bg-blue-50 transition-colors">
+                 <Link to={`/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`} className="px-4 py-2 bg-white text-amber-700 font-medium rounded-md shadow-sm border border-amber-200 hover:bg-amber-50 transition-colors">
                    Sign In
                  </Link>
                </div>
@@ -232,11 +232,11 @@ export default function InternshipRegistration() {
             {/* Step Indicators */}
             <div className="flex items-center justify-center mb-10">
               <div className="flex items-center space-x-4">
-                <div className={`flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm ${formStep >= 1 ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400'}`}>1</div>
-                <div className={`h-1 w-12 rounded-full ${formStep >= 2 ? 'bg-blue-600' : 'bg-slate-200'}`}></div>
-                <div className={`flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm ${formStep >= 2 ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400'}`}>2</div>
-                <div className={`h-1 w-12 rounded-full ${formStep >= 3 ? 'bg-blue-600' : 'bg-slate-200'}`}></div>
-                <div className={`flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm ${formStep >= 3 ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400'}`}>3</div>
+                <div className={`flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm ${formStep >= 1 ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-400'}`}>1</div>
+                <div className={`h-1 w-12 rounded-full ${formStep >= 2 ? 'bg-amber-600' : 'bg-slate-200'}`}></div>
+                <div className={`flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm ${formStep >= 2 ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-400'}`}>2</div>
+                <div className={`h-1 w-12 rounded-full ${formStep >= 3 ? 'bg-amber-600' : 'bg-slate-200'}`}></div>
+                <div className={`flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm ${formStep >= 3 ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-400'}`}>3</div>
               </div>
             </div>
 
@@ -312,7 +312,7 @@ export default function InternshipRegistration() {
               </div>
               
               <p className="text-xs text-slate-500 text-center mt-6">
-                By submitting this application, you agree to our <Link to="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link>.
+                By submitting this application, you agree to our <Link to="/privacy" className="text-amber-600 hover:underline">Privacy Policy</Link>.
               </p>
             </form>
           </div>

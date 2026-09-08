@@ -108,7 +108,7 @@ export default function AdminInternships() {
               placeholder="Search by candidate name or email..." 
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -160,7 +160,7 @@ export default function AdminInternships() {
                       <select 
                         value={app.status}
                         onChange={(e) => handleStatusChange(app, e.target.value as any)}
-                        className="text-sm border border-slate-300 rounded-md px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-[180px]"
+                        className="text-sm border border-slate-300 rounded-md px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 w-[180px]"
                       >
                         {STATUSES.map(status => (
                           <option key={status.value} value={status.value}>

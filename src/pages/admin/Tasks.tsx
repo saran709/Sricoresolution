@@ -58,7 +58,7 @@ export default function AdminTasks() {
               placeholder="Search tasks..." 
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -99,7 +99,7 @@ export default function AdminTasks() {
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium 
                         ${task.status === 'TODO' ? 'bg-slate-100 text-slate-800' : ''}
-                        ${task.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' : ''}
+                        ${task.status === 'IN_PROGRESS' ? 'bg-amber-100 text-amber-800' : ''}
                         ${task.status === 'BLOCKED' ? 'bg-red-100 text-red-800' : ''}
                         ${task.status === 'REVIEW' ? 'bg-amber-100 text-amber-800' : ''}
                         ${task.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-800' : ''}

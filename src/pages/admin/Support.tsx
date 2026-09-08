@@ -89,7 +89,7 @@ export default function AdminSupport() {
               placeholder="Search tickets by subject..." 
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -130,7 +130,7 @@ export default function AdminSupport() {
                       <span className={`uppercase text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full
                         ${ticket.priority === 'critical' ? 'bg-red-100 text-red-700' :
                           ticket.priority === 'high' ? 'bg-orange-100 text-orange-700' :
-                          ticket.priority === 'medium' ? 'bg-blue-100 text-blue-700' :
+                          ticket.priority === 'medium' ? 'bg-amber-100 text-amber-700' :
                           'bg-slate-100 text-slate-700'}`}
                       >
                         {ticket.priority}
@@ -143,7 +143,7 @@ export default function AdminSupport() {
                       <select 
                         value={ticket.status}
                         onChange={(e) => handleStatusChange(ticket, e.target.value as any)}
-                        className="text-sm border border-slate-300 rounded-md px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-[160px]"
+                        className="text-sm border border-slate-300 rounded-md px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 w-[160px]"
                       >
                         {STATUSES.map(status => (
                           <option key={status.value} value={status.value}>

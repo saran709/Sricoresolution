@@ -47,7 +47,7 @@ export default function AdminAudit() {
           <p className="text-sm text-slate-500">Track sensitive administrator actions and system events</p>
         </div>
         <div className="bg-slate-100 p-2 rounded-lg flex items-center gap-2 text-slate-600 text-sm font-medium border border-slate-200">
-          <Shield className="w-4 h-4 text-blue-600" />
+          <Shield className="w-4 h-4 text-amber-600" />
           Append-Only Log
         </div>
       </div>
@@ -61,7 +61,7 @@ export default function AdminAudit() {
               placeholder="Search actions or users..." 
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
             />
           </div>
         </div>

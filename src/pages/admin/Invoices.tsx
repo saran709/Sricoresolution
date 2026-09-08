@@ -140,7 +140,7 @@ export default function AdminInvoices() {
                 placeholder="Search invoices..." 
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
             </div>
           </div>
@@ -170,7 +170,7 @@ export default function AdminInvoices() {
                       <td className="px-6 py-4">
                         <span className={`uppercase text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full
                           ${inv.status === 'paid' ? 'bg-emerald-100 text-emerald-700' :
-                            inv.status === 'sent' ? 'bg-blue-100 text-blue-700' :
+                            inv.status === 'sent' ? 'bg-amber-100 text-amber-700' :
                             inv.status === 'overdue' ? 'bg-red-100 text-red-700' :
                             'bg-slate-100 text-slate-700'}`}
                         >

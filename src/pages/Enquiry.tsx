@@ -88,21 +88,21 @@ export default function Enquiry() {
               <h3 className="text-xl font-bold text-slate-900">What happens next?</h3>
               <ul className="space-y-6">
                 <li className="flex gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold">1</div>
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold">1</div>
                   <div>
                     <h4 className="font-semibold text-slate-900">Technical Review</h4>
                     <p className="text-slate-600 mt-1 text-sm">Our senior engineers will review your initial requirements and constraints.</p>
                   </div>
                 </li>
                 <li className="flex gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold">2</div>
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold">2</div>
                   <div>
                     <h4 className="font-semibold text-slate-900">Discovery Call</h4>
                     <p className="text-slate-600 mt-1 text-sm">We'll schedule a 30-minute consultation to dive deeper into your vision.</p>
                   </div>
                 </li>
                 <li className="flex gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold">3</div>
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold">3</div>
                   <div>
                     <h4 className="font-semibold text-slate-900">Detailed Proposal</h4>
                     <p className="text-slate-600 mt-1 text-sm">You'll receive a comprehensive proposal including architecture design, timelines, and costs.</p>
@@ -135,7 +135,7 @@ export default function Enquiry() {
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Service Interest
                 </label>
-                <select name="serviceInterest" className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+                <select name="serviceInterest" className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-colors">
                   <option value="software">Commercial Software Development</option>
                   <option value="hardware">Commercial Hardware & IoT</option>
                   <option value="ai">Commercial AI / Machine Learning</option>

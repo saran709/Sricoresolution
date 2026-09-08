@@ -1,5 +1,6 @@
 import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { ScrollToTop } from './components/ScrollToTop';
 import { MainLayout } from './components/layout/MainLayout';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { PagePlaceholder } from './components/ui/PagePlaceholder';
@@ -43,6 +44,7 @@ const AdminClients = React.lazy(() => import('./pages/admin/Clients'));
 const AdminTasks = React.lazy(() => import('./pages/admin/Tasks'));
 const AdminAudit = React.lazy(() => import('./pages/admin/Audit'));
 const AdminContent = React.lazy(() => import('./pages/admin/Content'));
+const AdminNewsletters = React.lazy(() => import('./pages/admin/Newsletters'));
 const AdminSupport = React.lazy(() => import('./pages/admin/Support'));
 const AdminDocuments = React.lazy(() => import('./pages/admin/Documents'));
 const AdminPayments = React.lazy(() => import('./pages/admin/Payments'));
@@ -50,13 +52,14 @@ const AdminInvoices = React.lazy(() => import('./pages/admin/Invoices'));
 
 const PageLoader = () => (
   <div className="min-h-[50vh] flex items-center justify-center">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
   </div>
 );
 
 export function AppRouter() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Admin Routes */}
@@ -92,6 +95,7 @@ export function AppRouter() {
             
             <Route path="notifications" element={<PagePlaceholder title="Notifications" />} />
             <Route path="website" element={<AdminContent />} />
+            <Route path="newsletters" element={<AdminNewsletters />} />
             <Route path="reports" element={<PagePlaceholder title="Reports" />} />
             <Route path="audit-logs" element={<AdminAudit />} />
             <Route path="settings" element={<PagePlaceholder title="Settings" />} />
