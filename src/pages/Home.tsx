@@ -27,8 +27,8 @@ export default function Home() {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 mt-2">
-                <Link to="/enquiry" className="inline-flex items-center justify-center px-6 py-3 text-sm font-semibold rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm w-fit">
-                  Get a Project Quote
+                <Link to="/tell-us-your-problem" className="inline-flex items-center justify-center px-6 py-3 text-sm font-semibold rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm w-fit">
+                  TELL US YOUR PROBLEM
                 </Link>
                 <Link to="/internships" className="inline-flex items-center justify-center px-6 py-3 text-sm font-semibold rounded text-blue-600 border border-blue-600 hover:bg-blue-50 transition-colors w-fit">
                   Apply for Internship
@@ -267,7 +267,7 @@ export default function Home() {
       <CTASection 
         title="Ready to transform your ideas into reality?"
         description="Connect with our technical team to discuss your project requirements or inquire about our services."
-        primaryAction={{ label: "Contact Us Today", href: "/contact" }}
+        primaryAction={{ label: "TELL US YOUR PROBLEM", href: "/tell-us-your-problem" }}
         secondaryAction={{ label: "View Our Services", href: "/services" }}
       />
     </div>

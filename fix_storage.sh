@@ -1,0 +1,92 @@
+cat << 'RULES_END' > storage.rules
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // =========================================================================
+    // Employee Documents (Private)
+    // =========================================================================
+    match /employees/{userId}/{document=**} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // =========================================================================
+    // Intern Documents (Private)
+    // =========================================================================
+    match /interns/{userId}/{document=**} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    // =========================================================================
+    // Client Documents (Private)
+    // =========================================================================
+    match /clients/{userId}/{document=**} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // =========================================================================
+    // Project Files (Protected)
+    // =========================================================================
+    match /projects/{projectId}/{document=**} {
+      allow read, write: if isAuthenticated(); 
+    }
+
+    // =========================================================================
+    // Invoices (Protected)
+    // =========================================================================
+    match /invoices/{userId}/{document=**} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // =========================================================================
+    // Certificates (Publicly readable, restricted write)
+    // =========================================================================
+    match /certificates/{userId}/{document=**} {
+      allow read: if true;
+      allow write: if isOwner(userId);
+    }
+
+    // =========================================================================
+    // Research Documents (Protected)
+    // =========================================================================
+    match /research/{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // =========================================================================
+    // Solution Requests (Public upload, protected read)
+    // =========================================================================
+    match /solution_requests/{document=**} {
+      allow create: if true;
+      allow read, update, delete: if isAuthenticated();
+    }
+
+    // =========================================================================
+    // Company Assets (Public)
+    // =========================================================================
+    match /assets/{document=**} {
+      allow read: if true;
+      allow write: if isAuthenticated(); 
+    }
+
+    match /admin_documents/{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Default deny
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
+RULES_END

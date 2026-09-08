@@ -72,7 +72,7 @@ export default function InternshipRegistration() {
         
         if (existingApp) {
           setApplicationId(existingApp.id);
-          if (existingApp.status === 'approved' || existingApp.status === 'completed' || existingApp.paymentStatus === 'paid') {
+          if ((existingApp as any).status === 'approved' || (existingApp as any).status === 'completed' || (existingApp as any).paymentStatus === 'paid') {
              setStep(3);
           } else if (selectedProgram && selectedProgram.fees > 0) {
              setStep(2);

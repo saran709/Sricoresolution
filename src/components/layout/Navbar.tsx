@@ -92,10 +92,10 @@ export function Navbar() {
             )}
             
             <Link 
-              to="/enquiry" 
+              to="/tell-us-your-problem" 
               className="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
             >
-              Get a Project Quote
+              TELL US YOUR PROBLEM
             </Link>
           </div>
 
@@ -167,11 +167,11 @@ export function Navbar() {
                 </Link>
               )}
               <Link
-                to="/enquiry"
+                to="/tell-us-your-problem"
                 onClick={closeMobileMenu}
                 className="block w-full text-center px-4 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700"
               >
-                Get a Project Quote
+                TELL US YOUR PROBLEM
               </Link>
             </div>
           </div>

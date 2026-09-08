@@ -17,15 +17,20 @@ export const APP_CONFIG = {
     main: [
       { name: 'Home', href: '/' },
       { name: 'About', href: '/about' },
-      { name: 'Services', href: '/services' },
+      { name: 'Services', href: '#', children: [
+          { name: 'All Services', href: '/services' },
+          { name: 'Project Rescue', href: '/services/project-rescue' },
+          { name: 'Digital Transformation', href: '/services/digital-transformation' },
+          { name: 'Technology Audit', href: '/services/technology-audit' },
+          { name: 'Research Assistance', href: '/services/research' }
+      ]},
       { name: 'Solutions', href: '#', children: [
           { name: 'Software Solutions', href: '/solutions/software' },
           { name: 'Hardware & IoT', href: '/solutions/hardware' },
           { name: 'AI/ML Solutions', href: '/solutions/ai-ml' },
       ]},
+      { name: 'Idea Lab', href: '/idea-lab' },
       { name: 'Internships', href: '/internships' },
-      { name: 'Projects', href: '/projects' },
-      { name: 'Careers', href: '/careers' },
       { name: 'Contact', href: '/contact' },
     ],
     legal: [

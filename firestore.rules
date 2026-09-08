@@ -5,45 +5,16 @@ service cloud.firestore {
     // =========================================================================
     // Core Helper Functions
     // =========================================================================
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-    
-    function incoming() {
-      return request.resource.data;
-    }
-
-    function existing() {
-      return resource.data;
-    }
-
-    function isAdmin() {
-      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMINISTRATOR';
-    }
-
-    function isEmployee() {
-      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'EMPLOYEE';
-    }
-
-    function isMentor() {
-      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'MENTOR';
-    }
-
-    function isClient() {
-      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'CLIENT';
-    }
-
-    function isIntern() {
-      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'INTERN';
-    }
-
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    function isValidId(id) {
-      return id != null && id != '';
-    }
+    function isAuthenticated() { return request.auth != null; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isAdmin() { return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMINISTRATOR'; }
+    function isEmployee() { return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'EMPLOYEE'; }
+    function isMentor() { return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'MENTOR'; }
+    function isClient() { return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'CLIENT'; }
+    function isIntern() { return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'INTERN'; }
+    function isOwner(userId) { return request.auth.uid == userId; }
+    function isValidId(id) { return id != null && id != ''; }
 
     // =========================================================================
     // Admin Initialization
@@ -69,25 +40,12 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isValidId(userId) && (isAdmin() || isOwner(userId) || isEmployee() || isMentor());
-      
       allow create: if isValidId(userId) && isAuthenticated() && request.auth.uid == userId && (
         (incoming().role in ['CANDIDATE', 'CLIENT'] && isValidUser(incoming()))
-        ||
-        (incoming().role == 'ADMINISTRATOR'
-          && isValidUser(incoming()) 
-          && !exists(/databases/$(database)/documents/system/setup)
-          && existsAfter(/databases/$(database)/documents/system/setup)
-        )
-        ||
-        (isAdmin() && isValidUser(incoming()))
+        || (incoming().role == 'ADMINISTRATOR' && isValidUser(incoming()) && !exists(/databases/$(database)/documents/system/setup) && existsAfter(/databases/$(database)/documents/system/setup))
+        || (isAdmin() && isValidUser(incoming()))
       );
-      
-      allow update: if isValidId(userId) && isAuthenticated() && (
-        (isAdmin())
-        ||
-        (isOwner(userId))
-      );
-      
+      allow update: if isValidId(userId) && isAuthenticated() && ( isAdmin() || isOwner(userId) );
       allow delete: if isValidId(userId) && isAdmin();
     }
 
@@ -103,6 +61,77 @@ service cloud.firestore {
       allow create: if true;
       allow read, update: if isValidId(enquiryId) && (isAdmin() || isEmployee() || (isAuthenticated() && resource.data.clientId == request.auth.uid));
       allow delete: if isValidId(enquiryId) && isAdmin();
+    }
+
+    match /ideaLab/{docId} {
+      allow create: if true;
+      allow read, update: if isValidId(docId) && (isAdmin() || isEmployee() || (isAuthenticated() && resource.data.clientId == request.auth.uid));
+      allow delete: if isValidId(docId) && isAdmin();
+    }
+
+    match /solutionRequests/{docId} {
+      allow create: if true;
+      allow read, update: if isValidId(docId) && (isAdmin() || isEmployee() || (isAuthenticated() && resource.data.clientId == request.auth.uid));
+      allow delete: if isValidId(docId) && isAdmin();
+    }
+
+    match /discoveryCases/{docId} {
+      allow create: if isAdmin() || isEmployee();
+      allow read, update: if isValidId(docId) && (isAdmin() || isEmployee() || (isAuthenticated() && resource.data.clientId == request.auth.uid));
+      allow delete: if isValidId(docId) && isAdmin();
+    }
+
+    match /solutionBlueprints/{docId} {
+      allow create: if isAdmin() || isEmployee();
+      allow read, update: if isValidId(docId) && (isAdmin() || isEmployee() || (isAuthenticated() && resource.data.clientId == request.auth.uid));
+      allow delete: if isValidId(docId) && isAdmin();
+    }
+    
+    match /solutionAssessments/{docId} {
+      allow create, update: if isAdmin() || isEmployee();
+      allow read: if isValidId(docId) && (isAdmin() || isEmployee());
+      allow delete: if isValidId(docId) && isAdmin();
+    }
+
+    match /aiReadinessAssessments/{docId} {
+      allow create, update: if isAdmin() || isEmployee();
+      allow read: if isValidId(docId) && (isAdmin() || isEmployee());
+      allow delete: if isValidId(docId) && isAdmin();
+    }
+
+    match /proofOfConcepts/{docId} {
+      allow create: if isAdmin() || isEmployee();
+      allow read, update: if isValidId(docId) && (isAdmin() || isEmployee() || (isAuthenticated() && resource.data.clientId == request.auth.uid));
+      allow delete: if isValidId(docId) && isAdmin();
+    }
+
+    match /technologyAudits/{docId} {
+      allow create: if true;
+      allow read, update: if isValidId(docId) && (isAdmin() || isEmployee() || (isAuthenticated() && resource.data.clientId == request.auth.uid));
+      allow delete: if isValidId(docId) && isAdmin();
+    }
+
+    match /projectRescueCases/{docId} {
+      allow create: if true;
+      allow read, update: if isValidId(docId) && (isAdmin() || isEmployee() || (isAuthenticated() && resource.data.clientId == request.auth.uid));
+      allow delete: if isValidId(docId) && isAdmin();
+    }
+
+    match /proposals/{docId} {
+      allow create: if isAdmin() || isEmployee();
+      allow read, update: if isValidId(docId) && (isAdmin() || isEmployee() || (isAuthenticated() && resource.data.clientId == request.auth.uid));
+      allow delete: if isValidId(docId) && isAdmin();
+    }
+
+    match /followUps/{docId} {
+      allow create, update: if isAdmin() || isEmployee();
+      allow read: if isValidId(docId) && (isAdmin() || isEmployee());
+      allow delete: if isValidId(docId) && isAdmin();
+    }
+
+    match /servicePackages/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     match /internships/{docId} {
@@ -124,6 +153,19 @@ service cloud.firestore {
       );
       allow create, update: if isValidId(projectId) && (isAdmin() || isEmployee());
       allow delete: if isValidId(projectId) && isAdmin();
+    }
+
+    match /supportTickets/{taskId} {
+      allow read: if isValidId(taskId) && (
+        isAdmin() || isEmployee() || isMentor()
+        || (isAuthenticated() && resource.data.clientId == request.auth.uid)
+      );
+      allow create: if isAuthenticated() && incoming().clientId == request.auth.uid;
+      allow update: if isValidId(taskId) && (
+        isAdmin() || isEmployee() || isMentor()
+        || (isAuthenticated() && resource.data.clientId == request.auth.uid)
+      );
+      allow delete: if isValidId(taskId) && (isAdmin() || isEmployee());
     }
 
     match /tasks/{taskId} {

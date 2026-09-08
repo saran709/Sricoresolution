@@ -1,25 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
-import { collection, query, where, getDocs, doc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
-import { Enquiry, Project, SupportTicket, Invoice, Payment, Document as AppDocument } from '../../../types';
-import { MessageSquare, Briefcase, FileText, CheckCircle, Clock, LifeBuoy, CreditCard, FolderOpen, Download } from 'lucide-react';
+import { collection, query, where, getDocs, addDoc, serverTimestamp, orderBy } from 'firebase/firestore';
+import { Project, SupportTicket, Invoice, Document as AppDocument } from '../../../types';
+import { MessageSquare, Briefcase, FileText, CheckCircle, Clock, LifeBuoy, CreditCard, FolderOpen, Download, AlertTriangle, ShieldCheck, Zap } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Textarea } from '../../../components/ui/Textarea';
 import { logActivity } from '../../../lib/activityLogger';
-
 import { CheckoutButton } from '../../../components/payments/CheckoutButton';
+import { Link } from 'react-router-dom';
 
 export default function ClientDashboard() {
   const { userProfile } = useAuth();
-  const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
+  const [solutionRequests, setSolutionRequests] = useState<any[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [documents, setDocuments] = useState<AppDocument[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'project_requests' | 'support' | 'invoices' | 'documents'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'solution_requests' | 'support' | 'invoices' | 'documents'>('overview');
   
   const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
   const [showNewTicketForm, setShowNewTicketForm] = useState(false);
@@ -29,15 +29,15 @@ export default function ClientDashboard() {
 
     const fetchData = async () => {
       try {
-        const enqQuery = query(collection(db, 'project_requests'), where('clientId', '==', userProfile.uid));
-        const enqSnap = await getDocs(enqQuery);
-        setEnquiries(enqSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Enquiry)));
+        const srQuery = query(collection(db, 'solutionRequests'), where('userId', '==', userProfile.uid));
+        const srSnap = await getDocs(srQuery);
+        setSolutionRequests(srSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
 
         const projQuery = query(collection(db, 'projects'), where('clientId', '==', userProfile.uid));
         const projSnap = await getDocs(projQuery);
         setProjects(projSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project)));
         
-        const tickQuery = query(collection(db, 'support_tickets'), where('clientId', '==', userProfile.uid));
+        const tickQuery = query(collection(db, 'supportTickets'), where('clientId', '==', userProfile.uid));
         const tickSnap = await getDocs(tickQuery);
         setTickets(tickSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as SupportTicket)));
         
@@ -55,7 +55,6 @@ export default function ClientDashboard() {
         setLoading(false);
       }
     };
-
     fetchData();
   }, [userProfile]);
 
@@ -77,7 +76,7 @@ export default function ClientDashboard() {
     };
     
     try {
-      const docRef = await addDoc(collection(db, 'support_tickets'), data);
+      const docRef = await addDoc(collection(db, 'supportTickets'), data);
       
       await logActivity(
         'SUPPORT_TICKET_CREATED',
@@ -103,11 +102,11 @@ export default function ClientDashboard() {
     <div className="space-y-6">
       <div className="flex space-x-1 bg-white p-1 rounded-lg border border-slate-200 w-fit overflow-x-auto">
         <button onClick={() => setActiveTab('overview')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'overview' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>Overview</button>
-        <button onClick={() => setActiveTab('projects')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'projects' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>My Projects</button>
-        <button onClick={() => setActiveTab('project_requests')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'project_requests' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>Enquiries</button>
+        <button onClick={() => setActiveTab('projects')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'projects' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>Project Passport</button>
+        <button onClick={() => setActiveTab('solution_requests')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'solution_requests' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>Solution Requests</button>
         <button onClick={() => setActiveTab('invoices')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'invoices' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>Invoices</button>
         <button onClick={() => setActiveTab('documents')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'documents' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>Documents</button>
-        <button onClick={() => setActiveTab('support')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'support' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>Support</button>
+        <button onClick={() => setActiveTab('support')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'support' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>Support Tickets</button>
       </div>
 
       {activeTab === 'overview' && (
@@ -123,13 +122,13 @@ export default function ClientDashboard() {
               </div>
             </div>
             
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 cursor-pointer hover:border-blue-300 transition-colors" onClick={() => setActiveTab('project_requests')}>
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 cursor-pointer hover:border-blue-300 transition-colors" onClick={() => setActiveTab('solution_requests')}>
               <div className="p-4 rounded-lg bg-blue-50 text-blue-600">
-                <MessageSquare className="w-6 h-6" />
+                <ShieldCheck className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-500">My Enquiries</p>
-                <p className="text-2xl font-bold text-slate-900">{enquiries.length}</p>
+                <p className="text-sm font-medium text-slate-500">Solution Requests</p>
+                <p className="text-2xl font-bold text-slate-900">{solutionRequests.length}</p>
               </div>
             </div>
             
@@ -149,123 +148,133 @@ export default function ClientDashboard() {
               </div>
               <div>
                 <p className="text-sm font-medium text-slate-500">Open Tickets</p>
-                <p className="text-2xl font-bold text-slate-900">{tickets.filter(t => t.status !== 'closed' && t.status !== 'resolved').length}</p>
+                <p className="text-2xl font-bold text-slate-900">{tickets.filter(t => t.status === 'open').length}</p>
               </div>
             </div>
           </div>
-          
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden p-6 text-center">
-            <h3 className="font-semibold text-slate-900 mb-2">Need a new solution?</h3>
-            <p className="text-slate-500 text-sm mb-4">Start a conversation with our team to get a project estimate.</p>
-            <Button onClick={() => window.location.href = '/enquiry'}>Start New Enquiry</Button>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-bold text-blue-900">Have a new problem to solve?</h3>
+              <p className="text-blue-700">Submit a new solution request to our engineering team.</p>
+            </div>
+            <Link to="/tell-us-your-problem">
+              <Button className="bg-blue-600 hover:bg-blue-700">Tell Us Your Problem</Button>
+            </Link>
           </div>
         </>
       )}
 
       {activeTab === 'projects' && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50">
-            <h2 className="font-semibold text-slate-800">My Projects</h2>
-          </div>
-          <div className="p-0">
-            {projects.length > 0 ? (
-              <ul className="divide-y divide-slate-100">
-                {projects.map(project => (
-                  <li key={project.id} className="p-6 hover:bg-slate-50 transition-colors">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="text-lg font-medium text-slate-900">{project.name}</h3>
-                          <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                            {project.projectType}
-                          </span>
+        <div className="space-y-6">
+          {projects.length > 0 ? (
+            projects.map((project) => (
+              <div key={project.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-slate-100 bg-slate-900 text-white">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-semibold uppercase tracking-wider mb-3">
+                        <Zap className="w-3 h-3" />
+                        Project Passport
+                      </div>
+                      <h2 className="text-2xl font-bold">{project.name}</h2>
+                      <p className="text-slate-400 mt-1">{project.description}</p>
+                    </div>
+                    <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-slate-800 text-slate-300 border border-slate-700">
+                      {project.status.replace('_', ' ')}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="p-6">
+                  <h3 className="text-lg font-bold text-slate-900 mb-4">Milestones & Progress</h3>
+                  <div className="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
+                    {/* Simulated Milestones */}
+                    <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-blue-600 text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
+                        <CheckCircle className="w-5 h-5" />
+                      </div>
+                      <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-4 rounded-xl border border-blue-100 shadow-sm">
+                        <div className="flex items-center justify-between mb-1">
+                          <h4 className="font-bold text-slate-900">Discovery Phase</h4>
+                          <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Completed</span>
                         </div>
-                        <p className="text-sm text-slate-500">{project.description}</p>
-                      </div>
-                      <div className="flex flex-col items-end gap-1">
-                        <span className={`text-xs px-3 py-1.5 rounded-full font-medium flex items-center gap-1.5
-                          ${project.status === 'active' ? 'bg-emerald-100 text-emerald-700' :
-                            project.status === 'completed' ? 'bg-blue-100 text-blue-700' :
-                            'bg-slate-100 text-slate-700'}`}
-                        >
-                          {project.status === 'active' ? <Clock className="w-3.5 h-3.5" /> : <CheckCircle className="w-3.5 h-3.5" />}
-                          {project.status.toUpperCase()}
-                        </span>
+                        <p className="text-sm text-slate-500">Initial technical audit and requirement gathering completed.</p>
                       </div>
                     </div>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 p-4 bg-slate-50 rounded-lg border border-slate-100">
-                      <div className="md:col-span-2">
-                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Current Stage</p>
-                        <p className="text-sm text-slate-900 font-semibold mt-1 bg-white inline-block px-3 py-1 rounded-md border border-slate-200">
-                          {project.stage ? project.stage.replace(/_/g, ' ').toUpperCase() : 'N/A'}
-                        </p>
+                    <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-amber-500 text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
+                        <Clock className="w-5 h-5" />
                       </div>
-                      <div>
-                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Start Date</p>
-                        <p className="text-sm text-slate-900 font-medium mt-1">
-                          {project.startDate?.toDate ? new Date(project.startDate.toDate()).toLocaleDateString() : 'TBD'}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Project ID</p>
-                        <p className="text-sm text-slate-900 font-mono mt-1">{project.id}</p>
+                      <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white p-4 rounded-xl border border-amber-100 shadow-sm">
+                        <div className="flex items-center justify-between mb-1">
+                          <h4 className="font-bold text-slate-900">Architecture & Design</h4>
+                          <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">In Progress</span>
+                        </div>
+                        <p className="text-sm text-slate-500">Drafting system architecture and infrastructure requirements.</p>
                       </div>
                     </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="p-12 text-center">
-                <Briefcase className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-slate-900 mb-2">No active projects</h3>
-                <p className="text-slate-500">You don't have any active projects with us yet.</p>
+                    <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-slate-200 text-slate-400 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
+                        <div className="w-2 h-2 rounded-full bg-slate-400"></div>
+                      </div>
+                      <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm opacity-60">
+                        <div className="flex items-center justify-between mb-1">
+                          <h4 className="font-bold text-slate-900">Development</h4>
+                          <span className="text-xs font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">Upcoming</span>
+                        </div>
+                        <p className="text-sm text-slate-500">Core engineering and sprint execution.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
+            ))
+          ) : (
+            <div className="bg-white rounded-xl border border-slate-200 p-12 text-center shadow-sm">
+              <Briefcase className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-slate-900 mb-2">No Active Projects</h3>
+              <p className="text-slate-500 mb-6">You don't have any active projects right now.</p>
+              <Link to="/tell-us-your-problem">
+                <Button>Tell Us Your Problem</Button>
+              </Link>
+            </div>
+          )}
         </div>
       )}
 
-      {activeTab === 'project_requests' && (
+      {activeTab === 'solution_requests' && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-            <h2 className="font-semibold text-slate-800">My Enquiries</h2>
-            <Button size="sm" onClick={() => window.location.href = '/enquiry'}>New Enquiry</Button>
+            <h2 className="font-semibold text-slate-800">My Solution Requests</h2>
+            <Link to="/tell-us-your-problem">
+              <Button size="sm">New Request</Button>
+            </Link>
           </div>
           <div className="p-0">
-            {enquiries.length > 0 ? (
+            {solutionRequests.length > 0 ? (
               <ul className="divide-y divide-slate-100">
-                {enquiries.map(enq => (
-                  <li key={enq.id} className="p-6 hover:bg-slate-50 transition-colors">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h3 className="font-medium text-slate-900 capitalize text-lg">{enq.serviceInterest}</h3>
-                        <p className="text-xs text-slate-500 uppercase tracking-wider mt-0.5">{enq.enquiryType || 'commercial'}</p>
-                      </div>
-                      <span className={`text-xs px-3 py-1.5 rounded-full font-medium
-                        ${enq.status === 'pending' ? 'bg-amber-100 text-amber-700' :
-                          enq.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
-                          enq.status === 'converted' ? 'bg-indigo-100 text-indigo-700' :
-                          'bg-emerald-100 text-emerald-700'}`}
-                      >
-                        {enq.status.replace('_', ' ').toUpperCase()}
+                {solutionRequests.map(req => (
+                  <li key={req.id} className="p-6 hover:bg-slate-50 transition-colors">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-medium text-slate-900 text-lg">{req.requestId}</h3>
+                      <span className={`text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${req.status === 'NEW' ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-800'}`}>
+                        {req.status}
                       </span>
                     </div>
-                    <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
-                      <p className="text-sm text-slate-700 whitespace-pre-wrap">{enq.projectDetails || enq.message || ''}</p>
-                    </div>
-                    <div className="flex gap-6 mt-4 text-sm text-slate-500">
-                      <p>Submitted: {enq.createdAt?.toDate ? new Date(enq.createdAt.toDate()).toLocaleDateString() : ''}</p>
+                    <p className="text-sm text-slate-600 mb-4 line-clamp-2">{req.problem}</p>
+                    <div className="flex gap-4 text-xs text-slate-500">
+                      <span>Submitted: {req.createdAt?.toDate ? new Date(req.createdAt.toDate()).toLocaleDateString() : 'Just now'}</span>
+                      <span>Industry: {req.industry}</span>
                     </div>
                   </li>
                 ))}
               </ul>
             ) : (
-              <div className="p-12 text-center">
-                <MessageSquare className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-slate-900 mb-2">No enquiries</h3>
-                <p className="text-slate-500 mb-4">You haven't submitted any project enquiries yet.</p>
-                <Button onClick={() => window.location.href = '/enquiry'}>Submit Enquiry</Button>
+              <div className="p-12 text-center text-slate-500">
+                <ShieldCheck className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-slate-900 mb-2">No Solution Requests</h3>
+                <p>You haven't submitted any problems for us to solve.</p>
               </div>
             )}
           </div>
@@ -281,20 +290,16 @@ export default function ClientDashboard() {
             {invoices.length > 0 ? (
               <ul className="divide-y divide-slate-100">
                 {invoices.map(invoice => (
-                  <li key={invoice.id} className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <li key={invoice.id} className="p-6 hover:bg-slate-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                      <h3 className="font-semibold text-slate-900 text-lg">Invoice #{invoice.id?.substring(0, 8)}</h3>
-                      <p className="text-sm text-slate-500 mt-1">Due: {invoice.dueDate?.toDate ? new Date(invoice.dueDate.toDate()).toLocaleDateString() : 'N/A'}</p>
+                      <div className="flex items-center gap-3 mb-1">
+                        <h3 className="font-medium text-slate-900">{invoice.title || `Invoice #${invoice.invoiceNumber || invoice.id}`}</h3>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize                          ${invoice.status === 'paid' ? 'bg-emerald-100 text-emerald-700' :                            invoice.status === 'overdue' ? 'bg-red-100 text-red-700' :                            'bg-amber-100 text-amber-700'}`}                        >                          {invoice.status}                        </span>
+                      </div>
+                      <p className="text-sm text-slate-500">Due: {invoice.dueDate?.toDate ? new Date(invoice.dueDate.toDate()).toLocaleDateString() : 'N/A'}</p>
                     </div>
-                    <div className="flex items-center gap-6">
-                      <p className="text-xl font-bold text-slate-900">${invoice.amount?.toFixed(2) || '0.00'}</p>
-                      <span className={`text-xs px-3 py-1.5 rounded-full font-medium uppercase tracking-wider
-                        ${invoice.status === 'paid' ? 'bg-emerald-100 text-emerald-700' :
-                          invoice.status === 'overdue' ? 'bg-red-100 text-red-700' :
-                          'bg-amber-100 text-amber-700'}`}
-                      >
-                        {invoice.status}
-                      </span>
+                    <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
+                      <span className="text-xl font-bold text-slate-900">${(invoice.total || invoice.amount || 0).toLocaleString()}</span>
                       {invoice.status !== 'paid' && (
                         <CheckoutButton
                           amount={invoice.total || invoice.amount}
@@ -302,7 +307,6 @@ export default function ClientDashboard() {
                           referenceId={invoice.id!}
                           referenceType="service"
                           onSuccess={() => {
-                            // Update local state temporarily for UX
                             setInvoices(invoices.map(i => i.id === invoice.id ? {...i, status: 'paid'} : i));
                           }}
                         />

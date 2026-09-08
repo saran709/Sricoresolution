@@ -9,6 +9,7 @@ import { AdminLayout } from './components/layout/AdminLayout';
 const Home = React.lazy(() => import('./pages/Home'));
 const About = React.lazy(() => import('./pages/About'));
 const Enquiry = React.lazy(() => import('./pages/Enquiry'));
+const TellUsYourProblem = React.lazy(() => import('./pages/TellUsYourProblem'));
 const Contact = React.lazy(() => import('./pages/Contact'));
 const InternshipRegistration = React.lazy(() => import('./pages/InternshipRegistration'));
 const Services = React.lazy(() => import('./pages/Services'));
@@ -111,6 +112,7 @@ export function AppRouter() {
             <Route path="careers" element={<Careers />} />
             <Route path="contact" element={<Contact />} />
             <Route path="enquiry" element={<Enquiry />} />
+            <Route path="tell-us-your-problem" element={<TellUsYourProblem />} />
             <Route path="privacy" element={<Privacy />} />
             <Route path="terms" element={<Terms />} />
             
