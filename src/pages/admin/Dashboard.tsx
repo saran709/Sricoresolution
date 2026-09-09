@@ -51,13 +51,17 @@ export default function AdminDashboard() {
           pendingPayments: payments.filter((p: any) => String(p.status).toLowerCase() === 'pending' || !p.status).length
         });
 
-        const activitiesQuery = query(collection(db, 'auditLogs'), orderBy('timestamp', 'desc'), limit(5));
-        const actSnap = await getDocs(activitiesQuery);
-        setActivities(actSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        
+        const [auditLogs, allTasks] = await Promise.all([
+          readFromSheet('auditLogs'),
+          readFromSheet('tasks')
+        ]);
+        
+        setActivities((auditLogs || []).sort((a: any, b: any) => new Date(b.timestamp || b.createdAt).getTime() - new Date(a.timestamp || a.createdAt).getTime()).slice(0, 5));
+        
+        const activeTasks = (allTasks || []).filter((t: any) => ['TODO', 'IN_PROGRESS', 'BLOCKED', 'REVIEW'].includes(t.status));
+        setTasks(activeTasks.slice(0, 5));
 
-        const tasksQuery = query(collection(db, 'tasks'), where('status', 'in', ['TODO', 'IN_PROGRESS', 'BLOCKED', 'REVIEW']), limit(5));
-        const taskSnap = await getDocs(tasksQuery);
-        setTasks(taskSnap.docs.map(d => ({ id: d.id, ...d.data() })));
 
       } catch (error) {
         console.error("Error fetching stats:", error);

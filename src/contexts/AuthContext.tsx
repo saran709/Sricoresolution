@@ -51,8 +51,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setAccessToken(null);
         }
 
-        // Fetch user role from Firestore
         try {
+          // Hardcoded Admin Override for the owner
+          if (user.email === 'saranramesh709@gmail.com') {
+            setUserProfile({
+              uid: user.uid,
+              email: user.email,
+              firstName: 'Saran',
+              lastName: 'Ramesh',
+              role: 'ADMINISTRATOR',
+              isActive: true
+            } as UserProfile);
+            setLoading(false);
+            return;
+          }
+
           const users = await readFromSheet('users', 'uid', user.uid);
           if (users && users.length > 0) {
             setUserProfile(users[0] as UserProfile);
@@ -80,7 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     currentUser,
     userProfile,
     loading,
-    isAdmin: userProfile?.role === 'ADMINISTRATOR',
+    isAdmin: userProfile?.role === 'ADMINISTRATOR' || currentUser?.email === 'saranramesh709@gmail.com',
   };
 
   return (
