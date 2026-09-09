@@ -3,8 +3,8 @@ import { Container } from '../components/ui/Container';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Textarea } from '../components/ui/Textarea';
-import { db } from '../lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+
+import { writeToSheet } from '../lib/sheets';
 import { Lightbulb, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 

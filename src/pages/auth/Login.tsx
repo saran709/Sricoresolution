@@ -3,10 +3,19 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { googleSignIn } from '../../lib/auth';
 import { auth, db } from '../../lib/firebase';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { readFromSheet, writeToSheet } from '../../lib/sheets';
 import { Container } from '../../components/ui/Container';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
+
+
+function mapAuthError(err) {
+  if (err.code === 'auth/operation-not-allowed') return 'Email/Password sign-in is not enabled in Firebase. Please enable it in the Firebase Console under Authentication > Sign-in method.';
+  if (err.code === 'auth/weak-password') return 'Your password must be at least 6 characters long.';
+  if (err.code === 'auth/email-already-in-use') return 'An account already exists with this email.';
+  if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') return 'Incorrect email or password.';
+  return err.message || 'An error occurred';
+}
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -27,15 +36,14 @@ export default function Login() {
       const result = await googleSignIn();
       if (result?.user) {
         // Create user profile if it doesn't exist
-        const userRef = doc(db, 'users', result.user.uid);
-        const userSnap = await getDoc(userRef);
-        if (!userSnap.exists()) {
-          await setDoc(userRef, {
+        const users = await readFromSheet('users', 'uid', result.user.uid);
+        if (!users || users.length === 0) {
+          await writeToSheet('users', {
+            uid: result.user.uid,
             email: result.user.email,
             firstName: result.user.displayName?.split(' ')[0] || '',
             lastName: result.user.displayName?.split(' ').slice(1).join(' ') || '',
-            role: 'CANDIDATE', // default role
-            createdAt: serverTimestamp(),
+            role: 'CANDIDATE',
             status: 'active'
           });
         }
@@ -43,7 +51,7 @@ export default function Login() {
       navigate(from, { replace: true });
     } catch (err: any) {
       console.error(err);
-      setError(`Failed to sign in with Google: ${err.message || err.code}`);
+      setError(mapAuthError(err));
     } finally {
       setLoading(false);
     }
@@ -60,7 +68,7 @@ export default function Login() {
       navigate(from, { replace: true });
     } catch (err: any) {
       console.error(err);
-      setError('Failed to log in. Please check your credentials.');
+      setError(mapAuthError(err));
     } finally {
       setLoading(false);
     }

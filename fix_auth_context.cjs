@@ -1,39 +1,31 @@
 const fs = require('fs');
 let code = fs.readFileSync('src/contexts/AuthContext.tsx', 'utf8');
 
-code = code.replace(
-  "import { auth, db } from '../lib/firebase';",
-  "import { auth, db } from '../lib/firebase';\nimport { setCachedAccessToken, getIsSigningIn, getCachedAccessToken } from '../lib/auth';"
-);
+// Replace imports
+code = code.replace("import { doc, getDoc } from 'firebase/firestore';", "import { readFromSheet } from '../lib/sheets';");
 
-code = code.replace(
-  "const [loading, setLoading] = useState(true);",
-  "const [loading, setLoading] = useState(true);\n  const [accessToken, setAccessToken] = useState<string | null>(null);"
-);
+// Replace getDoc
+const firestoreLogic = `
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            setUserProfile({ uid: user.uid, ...userDoc.data() } as UserProfile);
+          } else {
+            setUserProfile(null);
+          }
+        } catch (error) {
+`;
+const sheetLogic = `
+        try {
+          const users = await readFromSheet('users', 'uid', user.uid);
+          if (users && users.length > 0) {
+            setUserProfile(users[0] as UserProfile);
+          } else {
+            setUserProfile(null);
+          }
+        } catch (error) {
+`;
 
-code = code.replace(
-  "if (user) {",
-  "if (user) {\n        const currentToken = getCachedAccessToken();\n        if (currentToken) {\n          setAccessToken(currentToken);\n        } else if (!getIsSigningIn()) {\n          setCachedAccessToken(null);\n          setAccessToken(null);\n        }\n"
-);
-
-code = code.replace(
-  "setUserProfile(null);\n      }",
-  "setUserProfile(null);\n        setCachedAccessToken(null);\n        setAccessToken(null);\n      }"
-);
-
-code = code.replace(
-  "interface AuthContextType {",
-  "interface AuthContextType {\n  accessToken: string | null;"
-);
-
-code = code.replace(
-  "isAdmin: false,\n});",
-  "isAdmin: false,\n  accessToken: null,\n});"
-);
-
-code = code.replace(
-  "const value = {",
-  "const value = {\n    accessToken,"
-);
+code = code.replace(firestoreLogic, sheetLogic);
 
 fs.writeFileSync('src/contexts/AuthContext.tsx', code);

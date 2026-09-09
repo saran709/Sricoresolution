@@ -6,8 +6,7 @@ import { Input } from '../components/ui/Input';
 import { Textarea } from '../components/ui/Textarea';
 import { Button } from '../components/ui/Button';
 import { APP_CONFIG } from '../config';
-import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { writeToSheet, readFromSheet } from '../lib/sheets';
 import { AVAILABLE_INTERNSHIPS } from '../data/internships';
 import { useAuth } from '../contexts/AuthContext';
 import { CheckoutButton } from '../components/payments/CheckoutButton';
@@ -122,13 +121,15 @@ export default function InternshipRegistration() {
       domain: selectedProgram?.title,
       resumeLink: formData.resumeLink,
       motivation: formData.motivation,
-      createdAt: serverTimestamp(),
       status: 'pending'
     };
     
     try {
-      const docRef = await addDoc(collection(db, 'internship_applications'), data);
-      setApplicationId(docRef.id);
+      // Create a unique ID for the application locally
+      const id = 'APP-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+      data.id = id;
+      await writeToSheet('internship_applications', data);
+      setApplicationId(id);
       
       if (selectedProgram && selectedProgram.fees > 0) {
         setStep(2);

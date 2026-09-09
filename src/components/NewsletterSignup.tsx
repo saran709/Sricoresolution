@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { addDoc, collection, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { writeToSheet, readFromSheet } from '../lib/sheets';
+
 import { cn } from '../utils/cn';
 
 interface NewsletterFormData {
@@ -19,19 +19,17 @@ export function NewsletterSignup({ className }: { className?: string }) {
     setMessage('');
     
     try {
-      const q = query(collection(db, 'newsletter_subscribers'), where('email', '==', data.email.toLowerCase()));
-      const snap = await getDocs(q);
+      const snap = await readFromSheet('newsletter_subscribers', 'email', data.email.toLowerCase());
       
-      if (!snap.empty) {
+      if (snap && snap.length > 0) {
         setStatus('error');
         setMessage('This email is already subscribed.');
         return;
       }
       
-      await addDoc(collection(db, 'newsletter_subscribers'), {
+      await writeToSheet('newsletter_subscribers', {
         email: data.email.toLowerCase(),
-        status: 'active',
-        subscribedAt: serverTimestamp()
+        status: 'active'
       });
       
       setStatus('success');

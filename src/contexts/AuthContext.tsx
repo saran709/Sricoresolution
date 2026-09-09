@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { readFromSheet } from '../lib/sheets';
 import { auth, db } from '../lib/firebase';
 import { setCachedAccessToken, getIsSigningIn, getCachedAccessToken } from '../lib/auth';
 import { UserRole } from '../types';
@@ -53,9 +53,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Fetch user role from Firestore
         try {
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
-          if (userDoc.exists()) {
-            setUserProfile({ uid: user.uid, ...userDoc.data() } as UserProfile);
+          const users = await readFromSheet('users', 'uid', user.uid);
+          if (users && users.length > 0) {
+            setUserProfile(users[0] as UserProfile);
           } else {
             setUserProfile(null);
           }

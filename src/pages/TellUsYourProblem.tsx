@@ -5,7 +5,7 @@ import { SectionHeader } from '../components/ui/SectionHeader';
 import { Input } from '../components/ui/Input';
 import { Textarea } from '../components/ui/Textarea';
 import { Button } from '../components/ui/Button';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { writeToSheet } from '../lib/sheets';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';

@@ -1,11 +1,20 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { writeToSheet } from '../../lib/sheets';
 import { auth, db } from '../../lib/firebase';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { UserRole } from '../../types';
+
+
+function mapAuthError(err) {
+  if (err.code === 'auth/operation-not-allowed') return 'Email/Password sign-in is not enabled in Firebase. Please enable it in the Firebase Console under Authentication > Sign-in method.';
+  if (err.code === 'auth/weak-password') return 'Your password must be at least 6 characters long.';
+  if (err.code === 'auth/email-already-in-use') return 'An account already exists with this email.';
+  if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') return 'Incorrect email or password.';
+  return err.message || 'An error occurred';
+}
 
 export default function Register() {
   const [firstName, setFirstName] = useState('');
@@ -34,20 +43,19 @@ export default function Register() {
 
       // Create user profile in Firestore
       // Note: role is restricted to CANDIDATE or CLIENT for public registration
-      await setDoc(doc(db, 'users', user.uid), {
+      await writeToSheet('users', {
+        uid: user.uid,
         email: user.email,
         firstName,
         lastName,
         role: role === 'CLIENT' ? 'CLIENT' : 'CANDIDATE',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
         isActive: true,
       });
 
       navigate('/dashboard');
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Failed to create an account');
+      setError(mapAuthError(err));
     } finally {
       setLoading(false);
     }

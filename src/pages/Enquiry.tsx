@@ -5,8 +5,8 @@ import { Input } from '../components/ui/Input';
 import { Textarea } from '../components/ui/Textarea';
 import { Button } from '../components/ui/Button';
 import { APP_CONFIG } from '../config';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { writeToSheet } from '../lib/sheets';
+
 import { Enquiry as EnquiryType } from '../types';
 
 export default function Enquiry() {
@@ -41,7 +41,7 @@ export default function Enquiry() {
     };
     
     try {
-      await addDoc(collection(db, 'project_requests'), data);
+      await writeToSheet('project_requests', data);
       setIsSuccess(true);
     } catch (err) {
       console.error("Error submitting enquiry:", err);
