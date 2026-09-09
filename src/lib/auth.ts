@@ -2,23 +2,7 @@ import { GoogleAuthProvider, signInWithPopup, User } from 'firebase/auth';
 import { auth } from './firebase';
 
 const provider = new GoogleAuthProvider();
-provider.setCustomParameters({ prompt: 'select_account consent' });
-
-// Request Workspace scopes
-provider.addScope('https://mail.google.com/');
-provider.addScope('https://www.googleapis.com/auth/gmail.addons.current.action.compose');
-provider.addScope('https://www.googleapis.com/auth/gmail.addons.current.message.action');
-provider.addScope('https://www.googleapis.com/auth/gmail.addons.current.message.metadata');
-provider.addScope('https://www.googleapis.com/auth/gmail.addons.current.message.readonly');
-provider.addScope('https://www.googleapis.com/auth/gmail.compose');
-provider.addScope('https://www.googleapis.com/auth/gmail.insert');
-provider.addScope('https://www.googleapis.com/auth/gmail.labels');
-provider.addScope('https://www.googleapis.com/auth/gmail.metadata');
-provider.addScope('https://www.googleapis.com/auth/gmail.modify');
-provider.addScope('https://www.googleapis.com/auth/gmail.readonly');
-provider.addScope('https://www.googleapis.com/auth/gmail.send');
-provider.addScope('https://www.googleapis.com/auth/gmail.settings.basic');
-provider.addScope('https://www.googleapis.com/auth/gmail.settings.sharing');
+provider.setCustomParameters({ prompt: 'select_account' });
 
 let isSigningIn = false;
 let cachedAccessToken: string | null = null;
@@ -40,11 +24,9 @@ export const googleSignIn = async (): Promise<{ user: User; accessToken: string 
     isSigningIn = true;
     const result = await signInWithPopup(auth, provider);
     const credential = GoogleAuthProvider.credentialFromResult(result);
-    if (!credential?.accessToken) {
-      throw new Error('Failed to get access token from Firebase Auth');
-    }
-
-    cachedAccessToken = credential.accessToken;
+    // Don't throw if accessToken is missing, just fallback to empty string
+    // as it's not strictly needed since we removed Gmail API.
+    cachedAccessToken = credential?.accessToken || '';
     return { user: result.user, accessToken: cachedAccessToken };
   } catch (error: any) {
     console.error('Sign in error:', error);

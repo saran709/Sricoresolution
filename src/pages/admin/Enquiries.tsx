@@ -8,8 +8,8 @@ import { logActivity } from '../../lib/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Mail, X } from 'lucide-react';
-import { getCachedAccessToken } from '../../lib/auth';
-import { sendGmailMessage } from '../../lib/gmailApi';
+
+
 import { Input } from '../../components/ui/Input';
 import { Textarea } from '../../components/ui/Textarea';
 
@@ -39,47 +39,9 @@ export default function Enquiries() {
 
   const handleSendReply = async () => {
     if (!selectedEnquiry?.email) return;
-    
-    const token = getCachedAccessToken();
-    if (!token) {
-      if (window.confirm("You need to sign in with Google to send emails via Gmail. Please log out and sign in with Google.")) {
-        // Just show error for now
-      }
-      setEmailError('Gmail access token not found. You must be signed in with Google.');
-      return;
-    }
-
-    setSendingEmail(true);
-    setEmailError('');
-    setEmailSuccess('');
-
-    try {
-      // Confirm before sending
-      if (!window.confirm(`Are you sure you want to send this email to ${selectedEnquiry.email}?`)) {
-        setSendingEmail(false);
-        return;
-      }
-      
-      const htmlBody = replyBody.replace(/\n/g, '<br/>');
-      await sendGmailMessage(token, selectedEnquiry.email, replySubject, htmlBody);
-      setEmailSuccess('Email sent successfully!');
-      
-      // Update status to contacted
-      if (selectedEnquiry.status === 'NEW') {
-        await handleStatusChange(selectedEnquiry.id!, 'CONTACTED');
-      }
-      
-      setTimeout(() => {
-        setReplyModalOpen(false);
-      }, 2000);
-    } catch (err: any) {
-      setEmailError(err.message || 'Failed to send email.');
-    } finally {
-      setSendingEmail(false);
-    }
-  };
-
-  useEffect(() => {
+    window.location.href = `mailto:${selectedEnquiry?.email}?subject=${encodeURIComponent(replySubject)}&body=${encodeURIComponent(replyBody)}`;
+    setReplyModalOpen(false);
+  };  useEffect(() => {
     fetchEnquiries();
   }, []);
 

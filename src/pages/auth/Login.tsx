@@ -43,7 +43,7 @@ export default function Login() {
       navigate(from, { replace: true });
     } catch (err: any) {
       console.error(err);
-      setError('Failed to sign in with Google.');
+      setError(`Failed to sign in with Google: ${err.message || err.code}`);
     } finally {
       setLoading(false);
     }
