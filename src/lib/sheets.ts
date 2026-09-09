@@ -1,4 +1,4 @@
-const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwD-ZFmRVWxpqa-7cdcb91cPgyfqa3w0C5ntkx-LvuHBtxM414A1ACZQM11B8TQdop4/exec';
+const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbxBPDJT_x9nDnwIfG-4SvIDWbEtRtbq2tKvfbtQ7g1Av7N7jksPZ3OjwhES0LCrakw/exec';
 
 export async function writeToSheet(sheetName: string, data: any) {
   try {

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
-import { db } from '../../../lib/firebase';
+import { readFromSheet } from '../../../lib/sheets';
+
 import { InternshipApplication, Document as AppDocument, Notification as AppNotification } from '../../../types';
 import { FileText, Clock, CheckCircle, Search, FolderOpen, Bell, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -20,38 +20,23 @@ export default function CandidateDashboard() {
 
     const fetchData = async () => {
       try {
-        const appQuery = query(
-          collection(db, 'internship_applications'),
-          where('candidateId', '==', userProfile.uid)
-        );
-        const appSnap = await getDocs(appQuery);
-        
-        const apps = await Promise.all(appSnap.docs.map(async (docSnap) => {
-          const appData = { id: docSnap.id, ...docSnap.data() } as InternshipApplication;
+        const appsData = await readFromSheet('internship_applications', 'candidateId', userProfile.uid);
+        const apps = await Promise.all(appsData.map(async (appData: any) => {
           let programTitle = 'Unknown Program';
-          
-          if (appData.programId) {
-            try {
-              const progDoc = await getDoc(doc(db, 'internship_programs', appData.programId));
-              if (progDoc.exists()) {
-                programTitle = progDoc.data().title || 'Unknown Program';
-              }
-            } catch (e) {
-              // ignore
-            }
+          // Simulating fetch of program
+          const progData = await readFromSheet('internship_programs', 'id', appData.programId);
+          if (progData && progData.length > 0) {
+             programTitle = progData[0].title || 'Unknown Program';
           }
-          return { ...appData, programTitle };
+          return { ...appData, programTitle } as InternshipApplication;
         }));
-        
         setApplications(apps);
         
-        const docQuery = query(collection(db, 'documents'), where('ownerId', '==', userProfile.uid));
-        const docSnap = await getDocs(docQuery);
-        setDocuments(docSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppDocument)));
+        const docsData = await readFromSheet('documents', 'ownerId', userProfile.uid);
+        setDocuments(docsData as AppDocument[]);
 
-        const notifQuery = query(collection(db, 'notifications'), where('userId', '==', userProfile.uid));
-        const notifSnap = await getDocs(notifQuery);
-        setNotifications(notifSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppNotification)));
+        const notifsData = await readFromSheet('notifications', 'userId', userProfile.uid);
+        setNotifications(notifsData as AppNotification[]);
 
       } catch (error) {
         console.error("Error fetching candidate data:", error);

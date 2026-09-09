@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, where, getCountFromServer, getDocs, limit, orderBy } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { readFromSheet } from '../../lib/sheets';
+
 import { Users, Briefcase, MessageSquare, GraduationCap, Clock, AlertCircle, Shield, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -26,37 +26,29 @@ export default function AdminDashboard() {
     const fetchData = async () => {
       try {
         const [
-          empSnap,
-          activeEmpSnap,
-          internSnap,
-          mentorSnap,
-          clientSnap,
-          projSnap,
-          enqSnap,
-          internAppSnap,
-          paymentSnap
+          users,
+          projects,
+          requests,
+          apps,
+          payments
         ] = await Promise.all([
-          getCountFromServer(query(collection(db, 'users'), where('role', '==', 'EMPLOYEE'))),
-          getCountFromServer(query(collection(db, 'users'), where('role', '==', 'EMPLOYEE'), where('isActive', '==', true))),
-          getCountFromServer(query(collection(db, 'users'), where('role', '==', 'INTERN'))),
-          getCountFromServer(query(collection(db, 'users'), where('role', '==', 'MENTOR'))),
-          getCountFromServer(query(collection(db, 'users'), where('role', '==', 'CLIENT'))),
-          getCountFromServer(query(collection(db, 'projects'), where('status', '==', 'active'))),
-          getCountFromServer(query(collection(db, 'project_requests'), where('status', 'in', ['NEW']))),
-          getCountFromServer(query(collection(db, 'internship_applications'), where('status', '==', 'pending'))),
-          getCountFromServer(query(collection(db, 'payments'), where('status', '==', 'pending')))
+          readFromSheet('users'),
+          readFromSheet('projects'),
+          readFromSheet('project_requests'),
+          readFromSheet('internship_applications'),
+          readFromSheet('payments')
         ]);
         
         setStats({
-          employees: empSnap.data().count,
-          activeEmployees: activeEmpSnap.data().count,
-          interns: internSnap.data().count,
-          mentors: mentorSnap.data().count,
-          clients: clientSnap.data().count,
-          activeProjects: projSnap.data().count,
-          pendingEnquiries: enqSnap.data().count,
-          internApplications: internAppSnap.data().count,
-          pendingPayments: paymentSnap.data().count
+          employees: users.filter((u: any) => u.role === 'EMPLOYEE').length,
+          activeEmployees: users.filter((u: any) => u.role === 'EMPLOYEE' && String(u.isActive) === 'true').length,
+          interns: users.filter((u: any) => u.role === 'INTERN').length,
+          mentors: users.filter((u: any) => u.role === 'MENTOR').length,
+          clients: users.filter((u: any) => u.role === 'CLIENT').length,
+          activeProjects: projects.filter((p: any) => String(p.status).toLowerCase() === 'active').length,
+          pendingEnquiries: requests.filter((r: any) => String(r.status).toLowerCase() === 'new' || !r.status).length,
+          internApplications: apps.filter((a: any) => String(a.status).toLowerCase() === 'pending' || !a.status).length,
+          pendingPayments: payments.filter((p: any) => String(p.status).toLowerCase() === 'pending' || !p.status).length
         });
 
         const activitiesQuery = query(collection(db, 'auditLogs'), orderBy('timestamp', 'desc'), limit(5));

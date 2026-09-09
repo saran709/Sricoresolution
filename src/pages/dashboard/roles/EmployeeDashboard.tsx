@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
-import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp, addDoc, orderBy } from 'firebase/firestore';
-import { db } from '../../../lib/firebase';
+import { readFromSheet, writeToSheet } from '../../../lib/sheets';
+
 import { Project, ProjectTask, Attendance, LeaveRequest, Employee } from '../../../types';
 import { Briefcase, CheckSquare, Clock, Calendar, FileText, Send, UserCheck, Search } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
@@ -30,33 +30,17 @@ export default function EmployeeDashboard() {
       try {
         setEmployeeData(userProfile as Employee);
       
-        const projQuery = query(
-          collection(db, 'projects'),
-          where('assignedEmployees', 'array-contains', userProfile.uid)
-        );
-        const projSnap = await getDocs(projQuery);
-        setProjects(projSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project)));
+        const projData = await readFromSheet('projects');
+        setProjects(projData.filter((p: any) => p.assignedEmployees && p.assignedEmployees.includes(userProfile.uid)) as Project[]);
 
-        const taskQuery = query(
-          collection(db, 'projectTasks'),
-          where('assignedTo', '==', userProfile.uid)
-        );
-        const taskSnap = await getDocs(taskQuery);
-        setTasks(taskSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProjectTask)));
+        const taskData = await readFromSheet('projectTasks', 'assignedTo', userProfile.uid);
+        setTasks(taskData as ProjectTask[]);
         
-        const leaveQuery = query(
-          collection(db, 'leaveRequests'),
-          where('userId', '==', userProfile.uid),
-        );
-        const leaveSnap = await getDocs(leaveQuery);
-        setLeaveRequests(leaveSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as LeaveRequest)));
+        const leaveData = await readFromSheet('leaveRequests', 'userId', userProfile.uid);
+        setLeaveRequests(leaveData as LeaveRequest[]);
         
-        const attQuery = query(
-          collection(db, 'attendance'),
-          where('userId', '==', userProfile.uid)
-        );
-        const attSnap = await getDocs(attQuery);
-        setAttendances(attSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Attendance)).sort((a,b) => b.date - a.date));
+        const attData = await readFromSheet('attendance', 'userId', userProfile.uid);
+        setAttendances((attData as Attendance[]).sort((a: any,b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()));
         
       } catch (error) {
         console.error("Error fetching employee data:", error);
@@ -70,9 +54,9 @@ export default function EmployeeDashboard() {
 
   const updateTaskStatus = async (taskId: string, newStatus: string) => {
     try {
-      await updateDoc(doc(db, 'projectTasks', taskId), {
-        status: newStatus
-      });
+      // In a real sheet we would need an update mechanism, but we'll append a status update or rely on local state for now
+      // This is a mockup as webhook needs update action
+      await writeToSheet('task_updates', { taskId, status: newStatus });
       setTasks(tasks.map(t => t.id === taskId ? { ...t, status: newStatus as any } : t));
       
       if (userProfile?.uid) {
@@ -105,8 +89,9 @@ export default function EmployeeDashboard() {
     };
     
     try {
-      const docRef = await addDoc(collection(db, 'leaveRequests'), data);
-      setLeaveRequests([...leaveRequests, { id: docRef.id, ...data } as LeaveRequest]);
+      const docId = 'LR-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+      await writeToSheet('leaveRequests', { id: docId, ...data });
+      setLeaveRequests([...leaveRequests, { id: docId, ...data } as LeaveRequest]);
       setShowLeaveForm(false);
       
       await logActivity(
@@ -136,8 +121,9 @@ export default function EmployeeDashboard() {
         status: 'present'
       };
       
-      const docRef = await addDoc(collection(db, 'attendance'), attData);
-      setAttendances([{ id: docRef.id, ...attData } as Attendance, ...attendances]);
+      const docId = 'ATT-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+      await writeToSheet('attendance', { id: docId, ...attData });
+      setAttendances([{ id: docId, ...attData } as Attendance, ...attendances]);
     } catch (err) {
       console.error("Failed to check in", err);
     }
