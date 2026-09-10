@@ -49,6 +49,17 @@ const AdminSupport = React.lazy(() => import('./pages/admin/Support'));
 const AdminDocuments = React.lazy(() => import('./pages/admin/Documents'));
 const AdminPayments = React.lazy(() => import('./pages/admin/Payments'));
 const AdminInvoices = React.lazy(() => import('./pages/admin/Invoices'));
+const AdminDepartments = React.lazy(() => import('./pages/admin/Departments'));
+const AdminMentors = React.lazy(() => import('./pages/admin/Mentors'));
+const AdminInterns = React.lazy(() => import('./pages/admin/Interns'));
+const AdminCandidates = React.lazy(() => import('./pages/admin/Candidates'));
+const AdminAttendance = React.lazy(() => import('./pages/admin/Attendance'));
+const AdminLeave = React.lazy(() => import('./pages/admin/Leave'));
+const AdminVendors = React.lazy(() => import('./pages/admin/Vendors'));
+const AdminNotifications = React.lazy(() => import('./pages/admin/Notifications'));
+const AdminReports = React.lazy(() => import('./pages/admin/Reports'));
+const AdminSettings = React.lazy(() => import('./pages/admin/Settings'));
+
 
 const PageLoader = () => (
   <div className="min-h-[50vh] flex items-center justify-center">
@@ -71,10 +82,10 @@ export function AppRouter() {
             <Route index element={<AdminDashboard />} />
             
             <Route path="employees" element={<AdminEmployees />} />
-            <Route path="departments" element={<PagePlaceholder title="Departments" />} />
-            <Route path="mentors" element={<PagePlaceholder title="Mentors" />} />
-            <Route path="interns" element={<PagePlaceholder title="Interns" />} />
-            <Route path="candidates" element={<PagePlaceholder title="Candidates" />} />
+            <Route path="departments" element={<AdminDepartments />} />
+            <Route path="mentors" element={<AdminMentors />} />
+            <Route path="interns" element={<AdminInterns />} />
+            <Route path="candidates" element={<AdminCandidates />} />
             <Route path="clients" element={<AdminClients />} />
             
             <Route path="projects" element={<AdminProjects />} />
@@ -89,16 +100,16 @@ export function AppRouter() {
             
             <Route path="documents" element={<AdminDocuments />} />
             
-            <Route path="attendance" element={<PagePlaceholder title="Attendance" />} />
-            <Route path="leave" element={<PagePlaceholder title="Leave" />} />
-            <Route path="vendors" element={<PagePlaceholder title="Vendors" />} />
+            <Route path="attendance" element={<AdminAttendance />} />
+            <Route path="leave" element={<AdminLeave />} />
+            <Route path="vendors" element={<AdminVendors />} />
             
-            <Route path="notifications" element={<PagePlaceholder title="Notifications" />} />
+            <Route path="notifications" element={<AdminNotifications />} />
             <Route path="website" element={<AdminContent />} />
             <Route path="newsletters" element={<AdminNewsletters />} />
-            <Route path="reports" element={<PagePlaceholder title="Reports" />} />
+            <Route path="reports" element={<AdminReports />} />
             <Route path="audit-logs" element={<AdminAudit />} />
-            <Route path="settings" element={<PagePlaceholder title="Settings" />} />
+            <Route path="settings" element={<AdminSettings />} />
           </Route>
 
           {/* Main Application Routes */}
