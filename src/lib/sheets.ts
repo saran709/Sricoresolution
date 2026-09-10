@@ -1,8 +1,26 @@
 const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbxBPDJT_x9nDnwIfG-4SvIDWbEtRtbq2tKvfbtQ7g1Av7N7jksPZ3OjwhES0LCrakw/exec';
 
+async function fetchWithRetry(url: string, options: any, retries = 3, delay = 500): Promise<Response> {
+  try {
+    const res = await fetch(url, options);
+    if (!res.ok && res.status !== 302) {
+      throw new Error('HTTP status ' + res.status);
+    }
+    return res;
+  } catch (error) {
+    if (retries > 0) {
+      console.warn(`Fetch failed (${error}). Retrying in ${delay}ms... (${retries} retries left)`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return fetchWithRetry(url, options, retries - 1, delay * 1.5);
+    }
+    throw error;
+  }
+}
+
+
 export async function writeToSheet(sheetName: string, data: any) {
   try {
-    const response = await fetch(WEBHOOK_URL, {
+    const response = await fetchWithRetry(WEBHOOK_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'text/plain;charset=utf-8',
@@ -34,7 +52,7 @@ export async function readFromSheet(sheetName: string, queryKey?: string, queryV
       payload.query = { key: queryKey, value: queryValue };
     }
 
-    const response = await fetch(WEBHOOK_URL, {
+    const response = await fetchWithRetry(WEBHOOK_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'text/plain;charset=utf-8',
@@ -55,7 +73,7 @@ export async function readFromSheet(sheetName: string, queryKey?: string, queryV
 
 export async function updateInSheet(sheetName: string, matchKey: string, matchValue: any, data: any) {
   try {
-    const response = await fetch(WEBHOOK_URL, {
+    const response = await fetchWithRetry(WEBHOOK_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'text/plain;charset=utf-8',
@@ -79,7 +97,7 @@ export async function updateInSheet(sheetName: string, matchKey: string, matchVa
 
 export async function deleteFromSheet(sheetName: string, matchKey: string, matchValue: any) {
   try {
-    const response = await fetch(WEBHOOK_URL, {
+    const response = await fetchWithRetry(WEBHOOK_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'text/plain;charset=utf-8',

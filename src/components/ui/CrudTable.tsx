@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { readFromSheet, writeToSheet, updateInSheet, deleteFromSheet } from '../../lib/sheets';
+import { firebaseService } from '../../lib/firebaseService';
 import { Loader2, Plus, Edit2, Trash2, X } from 'lucide-react';
+import { Loader } from './Loader';
 import { Button } from './Button';
 import { Input } from './Input';
 
@@ -28,7 +29,7 @@ export function CrudTable({ title, sheetName, columns, filterLogic }: CrudTableP
   const fetchData = async () => {
     setLoading(true);
     try {
-      const data = await readFromSheet(sheetName);
+      const data = await firebaseService.getAll(sheetName);
       if (filterLogic && data) {
         setItems(data.filter(filterLogic));
       } else {
@@ -51,7 +52,12 @@ export function CrudTable({ title, sheetName, columns, filterLogic }: CrudTableP
       setFormData(item);
     } else {
       setEditingItem(null);
-      setFormData({});
+      // Auto-populate role if title implies a specific role
+      const initialData: any = {};
+      if (title.toLowerCase().includes('mentor')) initialData.role = 'MENTOR';
+      if (title.toLowerCase().includes('intern')) initialData.role = 'INTERN';
+      if (title.toLowerCase().includes('candidate')) initialData.role = 'CANDIDATE';
+      setFormData(initialData);
     }
     setIsModalOpen(true);
   };
@@ -72,20 +78,15 @@ export function CrudTable({ title, sheetName, columns, filterLogic }: CrudTableP
     setSubmitting(true);
     try {
       if (editingItem && editingItem.id) {
-        await updateInSheet(sheetName, 'id', editingItem.id, formData);
+        await firebaseService.update(sheetName, editingItem.id, formData);
       } else {
-        const newItem = {
-          ...formData,
-          id: formData.id || 'ID-' + Math.random().toString(36).substr(2, 9).toUpperCase(),
-          createdAt: new Date().toISOString()
-        };
-        await writeToSheet(sheetName, newItem);
+        await firebaseService.create(sheetName, formData);
       }
       await fetchData();
       handleCloseModal();
     } catch (err) {
       console.error("Failed to save record:", err);
-      alert("Failed to save record. Check console for errors. Make sure Apps Script supports update/delete.");
+      alert("Failed to save record. Check console for errors.");
     } finally {
       setSubmitting(false);
     }
@@ -94,7 +95,7 @@ export function CrudTable({ title, sheetName, columns, filterLogic }: CrudTableP
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this record?")) return;
     try {
-      await deleteFromSheet(sheetName, 'id', id);
+      await firebaseService.remove(sheetName, id);
       await fetchData();
     } catch (err) {
       console.error("Failed to delete record:", err);
@@ -113,7 +114,7 @@ export function CrudTable({ title, sheetName, columns, filterLogic }: CrudTableP
 
       {loading ? (
         <div className="flex items-center justify-center min-h-[400px]">
-          <Loader2 className="w-8 h-8 animate-spin text-amber-600" />
+          <Loader />
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">

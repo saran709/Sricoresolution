@@ -61,11 +61,7 @@ const AdminReports = React.lazy(() => import('./pages/admin/Reports'));
 const AdminSettings = React.lazy(() => import('./pages/admin/Settings'));
 
 
-const PageLoader = () => (
-  <div className="min-h-[50vh] flex items-center justify-center">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
-  </div>
-);
+import { PageLoader } from './components/ui/Loader';
 
 export function AppRouter() {
   return (

@@ -25,19 +25,12 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [
-          users,
-          projects,
-          requests,
-          apps,
-          payments
-        ] = await Promise.all([
-          readFromSheet('users'),
-          readFromSheet('projects'),
-          readFromSheet('project_requests'),
-          readFromSheet('internship_applications'),
-          readFromSheet('payments')
-        ]);
+        // Fetch sequentially or in smaller batches to avoid Google Apps Script concurrent rate limits
+        const users = await readFromSheet('users');
+        const projects = await readFromSheet('projects');
+        const requests = await readFromSheet('project_requests');
+        const apps = await readFromSheet('internship_applications');
+        const payments = await readFromSheet('payments');
         
         setStats({
           employees: users.filter((u: any) => u.role === 'EMPLOYEE').length,
@@ -52,10 +45,8 @@ export default function AdminDashboard() {
         });
 
         
-        const [auditLogs, allTasks] = await Promise.all([
-          readFromSheet('auditLogs'),
-          readFromSheet('tasks')
-        ]);
+        const auditLogs = await readFromSheet('auditLogs');
+        const allTasks = await readFromSheet('tasks');
         
         setActivities((auditLogs || []).sort((a: any, b: any) => new Date(b.timestamp || b.createdAt).getTime() - new Date(a.timestamp || a.createdAt).getTime()).slice(0, 5));
         
