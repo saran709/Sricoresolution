@@ -1,3 +1,4 @@
+import { firebaseService } from '../lib/firebaseService';
 import React, { useState } from 'react';
 import { Container } from '../components/ui/Container';
 import { SectionHeader } from '../components/ui/SectionHeader';
@@ -11,15 +12,29 @@ export default function Contact() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const formData = new FormData(e.currentTarget);
+      const payload = {
+        firstName: formData.get('name') || '',
+        lastName: '',
+        email: formData.get('email') || '',
+        serviceInterest: formData.get('subject') || 'General Contact',
+        enquiryType: 'general',
+        message: formData.get('message') || '',
+        status: 'NEW'
+      };
+      
+      await firebaseService.create('enquiries', payload);
       setIsSuccess(true);
-    }, 1500);
+    } catch (error) {
+      console.error(error);
+      alert('Failed to send message. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -88,14 +103,11 @@ export default function Contact() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <h3 className="text-2xl font-bold text-slate-900 mb-6">Send us a message</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <Input label="Full Name" required placeholder="John Doe" />
-                  <Input label="Email Address" type="email" required placeholder="john@example.com" />
+                  <Input label="Full Name" name="name" required placeholder="John Doe" />
+                  <Input label="Email Address" name="email" type="email" required placeholder="john@example.com" />
                 </div>
-                <Input label="Subject" required placeholder="How can we help?" />
-                <Textarea 
-                  label="Message" 
-                  required 
-                  placeholder="Your message here..." 
+                <Input label="Subject" name="subject" required placeholder="How can we help?" />
+                <Textarea name="message" label="Message" required placeholder="Your message here..." 
                   className="min-h-[150px]"
                 />
                 <Button type="submit" isLoading={isSubmitting} className="py-3 px-8 mt-4">

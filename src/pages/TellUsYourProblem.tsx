@@ -9,6 +9,8 @@ import { Button } from '../components/ui/Button';
 import { writeToSheet } from '../lib/sheets';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../lib/firebase';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import { Shield, Upload, FileText, CheckCircle2 } from 'lucide-react';
 
@@ -74,7 +76,7 @@ export default function TellUsYourProblem() {
         status: 'NEW'
       };
 
-      await addDoc(collection(db, 'solutionRequests'), payload);
+      await firebaseService.create('solutionRequests', payload);
       setIsSuccess(true);
     } catch (err) {
       console.error("Error submitting problem:", err);

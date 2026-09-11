@@ -33,7 +33,7 @@ export default function Internships() {
               Launch your technical career with Sricore Solutions. Gain hands-on experience working on real-world industry projects alongside experienced mentors and senior engineers.
             </p>
             <Link 
-              to="/internships/apply" 
+              to="#available-programs" onClick={(e) => { e.preventDefault(); document.getElementById("available-programs")?.scrollIntoView({ behavior: "smooth" }); }} 
               className="inline-flex items-center justify-center px-6 py-3 text-base font-medium rounded-md bg-amber-600 text-white hover:bg-amber-700 transition-colors"
             >
               Apply for Internship
@@ -61,6 +61,7 @@ export default function Internships() {
       </Container>
 
       <Container className="pb-20 lg:pb-32">
+        <div id="available-programs" className="scroll-mt-24"></div>
         <SectionHeader 
           title="Available Programs" 
           description="Explore our currently open internship roles and apply to join our development teams."
