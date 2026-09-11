@@ -1,3 +1,4 @@
+import { firebaseService } from '../lib/firebaseService';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { readFromSheet } from '../lib/sheets';
@@ -66,7 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return;
           }
 
-          const users = await readFromSheet('users', 'uid', user.uid);
+          const users = await firebaseService.getByQuery('users', 'uid', '==', user.uid);
           if (users && users.length > 0) {
             setUserProfile(users[0] as UserProfile);
           } else {

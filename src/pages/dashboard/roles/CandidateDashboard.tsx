@@ -1,3 +1,4 @@
+import { firebaseService } from '../../../lib/firebaseService';
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { readFromSheet } from '../../../lib/sheets';
@@ -20,11 +21,11 @@ export default function CandidateDashboard() {
 
     const fetchData = async () => {
       try {
-        const appsData = await readFromSheet('internship_applications', 'candidateId', userProfile.uid);
+        const appsData = await firebaseService.getByQuery('internship_applications', 'candidateId', '==', userProfile.uid);
         const apps = await Promise.all(appsData.map(async (appData: any) => {
           let programTitle = 'Unknown Program';
           // Simulating fetch of program
-          const progData = await readFromSheet('internship_programs', 'id', appData.programId);
+          const progData = await firebaseService.getByQuery('internship_programs', 'id', '==', appData.programId);
           if (progData && progData.length > 0) {
              programTitle = progData[0].title || 'Unknown Program';
           }
@@ -32,10 +33,10 @@ export default function CandidateDashboard() {
         }));
         setApplications(apps);
         
-        const docsData = await readFromSheet('documents', 'ownerId', userProfile.uid);
+        const docsData = await firebaseService.getByQuery('documents', 'ownerId', '==', userProfile.uid);
         setDocuments(docsData as AppDocument[]);
 
-        const notifsData = await readFromSheet('notifications', 'userId', userProfile.uid);
+        const notifsData = await firebaseService.getByQuery('notifications', 'userId', '==', userProfile.uid);
         setNotifications(notifsData as AppNotification[]);
 
       } catch (error) {

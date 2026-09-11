@@ -1,3 +1,4 @@
+import { firebaseService } from '../../lib/firebaseService';
 import React, { useState, useEffect } from 'react';
 import { readFromSheet } from '../../lib/sheets';
 import { Loader2 } from 'lucide-react';
@@ -9,7 +10,7 @@ export default function Reports() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await readFromSheet('reports');
+        const data = await firebaseService.getAll('reports');
         setItems(data || []);
       } catch (err) {
         console.error(err);

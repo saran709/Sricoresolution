@@ -1,3 +1,4 @@
+import { firebaseService } from '../lib/firebaseService';
 import React, { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { Container } from '../components/ui/Container';

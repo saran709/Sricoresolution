@@ -1,3 +1,4 @@
+import { firebaseService } from '../../lib/firebaseService';
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
@@ -36,9 +37,9 @@ export default function Login() {
       const result = await googleSignIn();
       if (result?.user) {
         // Create user profile if it doesn't exist
-        const users = await readFromSheet('users', 'uid', result.user.uid);
+        const users = await firebaseService.getByQuery('users', 'uid', '==', result.user.uid);
         if (!users || users.length === 0) {
-          await writeToSheet('users', {
+          await firebaseService.create('users', {
             uid: result.user.uid,
             email: result.user.email,
             firstName: result.user.displayName?.split(' ')[0] || '',

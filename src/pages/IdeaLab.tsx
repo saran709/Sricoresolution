@@ -1,10 +1,11 @@
+import { firebaseService } from '../lib/firebaseService';
 import React, { useState } from 'react';
 import { Container } from '../components/ui/Container';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Textarea } from '../components/ui/Textarea';
 
-import { writeToSheet } from '../lib/sheets';
+
 import { Lightbulb, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -35,14 +36,16 @@ export default function IdeaLab() {
       const randomStr = Math.floor(1000 + Math.random() * 9000).toString();
       const requestId = `SRC-IDEA-${year}-${randomStr}`;
 
-      await addDoc(collection(db, 'ideaLab'), {
+      await firebaseService.create('ideaLab', {
+
         requestId,
         userId: currentUser?.uid || null,
         ...formData,
         status: 'NEW',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
+        
+        
+      
+});
 
       setSuccess(true);
     } catch (error) {

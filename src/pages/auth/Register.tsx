@@ -1,3 +1,4 @@
+import { firebaseService } from '../../lib/firebaseService';
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
@@ -43,7 +44,7 @@ export default function Register() {
 
       // Create user profile in Firestore
       // Note: role is restricted to CANDIDATE or CLIENT for public registration
-      await writeToSheet('users', {
+      await firebaseService.create('users', {
         uid: user.uid,
         email: user.email,
         firstName,

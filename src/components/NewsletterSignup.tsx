@@ -1,3 +1,4 @@
+import { firebaseService } from '../lib/firebaseService';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { writeToSheet, readFromSheet } from '../lib/sheets';
@@ -19,7 +20,7 @@ export function NewsletterSignup({ className }: { className?: string }) {
     setMessage('');
     
     try {
-      const snap = await readFromSheet('newsletter_subscribers', 'email', data.email.toLowerCase());
+      const snap = await firebaseService.getByQuery('newsletter_subscribers', 'email', '==', data.email.toLowerCase());
       
       if (snap && snap.length > 0) {
         setStatus('error');
@@ -27,7 +28,7 @@ export function NewsletterSignup({ className }: { className?: string }) {
         return;
       }
       
-      await writeToSheet('newsletter_subscribers', {
+      await firebaseService.create('newsletter_subscribers', {
         email: data.email.toLowerCase(),
         status: 'active'
       });

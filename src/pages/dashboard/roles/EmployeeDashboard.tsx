@@ -1,3 +1,4 @@
+import { firebaseService } from '../../../lib/firebaseService';
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { readFromSheet, writeToSheet } from '../../../lib/sheets';
@@ -30,16 +31,16 @@ export default function EmployeeDashboard() {
       try {
         setEmployeeData(userProfile as Employee);
       
-        const projData = await readFromSheet('projects');
+        const projData = await firebaseService.getAll('projects');
         setProjects(projData.filter((p: any) => p.assignedEmployees && p.assignedEmployees.includes(userProfile.uid)) as Project[]);
 
-        const taskData = await readFromSheet('projectTasks', 'assignedTo', userProfile.uid);
+        const taskData = await firebaseService.getByQuery('projectTasks', 'assignedTo', '==', userProfile.uid);
         setTasks(taskData as ProjectTask[]);
         
-        const leaveData = await readFromSheet('leaveRequests', 'userId', userProfile.uid);
+        const leaveData = await firebaseService.getByQuery('leaveRequests', 'userId', '==', userProfile.uid);
         setLeaveRequests(leaveData as LeaveRequest[]);
         
-        const attData = await readFromSheet('attendance', 'userId', userProfile.uid);
+        const attData = await firebaseService.getByQuery('attendance', 'userId', '==', userProfile.uid);
         setAttendances((attData as Attendance[]).sort((a: any,b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()));
         
       } catch (error) {
@@ -56,7 +57,7 @@ export default function EmployeeDashboard() {
     try {
       // In a real sheet we would need an update mechanism, but we'll append a status update or rely on local state for now
       // This is a mockup as webhook needs update action
-      await writeToSheet('task_updates', { taskId, status: newStatus });
+      await firebaseService.create('task_updates', { taskId, status: newStatus });
       setTasks(tasks.map(t => t.id === taskId ? { ...t, status: newStatus as any } : t));
       
       if (userProfile?.uid) {
@@ -90,7 +91,7 @@ export default function EmployeeDashboard() {
     
     try {
       const docId = 'LR-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-      await writeToSheet('leaveRequests', { id: docId, ...data });
+      await firebaseService.create('leaveRequests', { id: docId, ...data });
       setLeaveRequests([...leaveRequests, { id: docId, ...data } as LeaveRequest]);
       setShowLeaveForm(false);
       
@@ -122,7 +123,7 @@ export default function EmployeeDashboard() {
       };
       
       const docId = 'ATT-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-      await writeToSheet('attendance', { id: docId, ...attData });
+      await firebaseService.create('attendance', { id: docId, ...attData });
       setAttendances([{ id: docId, ...attData } as Attendance, ...attendances]);
     } catch (err) {
       console.error("Failed to check in", err);

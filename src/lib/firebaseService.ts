@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
+import { collection, doc, getDocs, getDoc, addDoc, setDoc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
 import { db } from './firebase';
 
 export const firebaseService = {
@@ -19,7 +19,21 @@ export const firebaseService = {
     return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null;
   },
 
+  
+  async createWithId(collectionName: string, id: string, data: any) {
+    const docRef = doc(db, collectionName, id);
+    const { id: _, ...saveData } = data; // strip id from data payload if it exists
+    await setDoc(docRef, {
+      ...saveData,
+      createdAt: saveData.createdAt || new Date().toISOString()
+    }, { merge: true });
+    return { id, ...saveData };
+  },
+
   async create(collectionName: string, data: any) {
+    if (data.id) {
+      return this.createWithId(collectionName, data.id, data);
+    }
     const docRef = await addDoc(collection(db, collectionName), {
       ...data,
       createdAt: new Date().toISOString()

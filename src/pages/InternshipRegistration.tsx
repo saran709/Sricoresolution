@@ -1,3 +1,4 @@
+import { firebaseService } from '../lib/firebaseService';
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Container } from '../components/ui/Container';
@@ -128,7 +129,7 @@ export default function InternshipRegistration() {
       // Create a unique ID for the application locally
       const id = 'APP-' + Math.random().toString(36).substr(2, 9).toUpperCase();
       data.id = id;
-      await writeToSheet('internship_applications', data);
+      await firebaseService.create('internship_applications', data);
       setApplicationId(id);
       
       if (selectedProgram && selectedProgram.fees > 0) {

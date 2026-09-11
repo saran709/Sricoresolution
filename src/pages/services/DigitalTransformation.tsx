@@ -1,8 +1,44 @@
 import React from 'react';
+import { firebaseService } from '../../lib/firebaseService';
+import { useState } from 'react';
+import { Input } from '../../components/ui/Input';
+import { Textarea } from '../../components/ui/Textarea';
+import { useAuth } from '../../contexts/AuthContext';
+
 import { Container } from '../../components/ui/Container';
 import { Button } from '../../components/ui/Button';
 import { Layers, ArrowRight, Smartphone, Laptop, Database } from 'lucide-react';
 import { Link } from 'react-router-dom';
+
+
+  const { currentUser } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    organization: '',
+    phone: '',
+    details: ''
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await firebaseService.create('digital_transformations', {
+        ...formData,
+        userId: currentUser?.uid || null,
+        status: 'NEW',
+      });
+      setSuccess(true);
+    } catch (error) {
+      console.error(error);
+      alert("Failed to submit request.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
 export default function DigitalTransformation() {
   return (
@@ -22,11 +58,11 @@ export default function DigitalTransformation() {
               We help organizations eliminate manual workflows, disconnected systems, and operational bottlenecks by designing custom digital ecosystems.
             </p>
             <div className="flex flex-wrap gap-4">
-              <Link to="/tell-us-your-problem">
+              <a href="#request-form">
                 <Button size="lg" className="bg-amber-600 hover:bg-amber-700 text-white border-0">
                   Transform My Process
                 </Button>
-              </Link>
+              </a>
             </div>
           </div>
         </Container>
@@ -118,6 +154,46 @@ export default function DigitalTransformation() {
           </div>
         </Container>
       </section>
-    </div>
+    
+      {/* Request Form Section */}
+      <section className="py-24 bg-white" id="request-form">
+        <Container>
+          <div className="max-w-3xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold text-slate-900 mb-4">Request Transformation Consultation</h2>
+              <p className="text-lg text-slate-600">Tell us about your current manual workflows and what you hope to achieve with a digital ecosystem.</p>
+            </div>
+            {success ? (
+              <div className="bg-emerald-50 text-emerald-800 p-8 rounded-2xl text-center border border-emerald-200">
+                <h3 className="text-2xl font-bold mb-2">Request Received</h3>
+                <p>Our team will review your details and contact you shortly.</p>
+                <Button className="mt-6" onClick={() => setSuccess(false)}>Submit Another</Button>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 sm:p-12 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Input label="Your Name *" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                  <Input label="Email Address *" type="email" required value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Input label="Organization" value={formData.organization} onChange={e => setFormData({...formData, organization: e.target.value})} />
+                  <Input label="Phone Number" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                </div>
+                <Textarea 
+                  label="Project Details / Current Challenges *" 
+                  required 
+                  rows={5}
+                  value={formData.details} 
+                  onChange={e => setFormData({...formData, details: e.target.value})} 
+                />
+                <Button type="submit" size="lg" className="w-full text-lg h-14" isLoading={loading}>
+                  Submit Request
+                </Button>
+              </form>
+            )}
+          </div>
+        </Container>
+      </section>
+  </div>
   );
 }

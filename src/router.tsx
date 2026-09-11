@@ -24,6 +24,15 @@ const Careers = React.lazy(() => import('./pages/Careers'));
 const Privacy = React.lazy(() => import('./pages/Privacy'));
 const Terms = React.lazy(() => import('./pages/Terms'));
 
+
+import { ServiceSkeleton } from './components/ui/ServiceSkeleton';
+
+// New Service Pages
+const TechnologyAudit = React.lazy(() => import('./pages/services/TechnologyAudit'));
+const ProjectRescue = React.lazy(() => import('./pages/services/ProjectRescue'));
+const DigitalTransformation = React.lazy(() => import('./pages/services/DigitalTransformation'));
+const IdeaLab = React.lazy(() => import('./pages/IdeaLab'));
+
 // Auth Pages
 const Login = React.lazy(() => import('./pages/auth/Login'));
 const Register = React.lazy(() => import('./pages/auth/Register'));
@@ -113,10 +122,15 @@ export function AppRouter() {
             <Route index element={<Home />} />
             <Route path="about" element={<About />} />
             <Route path="services" element={<Services />} />
-            <Route path="services/research" element={<ResearchServices />} />
-            <Route path="solutions/software" element={<SoftwareSolutions />} />
-            <Route path="solutions/hardware" element={<HardwareSolutions />} />
-            <Route path="solutions/ai-ml" element={<AISolutions />} />
+            <Route path="services/research" element={<Suspense fallback={<ServiceSkeleton />}><ResearchServices /></Suspense>} />
+            <Route path="solutions/software" element={<Suspense fallback={<ServiceSkeleton />}><SoftwareSolutions /></Suspense>} />
+            <Route path="solutions/hardware" element={<Suspense fallback={<ServiceSkeleton />}><HardwareSolutions /></Suspense>} />
+            <Route path="solutions/ai-ml" element={<Suspense fallback={<ServiceSkeleton />}><AISolutions /></Suspense>} />
+            <Route path="services/technology-audit" element={<Suspense fallback={<ServiceSkeleton />}><TechnologyAudit /></Suspense>} />
+            <Route path="services/project-rescue" element={<Suspense fallback={<ServiceSkeleton />}><ProjectRescue /></Suspense>} />
+            <Route path="services/digital-transformation" element={<Suspense fallback={<ServiceSkeleton />}><DigitalTransformation /></Suspense>} />
+            <Route path="idealab" element={<Suspense fallback={<ServiceSkeleton />}><IdeaLab /></Suspense>} />
+
             <Route path="internships" element={<Internships />} />
             <Route path="internships/apply" element={<InternshipRegistration />} />
             <Route path="projects" element={<Projects />} />

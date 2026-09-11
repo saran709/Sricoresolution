@@ -1,3 +1,4 @@
+import { firebaseService } from '../lib/firebaseService';
 import React, { useState } from 'react';
 import { Container } from '../components/ui/Container';
 import { SectionHeader } from '../components/ui/SectionHeader';
@@ -41,7 +42,7 @@ export default function Enquiry() {
     };
     
     try {
-      await writeToSheet('project_requests', data);
+      await firebaseService.create('project_requests', data);
       setIsSuccess(true);
     } catch (err) {
       console.error("Error submitting enquiry:", err);

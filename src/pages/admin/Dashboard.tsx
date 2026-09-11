@@ -1,3 +1,4 @@
+import { firebaseService } from '../../lib/firebaseService';
 import React, { useEffect, useState } from 'react';
 import { readFromSheet } from '../../lib/sheets';
 
@@ -26,11 +27,11 @@ export default function AdminDashboard() {
     const fetchData = async () => {
       try {
         // Fetch sequentially or in smaller batches to avoid Google Apps Script concurrent rate limits
-        const users = await readFromSheet('users');
-        const projects = await readFromSheet('projects');
-        const requests = await readFromSheet('project_requests');
-        const apps = await readFromSheet('internship_applications');
-        const payments = await readFromSheet('payments');
+        const users = await firebaseService.getAll('users');
+        const projects = await firebaseService.getAll('projects');
+        const requests = await firebaseService.getAll('project_requests');
+        const apps = await firebaseService.getAll('internship_applications');
+        const payments = await firebaseService.getAll('payments');
         
         setStats({
           employees: users.filter((u: any) => u.role === 'EMPLOYEE').length,
@@ -45,8 +46,8 @@ export default function AdminDashboard() {
         });
 
         
-        const auditLogs = await readFromSheet('auditLogs');
-        const allTasks = await readFromSheet('tasks');
+        const auditLogs = await firebaseService.getAll('auditLogs');
+        const allTasks = await firebaseService.getAll('tasks');
         
         setActivities((auditLogs || []).sort((a: any, b: any) => new Date(b.timestamp || b.createdAt).getTime() - new Date(a.timestamp || a.createdAt).getTime()).slice(0, 5));
         

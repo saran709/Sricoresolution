@@ -1,3 +1,4 @@
+import { firebaseService } from '../../lib/firebaseService';
 import React, { useState } from 'react';
 import { Button } from '../ui/Button';
 import { createRazorpayOrder, verifyRazorpayPayment, loadRazorpayScript } from '../../lib/payments';
