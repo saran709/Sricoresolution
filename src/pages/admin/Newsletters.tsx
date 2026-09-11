@@ -183,7 +183,7 @@ export default function Newsletters() {
                   <div className="space-y-1 text-center">
                     {imagePreview ? (
                       <div className="mb-4 relative w-full max-w-md mx-auto aspect-video rounded-lg overflow-hidden border border-slate-200">
-                        <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                        <img loading="lazy" src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                       </div>
                     ) : (
                       <ImageIcon className="mx-auto h-12 w-12 text-slate-400" />
@@ -264,7 +264,7 @@ export default function Newsletters() {
                   <div key={item.id} className="p-6 flex flex-col sm:flex-row gap-6 items-start sm:items-center hover:bg-slate-50 transition-colors">
                     {item.imageUrl ? (
                       <div className="w-full sm:w-32 h-20 rounded-lg overflow-hidden border border-slate-200 shrink-0">
-                        <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
+                        <img loading="lazy" src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
                       </div>
                     ) : (
                       <div className="w-full sm:w-32 h-20 rounded-lg bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center">

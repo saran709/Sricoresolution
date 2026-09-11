@@ -1,3 +1,4 @@
+import { serverTimestamp } from 'firebase/firestore';
 import { firebaseService } from '../../../lib/firebaseService';
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -26,31 +27,32 @@ export default function EmployeeDashboard() {
 
   useEffect(() => {
     if (!userProfile?.uid) return;
+    
+    setEmployeeData(userProfile as Employee);
 
-    const fetchData = async () => {
-      try {
-        setEmployeeData(userProfile as Employee);
-      
-        const projData = await firebaseService.getAll('projects');
-        setProjects(projData.filter((p: any) => p.assignedEmployees && p.assignedEmployees.includes(userProfile.uid)) as Project[]);
+    const unsubProjects = firebaseService.subscribeToCollection('projects', (data) => {
+      setProjects(data.filter((p: any) => p.assignedEmployees && p.assignedEmployees.includes(userProfile.uid)) as Project[]);
+    });
 
-        const taskData = await firebaseService.getByQuery('projectTasks', 'assignedTo', '==', userProfile.uid);
-        setTasks(taskData as ProjectTask[]);
-        
-        const leaveData = await firebaseService.getByQuery('leaveRequests', 'userId', '==', userProfile.uid);
-        setLeaveRequests(leaveData as LeaveRequest[]);
-        
-        const attData = await firebaseService.getByQuery('attendance', 'userId', '==', userProfile.uid);
-        setAttendances((attData as Attendance[]).sort((a: any,b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-        
-      } catch (error) {
-        console.error("Error fetching employee data:", error);
-      } finally {
-        setLoading(false);
-      }
+    const unsubTasks = firebaseService.subscribeToQuery('projectTasks', 'assignedTo', '==', userProfile.uid, (data) => {
+      setTasks(data as ProjectTask[]);
+    });
+
+    const unsubLeave = firebaseService.subscribeToQuery('leaveRequests', 'userId', '==', userProfile.uid, (data) => {
+      setLeaveRequests(data as LeaveRequest[]);
+    });
+
+    const unsubAtt = firebaseService.subscribeToQuery('attendance', 'userId', '==', userProfile.uid, (data) => {
+      setAttendances((data as Attendance[]).sort((a: any,b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+      setLoading(false);
+    });
+
+    return () => {
+      if (unsubProjects) unsubProjects();
+      if (unsubTasks) unsubTasks();
+      if (unsubLeave) unsubLeave();
+      if (unsubAtt) unsubAtt();
     };
-
-    fetchData();
   }, [userProfile]);
 
   const updateTaskStatus = async (taskId: string, newStatus: string) => {
@@ -98,7 +100,7 @@ export default function EmployeeDashboard() {
       await logActivity(
         'LEAVE_REQUESTED',
         userProfile.uid,
-        docRef.id,
+        docId,
         'user',
         `Employee requested leave for ${data.startDate.toLocaleDateString()}`
       );

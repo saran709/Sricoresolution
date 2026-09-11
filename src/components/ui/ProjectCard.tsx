@@ -16,7 +16,7 @@ export function ProjectCard({ title, category, description, imageUrl, href }: Pr
     <Link to={href} className="group flex flex-col bg-white rounded-2xl overflow-hidden border border-slate-200 hover:border-amber-300 hover:shadow-lg transition-all duration-300">
       <div className="relative h-48 bg-slate-100 overflow-hidden">
         {imageUrl ? (
-          <img src={imageUrl} alt={title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <img loading="lazy" src={imageUrl} alt={title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-slate-200 text-slate-400">
             <span className="font-medium">Project Preview</span>

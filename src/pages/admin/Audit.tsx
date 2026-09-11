@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, orderBy, getDocs, limit } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, limit , onSnapshot} from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Search, Shield } from 'lucide-react';
 import { format } from 'date-fns';
@@ -10,29 +10,27 @@ export default function AdminAudit() {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    fetchLogs();
+    const unsubscribe = setupSubscription();
+    return () => unsubscribe && unsubscribe();
   }, []);
 
-  const fetchLogs = async () => {
+  const setupSubscription = () => {
     setLoading(true);
-    try {
+
       // Limit to 100 recent logs for performance
       const q = query(
         collection(db, 'auditLogs'),
         orderBy('timestamp', 'desc'),
         limit(100)
       );
-      const snapshot = await getDocs(q);
-      const items: any[] = [];
-      snapshot.forEach(doc => {
-        items.push({ id: doc.id, ...doc.data() });
+      return onSnapshot(q, (snapshot) => {
+        const items: any[] = [];
+        snapshot.forEach(doc => {
+          items.push({ id: doc.id, ...doc.data() });
+        });
+        setLogs(items);
+        setLoading(false);
       });
-      setLogs(items);
-    } catch (error) {
-      console.error("Error fetching audit logs:", error);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const filteredLogs = logs.filter(log => 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { collection, query, orderBy, getDocs, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, addDoc, serverTimestamp, deleteDoc, doc , onSnapshot} from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from '../../lib/firebase';
 import { Document as AppDocument } from '../../types';
@@ -21,24 +21,26 @@ export default function AdminDocuments() {
   const [accessLevel, setAccessLevel] = useState<AppDocument['accessLevel']>('company');
 
   useEffect(() => {
-    fetchDocuments();
+    const unsubscribe = setupSubscription();
+    return () => unsubscribe && unsubscribe();
   }, []);
 
-  const fetchDocuments = async () => {
+  const setupSubscription = () => {
     setLoading(true);
-    try {
+
       const q = query(collection(db, 'documents'), orderBy('createdAt', 'desc'));
-      const snapshot = await getDocs(q);
-      const items: AppDocument[] = [];
-      snapshot.forEach(doc => {
-        items.push({ id: doc.id, ...doc.data() } as AppDocument);
+      return onSnapshot(q, (snapshot) => {
+        const items: any[] = [];
+        snapshot.forEach(doc => {
+          items.push({ id: doc.id, ...doc.data() });
+        });
+        setDocuments(items);
+        setLoading(false);
+      }, (error) => {
+        console.error("Error in subscription:", error);
+        setLoading(false);
       });
-      setDocuments(items);
-    } catch (error) {
-      console.error("Error fetching documents:", error);
-    } finally {
-      setLoading(false);
-    }
+
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -86,7 +88,7 @@ export default function AdminDocuments() {
         `Uploaded document: ${file.name}`
       );
       
-      await fetchDocuments();
+      
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (error) {
       console.error("Failed to upload document", error);

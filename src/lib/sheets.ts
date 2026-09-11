@@ -12,7 +12,7 @@ export async function writeToSheet(sheetName: string, data: any) {
 export async function readFromSheet(sheetName: string, queryKey?: string, queryValue?: any) {
   try {
     if (queryKey !== undefined && queryValue !== undefined) {
-      return await firebaseService.getByField(sheetName, queryKey, queryValue);
+      return await firebaseService.getByQuery(sheetName, queryKey, '==', queryValue);
     }
     return await firebaseService.getAll(sheetName);
   } catch (error) {
@@ -23,7 +23,7 @@ export async function readFromSheet(sheetName: string, queryKey?: string, queryV
 
 export async function updateInSheet(sheetName: string, matchKey: string, matchValue: any, data: any) {
   try {
-    const items = await firebaseService.getByField(sheetName, matchKey, matchValue);
+    const items = await firebaseService.getByQuery(sheetName, matchKey, '==', matchValue);
     if (items.length > 0) {
       // update the first match
       await firebaseService.update(sheetName, items[0].id, data);
@@ -38,7 +38,7 @@ export async function updateInSheet(sheetName: string, matchKey: string, matchVa
 
 export async function deleteFromSheet(sheetName: string, matchKey: string, matchValue: any) {
   try {
-    const items = await firebaseService.getByField(sheetName, matchKey, matchValue);
+    const items = await firebaseService.getByQuery(sheetName, matchKey, '==', matchValue);
     if (items.length > 0) {
       await firebaseService.remove(sheetName, items[0].id);
       return { status: 'success' };

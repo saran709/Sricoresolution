@@ -8,7 +8,7 @@ import { Input } from './Input';
 interface Column {
   key: string;
   label: string;
-  type?: 'text' | 'number' | 'date' | 'email';
+  type?: string;
 }
 
 interface CrudTableProps {
@@ -26,24 +26,20 @@ export function CrudTable({ title, sheetName, columns, filterLogic }: CrudTableP
   const [formData, setFormData] = useState<any>({});
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchData = async () => {
+  useEffect(() => {
     setLoading(true);
-    try {
-      const data = await firebaseService.getAll(sheetName);
+    const unsubscribe = firebaseService.subscribeToCollection(sheetName, (data) => {
       if (filterLogic && data) {
         setItems(data.filter(filterLogic));
       } else {
         setItems(data || []);
       }
-    } catch (err) {
-      console.error(err);
-    } finally {
       setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
+    });
+    
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, [sheetName]);
 
   const handleOpenModal = (item?: any) => {
@@ -82,7 +78,6 @@ export function CrudTable({ title, sheetName, columns, filterLogic }: CrudTableP
       } else {
         await firebaseService.create(sheetName, formData);
       }
-      await fetchData();
       handleCloseModal();
     } catch (err) {
       console.error("Failed to save record:", err);
@@ -96,7 +91,6 @@ export function CrudTable({ title, sheetName, columns, filterLogic }: CrudTableP
     // confirm removed
     try {
       await firebaseService.remove(sheetName, id);
-      await fetchData();
     } catch (err) {
       console.error("Failed to delete record:", err);
       alert("Failed to delete record.");

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, orderBy, getDocs, doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, doc, updateDoc, serverTimestamp, getDoc , onSnapshot} from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { InternshipApplication, User } from '../../types';
 import { Search, GraduationCap } from 'lucide-react';
@@ -33,15 +33,16 @@ export default function AdminInternships() {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    fetchApplications();
+    const unsubscribe = setupSubscription();
+    return () => unsubscribe && unsubscribe();
   }, []);
 
-  const fetchApplications = async () => {
+  const setupSubscription = () => {
     setLoading(true);
-    try {
+
       const q = query(collection(db, 'internship_applications'), orderBy('createdAt', 'desc'));
-      const snapshot = await getDocs(q);
-      const items = await Promise.all(snapshot.docs.map(async (d) => {
+      return onSnapshot(q, async (snapshot) => {
+        const items = await Promise.all(snapshot.docs.map(async (d) => {
         const app = { id: d.id, ...d.data() } as InternshipApplication;
         let candidate: User | undefined;
         if (app.candidateId) {
@@ -55,11 +56,11 @@ export default function AdminInternships() {
         return { ...app, candidate };
       }));
       setApplications(items);
-    } catch (error) {
-      console.error("Error fetching internship applications:", error);
-    } finally {
       setLoading(false);
-    }
+    }, (error) => {
+      console.error(error);
+      setLoading(false);
+    });
   };
 
   const handleStatusChange = async (app: InternshipApplication, newStatus: InternshipApplication['status']) => {

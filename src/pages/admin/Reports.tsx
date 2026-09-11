@@ -8,17 +8,14 @@ export default function Reports() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await firebaseService.getAll('reports');
-        setItems(data || []);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
+    setLoading(true);
+    const unsubscribe = firebaseService.subscribeToCollection('reports', (data) => {
+      setItems(data || []);
+      setLoading(false);
+    });
+    return () => {
+      if (unsubscribe) unsubscribe();
     };
-    fetchData();
   }, []);
 
   if (loading) {

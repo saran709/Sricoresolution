@@ -117,7 +117,7 @@ export default function InternshipRegistration() {
     
     try {
       const id = 'APP-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-      payload.id = id;
+      (payload as any).id = id;
       
       await firebaseService.createWithId('internship_applications', id, payload);
       setApplicationId(id);

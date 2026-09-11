@@ -27,7 +27,7 @@ export default function CandidateDashboard() {
           // Simulating fetch of program
           const progData = await firebaseService.getByQuery('internship_programs', 'id', '==', appData.programId);
           if (progData && progData.length > 0) {
-             programTitle = progData[0].title || 'Unknown Program';
+             programTitle = (progData[0] as any).title || 'Unknown Program';
           }
           return { ...appData, programTitle } as InternshipApplication;
         }));

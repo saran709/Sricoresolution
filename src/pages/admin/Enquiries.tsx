@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, orderBy, getDocs, doc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, doc, updateDoc, addDoc, serverTimestamp , onSnapshot} from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Enquiry, Project } from '../../types';
 import { Search, ArrowRightCircle } from 'lucide-react';
@@ -42,7 +42,6 @@ export default function Enquiries() {
     setSendingEmail(true);
     setEmailError('');
     setEmailSuccess('');
-    
     try {
       const response = await fetch('/api/email/send', {
         method: 'POST',
@@ -81,24 +80,25 @@ export default function Enquiries() {
       setSendingEmail(false);
     }
   };  useEffect(() => {
-    fetchEnquiries();
+    const unsubscribe = setupSubscription();
+    return () => unsubscribe && unsubscribe();
   }, []);
 
-  const fetchEnquiries = async () => {
+  const setupSubscription = () => {
     setLoading(true);
-    try {
       const q = query(collection(db, 'project_requests'), orderBy('createdAt', 'desc'));
-      const snapshot = await getDocs(q);
-      const items: Enquiry[] = [];
-      snapshot.forEach(doc => {
-        items.push({ id: doc.id, ...doc.data() } as Enquiry);
+      return onSnapshot(q, (snapshot) => {
+        const items: any[] = [];
+        snapshot.forEach(doc => {
+          items.push({ id: doc.id, ...doc.data() });
+        });
+        setEnquiries(items);
+        setLoading(false);
+      }, (error) => {
+        console.error("Error in subscription:", error);
+        setLoading(false);
       });
-      setEnquiries(items);
-    } catch (error) {
-      console.error("Error fetching enquiries:", error);
-    } finally {
-      setLoading(false);
-    }
+
   };
 
   const handleStatusChange = async (id: string, newStatus: string) => {

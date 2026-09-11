@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, orderBy, getDocs, doc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, doc, updateDoc, addDoc, serverTimestamp , onSnapshot} from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Search, CheckCircle, FileText, Plus } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
@@ -12,24 +12,22 @@ export default function AdminTasks() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    fetchTasks();
+    const unsubscribe = setupSubscription();
+    return () => unsubscribe && unsubscribe();
   }, []);
 
-  const fetchTasks = async () => {
+  const setupSubscription = () => {
     setLoading(true);
-    try {
+
       const q = query(collection(db, 'projectTasks'), orderBy('createdAt', 'desc'));
-      const snapshot = await getDocs(q);
-      const items: any[] = [];
-      snapshot.forEach(doc => {
-        items.push({ id: doc.id, ...doc.data() });
+      return onSnapshot(q, (snapshot) => {
+        const items: any[] = [];
+        snapshot.forEach(doc => {
+          items.push({ id: doc.id, ...doc.data() });
+        });
+        setTasks(items);
+        setLoading(false);
       });
-      setTasks(items);
-    } catch (error) {
-      console.error("Error fetching tasks:", error);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const filteredTasks = tasks.filter(t => 

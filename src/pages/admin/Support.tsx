@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, orderBy, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, doc, updateDoc, serverTimestamp , onSnapshot} from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { SupportTicket } from '../../types';
 import { Search } from 'lucide-react';
@@ -23,24 +23,26 @@ export default function AdminSupport() {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    fetchTickets();
+    const unsubscribe = setupSubscription();
+    return () => unsubscribe && unsubscribe();
   }, []);
 
-  const fetchTickets = async () => {
+  const setupSubscription = () => {
     setLoading(true);
-    try {
+
       const q = query(collection(db, 'support_tickets'), orderBy('createdAt', 'desc'));
-      const snapshot = await getDocs(q);
-      const items: SupportTicket[] = [];
-      snapshot.forEach(doc => {
-        items.push({ id: doc.id, ...doc.data() } as SupportTicket);
+      return onSnapshot(q, (snapshot) => {
+        const items: any[] = [];
+        snapshot.forEach(doc => {
+          items.push({ id: doc.id, ...doc.data() });
+        });
+        setTickets(items);
+        setLoading(false);
+      }, (error) => {
+        console.error("Error in subscription:", error);
+        setLoading(false);
       });
-      setTickets(items);
-    } catch (error) {
-      console.error("Error fetching support tickets:", error);
-    } finally {
-      setLoading(false);
-    }
+
   };
 
   const handleStatusChange = async (ticket: SupportTicket, newStatus: SupportTicket['status']) => {

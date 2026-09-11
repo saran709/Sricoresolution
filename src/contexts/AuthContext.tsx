@@ -69,7 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           const users = await firebaseService.getByQuery('users', 'uid', '==', user.uid);
           if (users && users.length > 0) {
-            setUserProfile(users[0] as UserProfile);
+            setUserProfile(users[0] as unknown as UserProfile);
           } else {
             setUserProfile(null);
           }

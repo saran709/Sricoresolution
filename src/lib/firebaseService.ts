@@ -1,7 +1,27 @@
-import { collection, doc, getDocs, getDoc, addDoc, setDoc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
+import { collection, doc, getDocs, getDoc, addDoc, setDoc, updateDoc, deleteDoc, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from './firebase';
 
 export const firebaseService = {
+  subscribeToCollection(collectionName: string, callback: (data: any[]) => void) {
+    const q = collection(db, collectionName);
+    return onSnapshot(q, (querySnapshot) => {
+      const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      callback(data);
+    }, (error) => {
+      console.error("Error subscribing to collection:", error);
+    });
+  },
+
+  subscribeToQuery(collectionName: string, field: string, operator: any, value: any, callback: (data: any[]) => void) {
+    const q = query(collection(db, collectionName), where(field, operator, value));
+    return onSnapshot(q, (querySnapshot) => {
+      const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      callback(data);
+    }, (error) => {
+      console.error("Error subscribing to query:", error);
+    });
+  },
+
   async getAll(collectionName: string) {
     const querySnapshot = await getDocs(collection(db, collectionName));
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));

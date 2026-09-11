@@ -46,7 +46,7 @@ export default function Settings() {
           setMigrationStatus({ type: 'running', message: `Migrating ${sheetData.length} records into ${collection}...` });
           for (const record of sheetData) {
             // Use existing ID if present, otherwise generate one
-            const id = record.id || record.uid || `migrated-${Math.random().toString(36).substr(2, 9)}`;
+            const id = record.id || (record as any).uid || `migrated-${Math.random().toString(36).substr(2, 9)}`;
             await firebaseService.createWithId(collection, String(id), record);
           }
         }

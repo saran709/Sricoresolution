@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, orderBy, getDocs, doc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, doc, updateDoc, addDoc, serverTimestamp , onSnapshot} from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Project, ProjectStage, ActivityHistory } from '../../types';
 import { Search, Plus, Filter, FileText } from 'lucide-react';
@@ -66,24 +66,26 @@ export default function AdminProjects() {
   const [filterType, setFilterType] = useState<string>('all');
 
   useEffect(() => {
-    fetchProjects();
+    const unsubscribe = setupSubscription();
+    return () => unsubscribe && unsubscribe();
   }, []);
 
-  const fetchProjects = async () => {
+  const setupSubscription = () => {
     setLoading(true);
-    try {
+
       const q = query(collection(db, 'projects'), orderBy('createdAt', 'desc'));
-      const snapshot = await getDocs(q);
-      const items: Project[] = [];
-      snapshot.forEach(doc => {
-        items.push({ id: doc.id, ...doc.data() } as Project);
+      return onSnapshot(q, (snapshot) => {
+        const items: any[] = [];
+        snapshot.forEach(doc => {
+          items.push({ id: doc.id, ...doc.data() });
+        });
+        setProjects(items);
+        setLoading(false);
+      }, (error) => {
+        console.error("Error in subscription:", error);
+        setLoading(false);
       });
-      setProjects(items);
-    } catch (error) {
-      console.error("Error fetching projects:", error);
-    } finally {
-      setLoading(false);
-    }
+
   };
 
   const handleStageChange = async (project: Project, newStage: ProjectStage) => {

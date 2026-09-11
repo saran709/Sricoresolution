@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, orderBy, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, doc, updateDoc, serverTimestamp , onSnapshot} from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Payment } from '../../types';
 import { DollarSign, Search, CheckCircle, XCircle, AlertCircle, RefreshCw } from 'lucide-react';
@@ -25,51 +25,55 @@ export default function AdminPayments() {
   });
 
   useEffect(() => {
-    fetchPayments();
+    const unsubscribe = setupSubscription();
+    return () => unsubscribe && unsubscribe();
   }, []);
 
-  const fetchPayments = async () => {
+  const setupSubscription = () => {
     setLoading(true);
-    try {
-      const q = query(collection(db, 'payments'), orderBy('createdAt', 'desc'));
-      const snapshot = await getDocs(q);
-      const items: Payment[] = [];
-      
-      let totalCollected = 0;
-      let pending = 0;
-      let successful = 0;
-      let failed = 0;
-      let refunds = 0;
-      let internshipRevenue = 0;
-      let projectRevenue = 0;
 
-      snapshot.forEach(doc => {
-        const data = doc.data() as Payment;
-        items.push({ id: doc.id, ...data });
+      const q = query(collection(db, 'payments'), orderBy('createdAt', 'desc'));
+      return onSnapshot(q, (snapshot) => {
+        const items: Payment[] = [];
         
-        if (data.status === 'SUCCESS') {
-          totalCollected += data.amount || 0;
-          successful++;
-          if (data.paymentType === 'internship_fee') internshipRevenue += data.amount || 0;
-          if (data.paymentType === 'advance' || data.paymentType === 'milestone' || data.paymentType === 'final') projectRevenue += data.amount || 0;
-        } else if (data.status === 'PENDING' || data.status === 'INITIATED') {
-          pending++;
-        } else if (data.status === 'FAILED') {
-          failed++;
-        } else if (data.status === 'REFUNDED') {
-          refunds++;
-        }
+        let totalCollected = 0;
+        let pending = 0;
+        let successful = 0;
+        let failed = 0;
+        let refunds = 0;
+        let internshipRevenue = 0;
+        let projectRevenue = 0;
+
+        snapshot.forEach(doc => {
+          const p = { id: doc.id, ...doc.data() } as Payment;
+          items.push(p);
+          
+          if (p.status === 'SUCCESS') {
+            successful++;
+            totalCollected += p.amount;
+            if ((p as any).type === 'INTERNSHIP') internshipRevenue += p.amount;
+            if ((p as any).type === 'PROJECT') projectRevenue += p.amount;
+          } else if (p.status === 'PENDING' || p.status === 'INITIATED') {
+            pending++;
+          } else if (p.status === 'FAILED') {
+            failed++;
+          } else if (p.status === 'REFUNDED') {
+            refunds++;
+          }
+        });
+
+        setPayments(items);
+        setStats({
+          totalCollected,
+          pending,
+          successful,
+          failed,
+          refunds,
+          internshipRevenue,
+          projectRevenue
+        });
+        setLoading(false);
       });
-      
-      setPayments(items);
-      setStats({
-        totalCollected, pending, successful, failed, refunds, internshipRevenue, projectRevenue
-      });
-    } catch (error) {
-      console.error("Error fetching payments:", error);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleRefund = async (payment: Payment) => {
@@ -94,7 +98,7 @@ export default function AdminPayments() {
         await logActivity('PAYMENT_REFUNDED', userProfile.uid, payment.id!, 'payment', `Refunded ₹${payment.amount}`);
       }
       
-      fetchPayments();
+      
       alert("Refund initiated successfully");
     } catch (error) {
       console.error("Error processing refund", error);

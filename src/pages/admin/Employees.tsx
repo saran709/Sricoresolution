@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimestamp, setDoc , onSnapshot} from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { UserRole, User } from '../../types';
 import { Button } from '../../components/ui/Button';
@@ -29,27 +29,29 @@ export default function Employees() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetchEmployees();
+    const unsubscribe = setupSubscription();
+    return () => unsubscribe && unsubscribe();
   }, []);
 
-  const fetchEmployees = async () => {
+  const setupSubscription = () => {
     setLoading(true);
-    try {
+
       const q = query(
         collection(db, 'users'),
         
       );
-      const snapshot = await getDocs(q);
-      const emps: User[] = [];
-      snapshot.forEach(doc => {
-        emps.push({ id: doc.id, ...doc.data() } as User);
+      return onSnapshot(q, (snapshot) => {
+        const emps: any[] = [];
+        snapshot.forEach(doc => {
+          emps.push({ id: doc.id, ...doc.data() });
+        });
+        setEmployees(emps);
+        setLoading(false);
+      }, (error) => {
+        console.error("Error in subscription:", error);
+        setLoading(false);
       });
-      setEmployees(emps);
-    } catch (error) {
-      console.error("Error fetching employees:", error);
-    } finally {
-      setLoading(false);
-    }
+
   };
 
   const openAddModal = () => {
@@ -142,7 +144,7 @@ export default function Employees() {
       }
 
       setIsModalOpen(false);
-      fetchEmployees();
+      
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Failed to save employee.');
