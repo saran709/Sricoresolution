@@ -27,11 +27,15 @@ export default function AdminDashboard() {
     const fetchData = async () => {
       try {
         // Fetch sequentially or in smaller batches to avoid Google Apps Script concurrent rate limits
-        const users = await firebaseService.getAll('users');
-        const projects = await firebaseService.getAll('projects');
-        const requests = await firebaseService.getAll('project_requests');
-        const apps = await firebaseService.getAll('internship_applications');
-        const payments = await firebaseService.getAll('payments');
+        const [users, projects, requests, apps, payments, auditLogs, allTasks] = await Promise.all([
+          firebaseService.getAll('users'),
+          firebaseService.getAll('projects'),
+          firebaseService.getAll('project_requests'),
+          firebaseService.getAll('internship_applications'),
+          firebaseService.getAll('payments'),
+          firebaseService.getAll('auditLogs'),
+          firebaseService.getAll('tasks')
+        ]);
         
         setStats({
           employees: users.filter((u: any) => u.role === 'EMPLOYEE').length,
@@ -46,8 +50,7 @@ export default function AdminDashboard() {
         });
 
         
-        const auditLogs = await firebaseService.getAll('auditLogs');
-        const allTasks = await firebaseService.getAll('tasks');
+        
         
         setActivities((auditLogs || []).sort((a: any, b: any) => new Date(b.timestamp || b.createdAt).getTime() - new Date(a.timestamp || a.createdAt).getTime()).slice(0, 5));
         

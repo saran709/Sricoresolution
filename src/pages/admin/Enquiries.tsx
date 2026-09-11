@@ -39,8 +39,47 @@ export default function Enquiries() {
 
   const handleSendReply = async () => {
     if (!selectedEnquiry?.email) return;
-    window.location.href = `mailto:${selectedEnquiry?.email}?subject=${encodeURIComponent(replySubject)}&body=${encodeURIComponent(replyBody)}`;
-    setReplyModalOpen(false);
+    setSendingEmail(true);
+    setEmailError('');
+    setEmailSuccess('');
+    
+    try {
+      const response = await fetch('/api/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: selectedEnquiry.email,
+          subject: replySubject,
+          html: replyBody.replace(/\n/g, '<br/>')
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send email');
+      }
+      
+      setEmailSuccess('Email sent successfully!');
+      
+      // Update status to CONTACTED if it was NEW
+      if (selectedEnquiry.status === 'NEW') {
+        handleStatusChange(selectedEnquiry.id!, 'CONTACTED');
+      }
+      
+      setTimeout(() => {
+        setReplyModalOpen(false);
+        setEmailSuccess('');
+        setReplyBody('');
+        setReplySubject('');
+      }, 2000);
+      
+    } catch (error: any) {
+      console.error(error);
+      setEmailError(error.message || 'Failed to send email. Please check server configuration.');
+    } finally {
+      setSendingEmail(false);
+    }
   };  useEffect(() => {
     fetchEnquiries();
   }, []);
@@ -198,7 +237,7 @@ export default function Enquiries() {
                         size="sm"
                         variant="outline"
                         className="flex items-center gap-1 bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
-                        title="Reply via Gmail"
+                        title="Reply to Enquiry"
                       >
                         <Mail className="w-3.5 h-3.5" />
                       </Button>
@@ -245,7 +284,7 @@ export default function Enquiries() {
             <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
               <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
                 <Mail className="w-5 h-5 text-amber-600" />
-                Reply via Gmail
+                Reply to Enquiry
               </h2>
               <button onClick={() => setReplyModalOpen(false)} className="text-slate-400 hover:text-slate-500">
                 <X className="w-5 h-5" />
@@ -286,7 +325,7 @@ export default function Enquiries() {
                 className="font-sans"
               />
               <p className="text-xs text-slate-500">
-                This email will be sent directly from your connected Google Workspace account.
+                This email will be sent securely via the Sricore mail server.
               </p>
             </div>
             

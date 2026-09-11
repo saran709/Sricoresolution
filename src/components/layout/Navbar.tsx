@@ -9,7 +9,7 @@ import { useAuth } from '../../contexts/AuthContext';
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
-  const { currentUser, userProfile } = useAuth();
+  const { currentUser, userProfile, loading } = useAuth();
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
@@ -74,7 +74,9 @@ export function Navbar() {
           </nav>
 
           <div className="hidden md:flex items-center space-x-4">
-            {currentUser ? (
+            {loading ? (
+              <div className="w-20 h-9 bg-slate-100 rounded animate-pulse" />
+            ) : currentUser ? (
               <Link 
                 to="/dashboard" 
                 className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
@@ -149,7 +151,9 @@ export function Navbar() {
               </React.Fragment>
             ))}
             <div className="pt-4 pb-2 space-y-2">
-              {currentUser ? (
+              {loading ? (
+                <div className="w-full h-12 bg-slate-100 rounded-md animate-pulse" />
+              ) : currentUser ? (
                 <Link
                   to="/dashboard"
                   onClick={closeMobileMenu}

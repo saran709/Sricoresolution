@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { createRazorpayOrder, verifyRazorpayPayment, loadRazorpayScript } from '../../lib/payments';
 import { writeToSheet } from '../../lib/sheets';
 import { db } from '../../lib/firebase';
+import { addDoc, collection, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
 import { Payment } from '../../types';
 

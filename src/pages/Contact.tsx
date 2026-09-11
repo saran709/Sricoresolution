@@ -7,28 +7,66 @@ import { Textarea } from '../components/ui/Textarea';
 import { Button } from '../components/ui/Button';
 import { APP_CONFIG } from '../config';
 import { Mail, Phone, MapPin } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+const contactSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email address"),
+  subject: z.string().min(3, "Subject is required"),
+  message: z.string().min(10, "Message must be at least 10 characters")
+});
+
+type ContactFormData = z.infer<typeof contactSchema>;
 
 export default function Contact() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<ContactFormData>({
+    resolver: zodResolver(contactSchema)
+  });
+
+  const onSubmit = async (data: ContactFormData) => {
     setIsSubmitting(true);
     try {
-      const formData = new FormData(e.currentTarget);
       const payload = {
-        firstName: formData.get('name') || '',
+        firstName: data.name,
         lastName: '',
-        email: formData.get('email') || '',
-        serviceInterest: formData.get('subject') || 'General Contact',
+        email: data.email,
+        serviceInterest: data.subject,
         enquiryType: 'general',
-        message: formData.get('message') || '',
+        message: data.message,
         status: 'NEW'
       };
       
       await firebaseService.create('enquiries', payload);
+      
+      try {
+        fetch('/api/email/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: payload.email,
+            subject: 'Thank you for contacting Sricore Solutions',
+            html: `
+              <h3>Message Received</h3>
+              <p>Dear ${payload.firstName},</p>
+              <p>Thank you for reaching out. We have received your message regarding "<strong>${payload.serviceInterest}</strong>".</p>
+              <p>One of our team members will respond to your query shortly.</p>
+              <br/>
+              <p>Best Regards,</p>
+              <p>Sricore Solutions Team</p>
+            `
+          })
+        });
+      } catch (e) {
+        console.error('Failed to send confirmation email', e);
+      }
+      
       setIsSuccess(true);
+      reset();
     } catch (error) {
       console.error(error);
       alert('Failed to send message. Please try again.');
@@ -45,7 +83,6 @@ export default function Contact() {
           description="We're here to help. Reach out to us for general inquiries, support, or partnership opportunities."
           badge="Get in Touch"
         />
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 mt-16">
           {/* Contact Information */}
           <div className="lg:col-span-1 space-y-8">
@@ -72,7 +109,6 @@ export default function Contact() {
                 </div>
               </div>
             </div>
-
             <div className="bg-amber-600 p-8 rounded-2xl shadow-sm text-white">
               <h3 className="text-xl font-bold mb-4">Looking for a quote?</h3>
               <p className="text-amber-100 mb-6 text-sm leading-relaxed">
@@ -83,7 +119,6 @@ export default function Contact() {
               </a>
             </div>
           </div>
-
           {/* Contact Form */}
           <div className="lg:col-span-2 bg-white p-8 md:p-10 rounded-3xl border border-slate-200 shadow-xl">
             {isSuccess ? (
@@ -100,14 +135,14 @@ export default function Contact() {
                 <Button onClick={() => setIsSuccess(false)}>Send Another Message</Button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 <h3 className="text-2xl font-bold text-slate-900 mb-6">Send us a message</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <Input label="Full Name" name="name" required placeholder="John Doe" />
-                  <Input label="Email Address" name="email" type="email" required placeholder="john@example.com" />
+                  <Input label="Full Name" {...register('name')} error={errors.name?.message} placeholder="John Doe" />
+                  <Input label="Email Address" type="email" {...register('email')} error={errors.email?.message} placeholder="john@example.com" />
                 </div>
-                <Input label="Subject" name="subject" required placeholder="How can we help?" />
-                <Textarea name="message" label="Message" required placeholder="Your message here..." 
+                <Input label="Subject" {...register('subject')} error={errors.subject?.message} placeholder="How can we help?" />
+                <Textarea label="Message" {...register('message')} error={errors.message?.message} placeholder="Your message here..." 
                   className="min-h-[150px]"
                 />
                 <Button type="submit" isLoading={isSubmitting} className="py-3 px-8 mt-4">

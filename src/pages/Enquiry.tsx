@@ -8,43 +8,78 @@ import { Textarea } from '../components/ui/Textarea';
 import { Button } from '../components/ui/Button';
 import { APP_CONFIG } from '../config';
 import { writeToSheet } from '../lib/sheets';
-
 import { Enquiry as EnquiryType } from '../types';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+const enquirySchema = z.object({
+  firstName: z.string().min(2, "First name must be at least 2 characters"),
+  lastName: z.string().min(2, "Last name must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email address"),
+  phone: z.string().optional(),
+  company: z.string().optional(),
+  serviceInterest: z.string(),
+  projectDetails: z.string().min(10, "Project details must be at least 10 characters")
+});
+
+type EnquiryFormData = z.infer<typeof enquirySchema>;
 
 export default function Enquiry() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<EnquiryFormData>({
+    resolver: zodResolver(enquirySchema),
+    defaultValues: {
+      serviceInterest: 'software'
+    }
+  });
+
+  const onSubmit = async (data: EnquiryFormData) => {
     setIsSubmitting(true);
     setError(null);
     
-    const formData = new FormData(e.currentTarget);
-    const serviceInterest = formData.get('serviceInterest') as string;
-    
     let enquiryType: EnquiryType['enquiryType'] = 'commercial';
-    if (serviceInterest === 'research') enquiryType = 'research';
-    else if (serviceInterest === 'student_project') enquiryType = 'student';
-    else if (serviceInterest === 'internship') enquiryType = 'internship';
+    if (data.serviceInterest === 'research') enquiryType = 'research';
+    else if (data.serviceInterest === 'student_project') enquiryType = 'student';
+    else if (data.serviceInterest === 'internship') enquiryType = 'internship';
     
-    const data = {
-      firstName: formData.get('firstName'),
-      lastName: formData.get('lastName'),
-      email: formData.get('email'),
-      phone: formData.get('phone'),
-      company: formData.get('company'),
-      serviceInterest,
-      projectDetails: formData.get('projectDetails'),
+    const payload = {
+      ...data,
       createdAt: serverTimestamp(),
       status: 'NEW',
       enquiryType
     };
     
     try {
-      await firebaseService.create('project_requests', data);
+      await firebaseService.create('project_requests', payload);
+      
+      try {
+        fetch('/api/email/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: data.email,
+            subject: 'Project Enquiry Received - Sricore Solutions',
+            html: `
+              <h3>Thank you for your enquiry!</h3>
+              <p>Dear ${data.firstName},</p>
+              <p>We have successfully received your project enquiry.</p>
+              <p>Our sales and engineering team will review your requirements and get back to you within 24-48 business hours.</p>
+              <br/>
+              <p>Best Regards,</p>
+              <p>Sricore Solutions Team</p>
+            `
+          })
+        });
+      } catch (e) {
+        console.error('Failed to send confirmation email', e);
+      }
+      
       setIsSuccess(true);
+      reset();
     } catch (err) {
       console.error("Error submitting enquiry:", err);
       setError("An error occurred while submitting your request. Please try again later.");
@@ -120,24 +155,24 @@ export default function Enquiry() {
                 {error}
               </div>
             )}
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <Input label="First Name" name="firstName" required placeholder="John" />
-                <Input label="Last Name" name="lastName" required placeholder="Doe" />
+                <Input label="First Name" {...register('firstName')} error={errors.firstName?.message} placeholder="John" />
+                <Input label="Last Name" {...register('lastName')} error={errors.lastName?.message} placeholder="Doe" />
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <Input label="Email Address" name="email" type="email" required placeholder="john@company.com" />
-                <Input label="Phone Number" name="phone" type="tel" placeholder="+1 (555) 000-0000" />
+                <Input label="Email Address" type="email" {...register('email')} error={errors.email?.message} placeholder="john@company.com" />
+                <Input label="Phone Number" type="tel" {...register('phone')} error={errors.phone?.message} placeholder="+1 (555) 000-0000" />
               </div>
               
-              <Input label="Company / Institution" name="company" placeholder="Your Organization or University" />
+              <Input label="Company / Institution" {...register('company')} error={errors.company?.message} placeholder="Your Organization or University" />
               
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Service Interest
                 </label>
-                <select name="serviceInterest" className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-colors">
+                <select {...register('serviceInterest')} className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-colors">
                   <option value="software">Commercial Software Development</option>
                   <option value="hardware">Commercial Hardware & IoT</option>
                   <option value="ai">Commercial AI / Machine Learning</option>
@@ -145,12 +180,13 @@ export default function Enquiry() {
                   <option value="student_project">Student / Academic Project</option>
                   <option value="other">Other</option>
                 </select>
+                {errors.serviceInterest && <p className="mt-1 text-sm text-red-500">{errors.serviceInterest.message}</p>}
               </div>
 
               <Textarea 
                 label="Project Details" 
-                name="projectDetails"
-                required 
+                {...register('projectDetails')}
+                error={errors.projectDetails?.message}
                 placeholder="Please describe your requirements, challenges, and goals..." 
                 className="min-h-[150px]"
               />

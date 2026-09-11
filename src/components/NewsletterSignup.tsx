@@ -1,19 +1,23 @@
 import { firebaseService } from '../lib/firebaseService';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { writeToSheet, readFromSheet } from '../lib/sheets';
-
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { cn } from '../utils/cn';
 
-interface NewsletterFormData {
-  email: string;
-}
+const newsletterSchema = z.object({
+  email: z.string().email("Invalid email address")
+});
+
+type NewsletterFormData = z.infer<typeof newsletterSchema>;
 
 export function NewsletterSignup({ className }: { className?: string }) {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
   
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<NewsletterFormData>();
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<NewsletterFormData>({
+    resolver: zodResolver(newsletterSchema)
+  });
 
   const onSubmit = async (data: NewsletterFormData) => {
     setStatus('loading');
@@ -57,10 +61,7 @@ export function NewsletterSignup({ className }: { className?: string }) {
               "flex-1 px-4 py-2 rounded-md border text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500",
               errors.email ? "border-red-500" : "border-slate-300"
             )}
-            {...register('email', { 
-              required: 'Email is required',
-              pattern: { value: /^\S+@\S+$/i, message: 'Invalid email' }
-            })}
+            {...register('email')}
           />
           <button
             type="submit"

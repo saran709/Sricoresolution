@@ -137,13 +137,13 @@ app.post("/api/email/send", async (req, res) => {
       return res.json({ status: "simulated", message: "Email simulated (SMTP not configured)" });
     }
 
-    const info = await transporter.sendMail({
+    transporter.sendMail({
       from: `"Sricore Solutions" <${process.env.SMTP_USER}>`,
       to,
       subject,
       html,
-    });
-    res.json({ status: "success", messageId: info.messageId });
+    }).catch(e => console.error("Async email error:", e));
+    res.json({ status: "success", message: "Email queued" });
   } catch (error: any) {
     console.error("Error sending email:", error);
     res.status(500).json({ error: error.message || "Failed to send email" });
@@ -181,3 +181,30 @@ if (process.env.FUNCTIONS_EMULATOR !== 'true' && !process.env.FUNCTION_TARGET) {
 
   startServer();
 }
+
+// 4. Razorpay Webhook
+app.post("/api/payments/webhook", express.raw({type: 'application/json'}), async (req, res) => {
+  try {
+    const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    if (!secret) return res.status(200).send("Webhook secret not configured, skipping.");
+
+    const shasum = crypto.createHmac('sha256', secret);
+    shasum.update(JSON.stringify(req.body));
+    const digest = shasum.digest('hex');
+
+    if (digest === req.headers['x-razorpay-signature']) {
+      const event = req.body.event;
+      if (event === 'payment.captured' || event === 'order.paid') {
+        // Find payment in firestore and update
+        // We'd need admin SDK for this ideally, but as a placeholder:
+        console.log("Webhook verified: Payment Captured", req.body.payload.payment.entity.id);
+      }
+      res.status(200).json({status: "ok"});
+    } else {
+      res.status(400).json({error: "Invalid signature"});
+    }
+  } catch (error) {
+    console.error("Webhook error:", error);
+    res.status(500).json({error: "Webhook handler failed"});
+  }
+});

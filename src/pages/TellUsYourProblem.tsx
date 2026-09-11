@@ -1,36 +1,35 @@
 import { firebaseService } from '../lib/firebaseService';
+import { serverTimestamp } from 'firebase/firestore';
 import React, { useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
 import { Container } from '../components/ui/Container';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { Input } from '../components/ui/Input';
 import { Textarea } from '../components/ui/Textarea';
 import { Button } from '../components/ui/Button';
-import { writeToSheet } from '../lib/sheets';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../lib/firebase';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { serverTimestamp } from 'firebase/firestore';
-import { useAuth } from '../contexts/AuthContext';
-import { Shield, Upload, FileText, CheckCircle2 } from 'lucide-react';
+import { Upload, FileText, CheckCircle2, Shield } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 
-type FormData = {
-  name: string;
-  email: string;
-  phone: string;
-  organization: string;
-  serviceCategory: string;
-  problem: string;
-};
+const problemSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email address"),
+  phone: z.string().optional(),
+  organization: z.string().min(2, "Organization is required"),
+  serviceCategory: z.string(),
+  problem: z.string().min(20, "Please provide more details about the problem (min 20 characters)")
+});
+
+type ProblemFormData = z.infer<typeof problemSchema>;
 
 export default function TellUsYourProblem() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [files, setFiles] = useState<File[]>([]);
-  const { currentUser } = useAuth();
 
-  const { register, handleSubmit, control, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<ProblemFormData>({
+    resolver: zodResolver(problemSchema),
     defaultValues: {
       serviceCategory: 'Software'
     }
@@ -42,42 +41,49 @@ export default function TellUsYourProblem() {
     }
   };
 
-  const generateRequestId = () => {
-    const year = new Date().getFullYear();
-    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-    return `SRC-REQ-${year}-${random}`;
-  };
-
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = async (data: ProblemFormData) => {
     setIsSubmitting(true);
     setError(null);
-
+    
+    const payload = {
+      ...data,
+      createdAt: serverTimestamp(),
+      status: 'NEW',
+      hasAttachments: files.length > 0
+    };
+    
     try {
-      const fileUrls: string[] = [];
+      await firebaseService.create('project_requests', {
+        ...payload,
+        enquiryType: 'problem',
+        firstName: data.name,
+        lastName: '',
+        serviceInterest: data.serviceCategory,
+        projectDetails: data.problem,
+        company: data.organization
+      });
       
-      // Upload files if any
-      if (files.length > 0) {
-        for (const file of files) {
-          const fileRef = ref(storage, `solution_requests/${Date.now()}_${file.name}`);
-          const snapshot = await uploadBytes(fileRef, file);
-          const downloadURL = await getDownloadURL(snapshot.ref);
-          fileUrls.push(downloadURL);
-        }
-      }
-
-      const payload = {
-        requestId: generateRequestId(),
-        ...data,
-        fileUrls,
-        userId: currentUser?.uid || null,
-        clientId: currentUser?.uid || null, // Match rule requirements for read/update
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        status: 'NEW'
-      };
-
-      await firebaseService.create('solutionRequests', payload);
+      fetch('/api/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: payload.email,
+          subject: 'Solution Request Received - Sricore Solutions',
+          html: `
+            <h3>Thank you for reaching out to Sricore Solutions!</h3>
+            <p>Dear ${payload.name},</p>
+            <p>We have successfully received your problem/solution request regarding <strong>${payload.serviceCategory}</strong>.</p>
+            <p>Our engineering team will review your requirements and get back to you shortly to schedule a discovery call.</p>
+            <br/>
+            <p>Best Regards,</p>
+            <p>Sricore Solutions Team</p>
+          `
+        })
+      });
+      
       setIsSuccess(true);
+      reset();
+      setFiles([]);
     } catch (err) {
       console.error("Error submitting problem:", err);
       setError("An error occurred while submitting your request. Please try again later.");
@@ -115,13 +121,13 @@ export default function TellUsYourProblem() {
             align="center"
             badge="Solution Request"
           />
-
+          
           <div className="mt-12 bg-white p-8 md:p-12 rounded-3xl border border-slate-200 shadow-xl relative overflow-hidden">
             {/* Abstract Background Element */}
             <div className="absolute top-0 right-0 -mt-16 -mr-16 text-amber-50/50 pointer-events-none">
               <Shield className="w-64 h-64" />
             </div>
-
+            
             {error && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
                 {error}
@@ -137,21 +143,10 @@ export default function TellUsYourProblem() {
                   Contact & Organization
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div>
-                    <Input label="Your Name" {...register('name', { required: true })} placeholder="Full Name" />
-                    {errors.name && <span className="text-xs text-red-500">This field is required</span>}
-                  </div>
-                  <div>
-                    <Input label="Email Address" type="email" {...register('email', { required: true })} placeholder="name@company.com" />
-                    {errors.email && <span className="text-xs text-red-500">This field is required</span>}
-                  </div>
-                  <div>
-                    <Input label="Phone Number" type="tel" {...register('phone')} placeholder="+1 (555) 000-0000" />
-                  </div>
-                  <div>
-                    <Input label="Organization / Company" {...register('organization', { required: true })} placeholder="Company Name" />
-                    {errors.organization && <span className="text-xs text-red-500">This field is required</span>}
-                  </div>
+                  <Input label="Your Name" {...register('name')} error={errors.name?.message} placeholder="Full Name" />
+                  <Input label="Email Address" type="email" {...register('email')} error={errors.email?.message} placeholder="name@company.com" />
+                  <Input label="Phone Number" type="tel" {...register('phone')} error={errors.phone?.message} placeholder="+1 (555) 000-0000" />
+                  <Input label="Organization / Company" {...register('organization')} error={errors.organization?.message} placeholder="Company Name" />
                 </div>
               </div>
 
@@ -174,15 +169,13 @@ export default function TellUsYourProblem() {
                       <option value="ML">ML</option>
                     </select>
                   </div>
-                  <div>
-                    <Textarea 
-                      label="What is the primary problem you are trying to solve?" 
-                      {...register('problem', { required: true })}
-                      placeholder="Describe the challenge in detail..." 
-                      className="min-h-[120px]"
-                    />
-                    {errors.problem && <span className="text-xs text-red-500">This field is required</span>}
-                  </div>
+                  <Textarea 
+                    label="What is the primary problem you are trying to solve?" 
+                    {...register('problem')}
+                    error={errors.problem?.message}
+                    placeholder="Describe the challenge in detail..." 
+                    className="min-h-[120px]"
+                  />
                 </div>
               </div>
 
