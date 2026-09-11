@@ -45,6 +45,11 @@ const Dashboard = React.lazy(() => import('./pages/dashboard/Dashboard'));
 
 // Admin Pages
 const AdminDashboard = React.lazy(() => import('./pages/admin/Dashboard'));
+const AdminDiscovery = React.lazy(() => import('./pages/admin/Discovery'));
+const AdminSolutionRequests = React.lazy(() => import('./pages/admin/SolutionRequests'));
+const AdminBusinessInsights = React.lazy(() => import('./pages/admin/BusinessInsights'));
+const AdminOrganization = React.lazy(() => import('./pages/admin/Departments'));
+const AdminProfile = React.lazy(() => import('./pages/admin/Settings'));
 const AdminEmployees = React.lazy(() => import('./pages/admin/Employees'));
 const AdminEnquiries = React.lazy(() => import('./pages/admin/Enquiries'));
 const AdminProjects = React.lazy(() => import('./pages/admin/Projects'));
@@ -96,6 +101,8 @@ export function AppRouter() {
             <Route path="projects" element={<AdminProjects />} />
             <Route path="internships" element={<AdminInternships />} />
             <Route path="enquiries" element={<AdminEnquiries />} />
+            <Route path="discovery" element={<AdminDiscovery />} />
+            <Route path="solution-requests" element={<AdminSolutionRequests />} />
             <Route path="tasks" element={<AdminTasks />} />
             
             <Route path="finance/payments" element={<AdminPayments />} />
@@ -113,6 +120,9 @@ export function AppRouter() {
             <Route path="website" element={<AdminContent />} />
             <Route path="newsletters" element={<AdminNewsletters />} />
             <Route path="reports" element={<AdminReports />} />
+            <Route path="business-insights" element={<AdminBusinessInsights />} />
+            <Route path="organization" element={<AdminOrganization />} />
+            <Route path="profile" element={<AdminProfile />} />
             <Route path="audit-logs" element={<AdminAudit />} />
             <Route path="settings" element={<AdminSettings />} />
           </Route>
