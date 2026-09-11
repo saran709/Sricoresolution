@@ -61,8 +61,8 @@ export default function AdminInvoices() {
 
     try {
       const subtotal = newInvoice.items.reduce((sum, item) => sum + ((item.quantity || 1) * (item.amount || 0)), 0);
-      const taxAmount = subtotal * ((newInvoice.taxRate || 0) / 100);
-      const total = subtotal + taxAmount;
+      const taxAmount = Math.round((subtotal * ((newInvoice.taxRate || 0) / 100)) * 100) / 100;
+      const total = Math.round((subtotal + taxAmount) * 100) / 100;
       
       const invoiceNumber = `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
 

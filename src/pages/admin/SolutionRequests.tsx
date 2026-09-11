@@ -11,7 +11,7 @@ export default function SolutionRequests() {
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
 
   useEffect(() => {
-    const q = query(collection(db, 'solutionRequests'), orderBy('createdAt', 'desc'));
+    const q = query(collection(db, 'project_requests'), orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setRequests(results);
@@ -22,7 +22,7 @@ export default function SolutionRequests() {
 
   const handleStatusChange = async (id: string, newStatus: string) => {
     try {
-      await updateDoc(doc(db, 'solutionRequests', id), {
+      await updateDoc(doc(db, 'project_requests', id), {
         status: newStatus,
         updatedAt: new Date()
       });

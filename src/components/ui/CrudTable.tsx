@@ -88,7 +88,7 @@ export function CrudTable({ title, sheetName, columns, filterLogic }: CrudTableP
   };
 
   const handleDelete = async (id: string) => {
-    // confirm removed
+    if (!window.confirm("Are you sure you want to delete this record? This action cannot be undone.")) return;
     try {
       await firebaseService.remove(sheetName, id);
     } catch (err) {
