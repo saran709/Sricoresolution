@@ -60,7 +60,13 @@ export default function AdminDashboard() {
     const unsubAudit = firebaseService.subscribeToCollection('auditLogs', (data) => { auditLogsData = data; updateDashboard(); });
     const unsubTasks = firebaseService.subscribeToCollection('tasks', (data) => { tasksData = data; updateDashboard(); });
 
+    // Safety timeout in case snapshots take too long or are empty
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 2000);
+
     return () => {
+      clearTimeout(timer);
       if (unsubUsers) unsubUsers();
       if (unsubProjects) unsubProjects();
       if (unsubRequests) unsubRequests();

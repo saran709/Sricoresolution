@@ -8,7 +8,8 @@ export const firebaseService = {
       const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       callback(data);
     }, (error) => {
-      console.error("Error subscribing to collection:", error);
+      // Fallback or silent catch for network unavailability
+      callback([]);
     });
   },
 
@@ -18,7 +19,7 @@ export const firebaseService = {
       const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       callback(data);
     }, (error) => {
-      console.error("Error subscribing to query:", error);
+      callback([]);
     });
   },
 
