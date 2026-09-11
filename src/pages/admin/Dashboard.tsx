@@ -63,7 +63,7 @@ export default function AdminDashboard() {
     // Safety timeout in case snapshots take too long or are empty
     const timer = setTimeout(() => {
       setLoading(false);
-    }, 2000);
+    }, 400);
 
     return () => {
       clearTimeout(timer);

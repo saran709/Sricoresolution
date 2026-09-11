@@ -88,7 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setAccessToken(null);
       }
       
-      setLoading(false);
+      setTimeout(() => setLoading(false), 300); // Fast timeout to prevent indefinite loading
     });
 
     return unsubscribe;
