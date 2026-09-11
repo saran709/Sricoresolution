@@ -107,8 +107,8 @@ export function AppRouter() {
             
             <Route path="finance/payments" element={<AdminPayments />} />
             <Route path="finance/invoices" element={<AdminInvoices />} />
-            <Route path="finance/receipts" element={<PagePlaceholder title="Receipts" />} />
-            <Route path="finance/refunds" element={<PagePlaceholder title="Refunds" />} />
+            
+            
             
             <Route path="documents" element={<AdminDocuments />} />
             
@@ -140,7 +140,6 @@ export function AppRouter() {
             <Route path="services/project-rescue" element={<Suspense fallback={<ServiceSkeleton />}><ProjectRescue /></Suspense>} />
             <Route path="services/digital-transformation" element={<Suspense fallback={<ServiceSkeleton />}><DigitalTransformation /></Suspense>} />
             <Route path="idealab" element={<Suspense fallback={<ServiceSkeleton />}><IdeaLab /></Suspense>} />
-
             <Route path="internships" element={<Internships />} />
             <Route path="internships/apply" element={<InternshipRegistration />} />
             <Route path="projects" element={<Projects />} />
@@ -159,12 +158,7 @@ export function AppRouter() {
             <Route path="unauthorized" element={<Unauthorized />} />
             
             {/* Protected Client/Employee Routes */}
-            <Route path="dashboard" element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } />
-            
+            <Route path="dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="*" element={<PagePlaceholder title="Page Not Found" />} />
           </Route>
         </Routes>

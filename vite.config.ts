@@ -6,7 +6,20 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss(), 
+    plugins: [react(), tailwindcss(),
+
+    
+    {
+      name: 'html-transform-strip-vite-client',
+      enforce: 'post',
+      transformIndexHtml(html) {
+        // Strip the Vite client script completely to prevent WebSocket errors in the AI Studio environment
+        return html.replace('<script type="module" src="/@vite/client"></script>', '');
+      }
+    },
+
+
+ 
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['logo.png'],
@@ -67,7 +80,7 @@ export default defineConfig(() => {
     },
 
     server: {
-      hmr: process.env.DISABLE_HMR !== 'true',
+      hmr: false,
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },
   };
