@@ -89,9 +89,7 @@ export function Navbar() {
               <Link 
                 to="/login" 
                 className="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded text-slate-600 hover:text-amber-600 transition-colors"
-              >
-                Sign In
-              </Link>
+              >Login</Link>
             )}
             
             <Link 
@@ -167,9 +165,7 @@ export function Navbar() {
                   to="/login"
                   onClick={closeMobileMenu}
                   className="block w-full text-center px-4 py-3 border-2 border-slate-200 rounded-md shadow-sm text-base font-medium text-slate-900 hover:border-slate-900"
-                >
-                  Sign In
-                </Link>
+                >Login</Link>
               )}
               <Link
                 to="/tell-us-your-problem"

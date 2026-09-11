@@ -86,7 +86,7 @@ export default function Dashboard() {
                 {userProfile?.role}
               </span>
               <Button onClick={handleLogout} variant="outline" size="sm">
-                Sign Out
+                Logout
               </Button>
             </div>
           </div>

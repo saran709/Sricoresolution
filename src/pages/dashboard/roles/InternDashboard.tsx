@@ -26,17 +26,21 @@ export default function InternDashboard() {
     const fetchData = async () => {
       try {
         if (userProfile.mentorId) {
-          const mDoc = await getDoc(doc(db, 'users', userProfile.mentorId));
-          if (mDoc.exists()) {
-            setMentor({ id: mDoc.id, ...mDoc.data() } as User);
-          }
+          try {
+            const mDoc = await getDoc(doc(db, 'users', userProfile.mentorId));
+            if (mDoc.exists()) {
+              setMentor({ id: mDoc.id, ...mDoc.data() } as User);
+            }
+          } catch(e: any) { console.warn('Ignored transient getDoc error:', e.message); }
         }
         
         if (userProfile.programId) {
-          const pDoc = await getDoc(doc(db, 'internship_programs', userProfile.programId));
-          if (pDoc.exists()) {
-            setProgram({ id: pDoc.id, ...pDoc.data() } as InternshipProgram);
-          }
+          try {
+            const pDoc = await getDoc(doc(db, 'internship_programs', userProfile.programId));
+            if (pDoc.exists()) {
+              setProgram({ id: pDoc.id, ...pDoc.data() } as InternshipProgram);
+            }
+          } catch(e: any) { console.warn('Ignored transient getDoc error:', e.message); }
         }
 
         const taskQuery = query(

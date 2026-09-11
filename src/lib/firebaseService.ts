@@ -34,9 +34,14 @@ export const firebaseService = {
   },
   
   async getById(collectionName: string, id: string) {
-    const docRef = doc(db, collectionName, id);
-    const docSnap = await getDoc(docRef);
-    return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null;
+    try {
+      const docRef = doc(db, collectionName, id);
+      const docSnap = await getDoc(docRef);
+      return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null;
+    } catch(e: any) {
+      console.warn('Ignored transient getDoc error:', e.message);
+      return null;
+    }
   },
 
   

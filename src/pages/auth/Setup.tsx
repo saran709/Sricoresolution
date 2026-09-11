@@ -26,7 +26,7 @@ export default function Setup() {
           setIsInitialized(false);
         }
       } catch (err) {
-        console.error("Error checking setup:", err);
+        console.warn('Error checking setup:', err);
         // If we get permission denied on read, it might still mean we can't create it,
         // but our rule allows read: if true;
       }

@@ -71,7 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     });
                 }
             }
-          } catch(e) { console.error(e); }
+          } catch(e) { console.warn('Ignored transient getDoc error:', e.message); }
           
           if (userDoc) {
             setUserProfile(userDoc as unknown as UserProfile);
@@ -79,7 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUserProfile(null);
           }
         } catch (error) {
-          console.error("Error fetching user profile:", error);
+          console.warn('Error fetching user profile:', error.message);
           setUserProfile(null);
         }
       } else {

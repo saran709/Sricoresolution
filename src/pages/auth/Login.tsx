@@ -84,7 +84,7 @@ export default function Login() {
       <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-2xl shadow-xl border border-slate-100">
         <div>
           <h2 className="mt-2 text-center text-3xl font-extrabold text-slate-900">
-            Sign in to your account
+            Login to your account
           </h2>
           <p className="mt-2 text-center text-sm text-slate-600">
             Or{' '}
@@ -114,7 +114,7 @@ export default function Login() {
               <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
               <path fill="none" d="M0 0h48v48H0z"></path>
             </svg>
-            Sign in with Google
+            Login with Google
           </button>
           <div className="relative mt-6">
             <div className="absolute inset-0 flex items-center">
@@ -165,7 +165,7 @@ export default function Login() {
           </div>
 
           <Button type="submit" isLoading={loading} className="w-full justify-center py-3 text-base">
-            Sign in
+            Login
           </Button>
         </form>
       </div>
