@@ -29,21 +29,11 @@ export default function Dashboard() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-[80vh] bg-slate-50 py-12">
-        <Container>
-          <div className="animate-pulse flex flex-col gap-4">
-            <div className="h-24 bg-slate-200 rounded-xl w-full"></div>
-            <div className="h-64 bg-slate-200 rounded-xl w-full"></div>
-          </div>
-        </Container>
-      </div>
-    );
-  }
+  // Removed blocking loading check so dashboard renders instantly with fallback role
 
   const renderRoleDashboard = () => {
-    switch (userProfile?.role) {
+    const role = userProfile?.role || 'CANDIDATE';
+    switch (role) {
       case 'EMPLOYEE':
         return <EmployeeDashboard />;
       case 'MENTOR':
