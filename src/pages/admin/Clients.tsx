@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, where, getDocs , onSnapshot} from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { UserRole, User } from '../../types';
 import { Search } from 'lucide-react';
@@ -11,29 +11,27 @@ export default function AdminClients() {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    const unsubscribe = setupSubscription();
-    return () => unsubscribe && unsubscribe();
+    fetchClients();
   }, []);
 
-  const setupSubscription = () => {
+  const fetchClients = async () => {
     setLoading(true);
-
+    try {
       const q = query(
         collection(db, 'users'),
         where('role', '==', 'CLIENT')
       );
-      return onSnapshot(q, (snapshot) => {
-        const items: any[] = [];
-        snapshot.forEach(doc => {
-          items.push({ id: doc.id, ...doc.data() });
-        });
-        setClients(items);
-        setLoading(false);
-      }, (error) => {
-        console.error("Error in subscription:", error);
-        setLoading(false);
+      const snapshot = await getDocs(q);
+      const items: User[] = [];
+      snapshot.forEach(doc => {
+        items.push({ id: doc.id, ...doc.data() } as User);
       });
-
+      setClients(items);
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filteredClients = clients.filter(client => 
@@ -58,7 +56,7 @@ export default function AdminClients() {
               placeholder="Search clients..." 
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         </div>

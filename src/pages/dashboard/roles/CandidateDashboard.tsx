@@ -1,8 +1,7 @@
-import { firebaseService } from '../../../lib/firebaseService';
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
-import { readFromSheet } from '../../../lib/sheets';
-
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { db } from '../../../lib/firebase';
 import { InternshipApplication, Document as AppDocument, Notification as AppNotification } from '../../../types';
 import { FileText, Clock, CheckCircle, Search, FolderOpen, Bell, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -21,23 +20,38 @@ export default function CandidateDashboard() {
 
     const fetchData = async () => {
       try {
-        const appsData = await firebaseService.getByQuery('internship_applications', 'candidateId', '==', userProfile.uid);
-        const apps = await Promise.all(appsData.map(async (appData: any) => {
+        const appQuery = query(
+          collection(db, 'internship_applications'),
+          where('candidateId', '==', userProfile.uid)
+        );
+        const appSnap = await getDocs(appQuery);
+        
+        const apps = await Promise.all(appSnap.docs.map(async (docSnap) => {
+          const appData = { id: docSnap.id, ...docSnap.data() } as InternshipApplication;
           let programTitle = 'Unknown Program';
-          // Simulating fetch of program
-          const progData = await firebaseService.getByQuery('internship_programs', 'id', '==', appData.programId);
-          if (progData && progData.length > 0) {
-             programTitle = (progData[0] as any).title || 'Unknown Program';
+          
+          if (appData.programId) {
+            try {
+              const progDoc = await getDoc(doc(db, 'internship_programs', appData.programId));
+              if (progDoc.exists()) {
+                programTitle = progDoc.data().title || 'Unknown Program';
+              }
+            } catch (e) {
+              // ignore
+            }
           }
-          return { ...appData, programTitle } as InternshipApplication;
+          return { ...appData, programTitle };
         }));
+        
         setApplications(apps);
         
-        const docsData = await firebaseService.getByQuery('documents', 'ownerId', '==', userProfile.uid);
-        setDocuments(docsData as AppDocument[]);
+        const docQuery = query(collection(db, 'documents'), where('ownerId', '==', userProfile.uid));
+        const docSnap = await getDocs(docQuery);
+        setDocuments(docSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppDocument)));
 
-        const notifsData = await firebaseService.getByQuery('notifications', 'userId', '==', userProfile.uid);
-        setNotifications(notifsData as AppNotification[]);
+        const notifQuery = query(collection(db, 'notifications'), where('userId', '==', userProfile.uid));
+        const notifSnap = await getDocs(notifQuery);
+        setNotifications(notifSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppNotification)));
 
       } catch (error) {
         console.error("Error fetching candidate data:", error);
@@ -58,7 +72,7 @@ export default function CandidateDashboard() {
         <button onClick={() => setActiveTab('documents')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'documents' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>My Documents</button>
         <button onClick={() => setActiveTab('notifications')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'notifications' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>
           Notifications
-          {notifications.filter(n => !n.read).length > 0 && <span className="ml-1 bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full text-xs">{notifications.filter(n => !n.read).length}</span>}
+          {notifications.filter(n => !n.read).length > 0 && <span className="ml-1 bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full text-xs">{notifications.filter(n => !n.read).length}</span>}
         </button>
       </div>
 
@@ -83,7 +97,7 @@ export default function CandidateDashboard() {
                         <p className="font-medium text-slate-900 text-lg">{app.programTitle}</p>
                         <span className={`text-xs px-3 py-1.5 rounded-full font-medium flex items-center gap-1.5
                           ${app.status === 'pending' ? 'bg-amber-100 text-amber-700' :
-                            app.status === 'under_review' ? 'bg-amber-100 text-amber-700' :
+                            app.status === 'under_review' ? 'bg-blue-100 text-blue-700' :
                             app.status === 'approved' || app.status === 'active' ? 'bg-emerald-100 text-emerald-700' :
                             app.status === 'completed' ? 'bg-indigo-100 text-indigo-700' :
                             app.status === 'rejected' ? 'bg-red-100 text-red-700' :
@@ -140,7 +154,7 @@ export default function CandidateDashboard() {
                 {documents.map(doc => (
                   <li key={doc.id} className="p-4 hover:bg-slate-50 flex justify-between items-center">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-amber-50 text-amber-600 rounded">
+                      <div className="p-2 bg-blue-50 text-blue-600 rounded">
                         <FileText className="w-5 h-5" />
                       </div>
                       <div>
@@ -174,9 +188,9 @@ export default function CandidateDashboard() {
             {notifications.length > 0 ? (
               <ul className="divide-y divide-slate-100">
                 {notifications.map(notif => (
-                  <li key={notif.id} className={`p-4 ${notif.read ? 'bg-white' : 'bg-amber-50'}`}>
+                  <li key={notif.id} className={`p-4 ${notif.read ? 'bg-white' : 'bg-blue-50'}`}>
                     <div className="flex items-start gap-3">
-                      <div className={`p-2 rounded-full ${notif.read ? 'bg-slate-100 text-slate-500' : 'bg-amber-100 text-amber-600'}`}>
+                      <div className={`p-2 rounded-full ${notif.read ? 'bg-slate-100 text-slate-500' : 'bg-blue-100 text-blue-600'}`}>
                         <Bell className="w-4 h-4" />
                       </div>
                       <div>

@@ -26,21 +26,17 @@ export default function InternDashboard() {
     const fetchData = async () => {
       try {
         if (userProfile.mentorId) {
-          try {
-            const mDoc = await getDoc(doc(db, 'users', userProfile.mentorId));
-            if (mDoc.exists()) {
-              setMentor({ id: mDoc.id, ...mDoc.data() } as User);
-            }
-          } catch(e: any) { console.warn('Ignored transient getDoc error:', e.message); }
+          const mDoc = await getDoc(doc(db, 'users', userProfile.mentorId));
+          if (mDoc.exists()) {
+            setMentor({ id: mDoc.id, ...mDoc.data() } as User);
+          }
         }
         
         if (userProfile.programId) {
-          try {
-            const pDoc = await getDoc(doc(db, 'internship_programs', userProfile.programId));
-            if (pDoc.exists()) {
-              setProgram({ id: pDoc.id, ...pDoc.data() } as InternshipProgram);
-            }
-          } catch(e: any) { console.warn('Ignored transient getDoc error:', e.message); }
+          const pDoc = await getDoc(doc(db, 'internship_programs', userProfile.programId));
+          if (pDoc.exists()) {
+            setProgram({ id: pDoc.id, ...pDoc.data() } as InternshipProgram);
+          }
         }
 
         const taskQuery = query(
@@ -112,7 +108,7 @@ export default function InternDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
               <div className="flex items-center gap-3 mb-2">
-                <BookOpen className="w-5 h-5 text-amber-500" />
+                <BookOpen className="w-5 h-5 text-blue-500" />
                 <h3 className="font-semibold text-slate-800">My Mentor</h3>
               </div>
               {mentor ? (
@@ -167,7 +163,7 @@ export default function InternDashboard() {
                       <p className="font-medium text-slate-900 text-lg">{task.title}</p>
                       <span className={`text-xs px-2.5 py-1 rounded-full font-medium 
                         ${task.status === 'TODO' ? 'bg-slate-100 text-slate-800' : ''}
-                        ${task.status === 'IN_PROGRESS' ? 'bg-amber-100 text-amber-800' : ''}
+                        ${task.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' : ''}
                         ${task.status === 'REVIEW' ? 'bg-amber-100 text-amber-800' : ''}
                         ${task.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-800' : ''}
                       `}>
@@ -221,7 +217,7 @@ export default function InternDashboard() {
                 {feedback.map(fb => (
                   <li key={fb.id} className="p-6">
                     <div className="flex items-center gap-2 mb-2">
-                      <MessageSquare className="w-4 h-4 text-amber-500" />
+                      <MessageSquare className="w-4 h-4 text-blue-500" />
                       <span className="font-semibold text-slate-900 text-sm">{fb.action.replace('_', ' ')}</span>
                       <span className="text-xs text-slate-400 ml-auto">
                         {fb.timestamp?.toDate ? new Date(fb.timestamp.toDate()).toLocaleDateString() : ''}

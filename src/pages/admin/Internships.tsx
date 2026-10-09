@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, orderBy, getDocs, doc, updateDoc, serverTimestamp, getDoc , onSnapshot} from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { InternshipApplication, User } from '../../types';
 import { Search, GraduationCap } from 'lucide-react';
@@ -33,16 +33,15 @@ export default function AdminInternships() {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    const unsubscribe = setupSubscription();
-    return () => unsubscribe && unsubscribe();
+    fetchApplications();
   }, []);
 
-  const setupSubscription = () => {
+  const fetchApplications = async () => {
     setLoading(true);
-
+    try {
       const q = query(collection(db, 'internship_applications'), orderBy('createdAt', 'desc'));
-      return onSnapshot(q, async (snapshot) => {
-        const items = await Promise.all(snapshot.docs.map(async (d) => {
+      const snapshot = await getDocs(q);
+      const items = await Promise.all(snapshot.docs.map(async (d) => {
         const app = { id: d.id, ...d.data() } as InternshipApplication;
         let candidate: User | undefined;
         if (app.candidateId) {
@@ -56,44 +55,16 @@ export default function AdminInternships() {
         return { ...app, candidate };
       }));
       setApplications(items);
+    } catch (error) {
+      console.error("Error fetching internship applications:", error);
+    } finally {
       setLoading(false);
-    }, (error) => {
-      console.error(error);
-      setLoading(false);
-    });
+    }
   };
 
   const handleStatusChange = async (app: InternshipApplication, newStatus: InternshipApplication['status']) => {
     try {
       if (!app.id) return;
-      
-      // Enforce Capacity logic for moving into 'approved' or later stages
-      const activeStatuses = ['approved', 'onboarding', 'mentor_assignment', 'training', 'assignments', 'practical_work', 'project', 'evaluation', 'completed', 'certificate'];
-      if (activeStatuses.includes(newStatus) && !activeStatuses.includes(app.status)) {
-        if (app.programId) {
-          const programDoc = await getDoc(doc(db, 'internships', app.programId));
-          if (programDoc.exists()) {
-             const capacity = programDoc.data().capacity || 0;
-             if (capacity > 0) {
-               // Count how many are currently active
-               const allAppsSnap = await getDocs(query(collection(db, 'internship_applications'), orderBy('createdAt', 'desc')));
-               let activeCount = 0;
-               allAppsSnap.forEach(d => {
-                 const data = d.data();
-                 if (data.programId === app.programId && activeStatuses.includes(data.status)) {
-                   activeCount++;
-                 }
-               });
-               if (activeCount >= capacity) {
-                 if (!window.confirm(`This program has reached its capacity of ${capacity}. Do you want to intentionally override and approve this candidate anyway?`)) {
-                   return; // Cancel
-                 }
-               }
-             }
-          }
-        }
-      }
-
       await updateDoc(doc(db, 'internship_applications', app.id), {
         status: newStatus,
         updatedAt: serverTimestamp()
@@ -137,7 +108,7 @@ export default function AdminInternships() {
               placeholder="Search by candidate name or email..." 
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -189,7 +160,7 @@ export default function AdminInternships() {
                       <select 
                         value={app.status}
                         onChange={(e) => handleStatusChange(app, e.target.value as any)}
-                        className="text-sm border border-slate-300 rounded-md px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 w-[180px]"
+                        className="text-sm border border-slate-300 rounded-md px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-[180px]"
                       >
                         {STATUSES.map(status => (
                           <option key={status.value} value={status.value}>

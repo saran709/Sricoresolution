@@ -63,14 +63,14 @@ export default function Services() {
                 <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {service.features.map((feature, fIndex) => (
                     <li key={fIndex} className="flex items-center text-sm text-slate-600">
-                      <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mr-2"></div>
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2"></div>
                       {feature}
                     </li>
                   ))}
                 </ul>
               </div>
               
-              <a href={service.link} className="inline-flex items-center text-amber-600 font-semibold hover:text-amber-700 transition-colors mt-auto">
+              <a href={service.link} className="inline-flex items-center text-blue-600 font-semibold hover:text-blue-700 transition-colors mt-auto">
                 Explore {service.title} <span className="ml-2">→</span>
               </a>
             </div>

@@ -2,79 +2,54 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    match /notifications/{docId} {
-      allow read: if isValidId(docId) && isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create, update, delete: if isAdmin() || isEmployee();
-    }
-    match /project_requests/{docId} {
-      allow create: if true;
-      allow read, update: if isValidId(docId) && (isAdmin() || isEmployee() || (isAuthenticated() && resource.data.clientId == request.auth.uid));
-      allow delete: if isValidId(docId) && isAdmin();
-    }
-    match /projectTasks/{taskId} {
-      allow read: if isValidId(taskId) && (
-        isAdmin() || isEmployee() || isMentor()
-        || (isAuthenticated() && resource.data.assigneeId == request.auth.uid)
-      );
-      allow create: if isAdmin() || isEmployee() || isMentor();
-      allow update: if isValidId(taskId) && (
-        isAdmin() || isEmployee() || isMentor()
-        || (isAuthenticated() && resource.data.assigneeId == request.auth.uid)
-      );
-      allow delete: if isValidId(taskId) && (isAdmin() || isEmployee());
-    }
-    match /support_tickets/{taskId} {
-      allow read: if isValidId(taskId) && (
-        isAdmin() || isEmployee() || isMentor()
-        || (isAuthenticated() && resource.data.clientId == request.auth.uid)
-      );
-      allow create: if isAuthenticated() && incoming().clientId == request.auth.uid;
-      allow update: if isValidId(taskId) && (
-        isAdmin() || isEmployee() || isMentor()
-        || (isAuthenticated() && resource.data.clientId == request.auth.uid)
-      );
-      allow delete: if isValidId(taskId) && (isAdmin() || isEmployee());
-    }
-    match /attendance/{docId} {
-      allow read: if isAdmin() || isEmployee();
-      allow create, update: if isAdmin() || isEmployee();
-      allow delete: if isAdmin();
-    }
-    match /leaveRequests/{docId} {
-      allow read: if isAdmin() || isEmployee();
-      allow create, update: if isAdmin() || isEmployee();
-      allow delete: if isAdmin();
-    }
-    match /newsletters/{docId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    match /newsletter_subscribers/{docId} {
-      allow read: if isAdmin();
-      allow create: if true;
-      allow update, delete: if isAdmin();
+    
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
     }
 
     // =========================================================================
-    // Core Helper Functions
+    // Helpers
     // =========================================================================
     function isAuthenticated() { return request.auth != null; }
     function incoming() { return request.resource.data; }
     function existing() { return resource.data; }
-    function isAdmin() { return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMINISTRATOR'; }
-    function isEmployee() { return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'EMPLOYEE'; }
-    function isMentor() { return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'MENTOR'; }
-    function isClient() { return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'CLIENT'; }
-    function isIntern() { return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'INTERN'; }
-    function isOwner(userId) { return request.auth.uid == userId; }
-    function isValidId(id) { return id != null && id != ''; }
+    
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'ADMINISTRATOR';
+    }
+    function isEmployee() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'EMPLOYEE';
+    }
+    function isMentor() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'MENTOR';
+    }
+    function isClient() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'CLIENT';
+    }
+    function isIntern() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'INTERN';
+    }
+    function isCandidate() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'CANDIDATE';
+    }
+    
+    function isOwner(userId) { return isAuthenticated() && request.auth.uid == userId; }
 
     // =========================================================================
     // Admin Initialization
     // =========================================================================
     match /system/setup {
       allow read: if true;
+      // Atomicity Guarantee: Can only be created if it doesn't exist.
       allow create: if isAuthenticated() 
                     && !exists(/databases/$(database)/documents/system/setup)
                     && incoming().keys().hasAll(['isInitialized'])
@@ -83,7 +58,7 @@ service cloud.firestore {
     }
 
     // =========================================================================
-    // Users Collection (Shared for all role types)
+    // Users Collection
     // =========================================================================
     function isValidUser(data) {
       return data.keys().hasAll(['email', 'role', 'createdAt'])
@@ -94,106 +69,86 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isValidId(userId) && (isAdmin() || isOwner(userId) || isEmployee() || isMentor());
+      
       allow create: if isValidId(userId) && isAuthenticated() && request.auth.uid == userId && (
+        // Public Candidate/Client Registration
         (incoming().role in ['CANDIDATE', 'CLIENT'] && isValidUser(incoming()))
-        || (incoming().role == 'ADMINISTRATOR' && isValidUser(incoming()) && !exists(/databases/$(database)/documents/system/setup) && existsAfter(/databases/$(database)/documents/system/setup))
-        || (isAdmin() && isValidUser(incoming()))
+        ||
+        // Admin Bootstrap Strategy
+        (incoming().role == 'ADMINISTRATOR' 
+         && isValidUser(incoming())
+         && !exists(/databases/$(database)/documents/system/setup)
+         && existsAfter(/databases/$(database)/documents/system/setup)
+        )
+        ||
+        // Admin creates other users
+        (isAdmin() && isValidUser(incoming()))
       );
-      allow update: if isValidId(userId) && isAuthenticated() && ( isAdmin() || isOwner(userId) );
+
+      allow update: if isValidId(userId) && isAuthenticated() && (
+        // Admin can update anything, including roles
+        (isAdmin())
+        ||
+        // Users can update their own profile, but CANNOT change their role
+        (isOwner(userId) && incoming().role == existing().role && incoming().createdAt == existing().createdAt)
+      );
+
       allow delete: if isValidId(userId) && isAdmin();
+    }
+
+    // =========================================================================
+    // Entities (Clients, Candidates, Employees, Mentors, Interns)
+    // =========================================================================
+    match /employees/{docId} {
+      allow read: if isValidId(docId) && (isAdmin() || isEmployee() || isMentor() || isOwner(docId));
+      allow create: if isValidId(docId) && isAdmin();
+      allow update: if isValidId(docId) && (isAdmin() || isOwner(docId));
+      allow delete: if isValidId(docId) && isAdmin();
+    }
+    match /mentors/{docId} {
+      allow read: if isValidId(docId) && (isAdmin() || isEmployee() || isMentor() || isIntern());
+      allow create: if isValidId(docId) && isAdmin();
+      allow update: if isValidId(docId) && (isAdmin() || isOwner(docId));
+      allow delete: if isValidId(docId) && isAdmin();
+    }
+    match /interns/{docId} {
+      allow read: if isValidId(docId) && (isAdmin() || isEmployee() || isMentor() || isOwner(docId));
+      allow create: if isValidId(docId) && isAdmin();
+      allow update: if isValidId(docId) && (isAdmin() || isOwner(docId) || isMentor());
+      allow delete: if isValidId(docId) && isAdmin();
+    }
+    match /clients/{docId} {
+      allow read: if isValidId(docId) && (isAdmin() || isEmployee() || isOwner(docId));
+      allow create: if isValidId(docId) && isAdmin();
+      allow update: if isValidId(docId) && (isAdmin() || isOwner(docId));
+      allow delete: if isValidId(docId) && isAdmin();
+    }
+    match /candidates/{docId} {
+      allow read: if isValidId(docId) && (isAdmin() || isEmployee() || isOwner(docId));
+      allow create: if isValidId(docId) && (isAdmin() || isOwner(docId));
+      allow update: if isValidId(docId) && (isAdmin() || isOwner(docId));
+      allow delete: if isValidId(docId) && isAdmin();
     }
 
     // =========================================================================
     // Core Workflow Collections
     // =========================================================================
-    match /departments/{docId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
-    }
-
     match /enquiries/{enquiryId} {
+      // Public form submissions allowed
       allow create: if true;
       allow read, update: if isValidId(enquiryId) && (isAdmin() || isEmployee() || (isAuthenticated() && resource.data.clientId == request.auth.uid));
       allow delete: if isValidId(enquiryId) && isAdmin();
     }
 
-    match /ideaLab/{docId} {
-      allow create: if true;
-      allow read, update: if isValidId(docId) && (isAdmin() || isEmployee() || (isAuthenticated() && resource.data.clientId == request.auth.uid));
-      allow delete: if isValidId(docId) && isAdmin();
-    }
-
-    match /solutionRequests/{docId} {
-      allow create: if true;
-      allow read, update: if isValidId(docId) && (isAdmin() || isEmployee() || (isAuthenticated() && resource.data.clientId == request.auth.uid));
-      allow delete: if isValidId(docId) && isAdmin();
-    }
-
-    match /discoveryCases/{docId} {
-      allow create: if isAdmin() || isEmployee();
-      allow read, update: if isValidId(docId) && (isAdmin() || isEmployee() || (isAuthenticated() && resource.data.clientId == request.auth.uid));
-      allow delete: if isValidId(docId) && isAdmin();
-    }
-
-    match /solutionBlueprints/{docId} {
-      allow create: if isAdmin() || isEmployee();
-      allow read, update: if isValidId(docId) && (isAdmin() || isEmployee() || (isAuthenticated() && resource.data.clientId == request.auth.uid));
-      allow delete: if isValidId(docId) && isAdmin();
-    }
-    
-    match /solutionAssessments/{docId} {
-      allow create, update: if isAdmin() || isEmployee();
-      allow read: if isValidId(docId) && (isAdmin() || isEmployee());
-      allow delete: if isValidId(docId) && isAdmin();
-    }
-
-    match /aiReadinessAssessments/{docId} {
-      allow create, update: if isAdmin() || isEmployee();
-      allow read: if isValidId(docId) && (isAdmin() || isEmployee());
-      allow delete: if isValidId(docId) && isAdmin();
-    }
-
-    match /proofOfConcepts/{docId} {
-      allow create: if isAdmin() || isEmployee();
-      allow read, update: if isValidId(docId) && (isAdmin() || isEmployee() || (isAuthenticated() && resource.data.clientId == request.auth.uid));
-      allow delete: if isValidId(docId) && isAdmin();
-    }
-
-    match /technologyAudits/{docId} {
-      allow create: if true;
-      allow read, update: if isValidId(docId) && (isAdmin() || isEmployee() || (isAuthenticated() && resource.data.clientId == request.auth.uid));
-      allow delete: if isValidId(docId) && isAdmin();
-    }
-
-    match /projectRescueCases/{docId} {
-      allow create: if true;
-      allow read, update: if isValidId(docId) && (isAdmin() || isEmployee() || (isAuthenticated() && resource.data.clientId == request.auth.uid));
-      allow delete: if isValidId(docId) && isAdmin();
-    }
-
-    match /proposals/{docId} {
-      allow create: if isAdmin() || isEmployee();
-      allow read, update: if isValidId(docId) && (isAdmin() || isEmployee() || (isAuthenticated() && resource.data.clientId == request.auth.uid));
-      allow delete: if isValidId(docId) && isAdmin();
-    }
-
-    match /followUps/{docId} {
-      allow create, update: if isAdmin() || isEmployee();
-      allow read: if isValidId(docId) && (isAdmin() || isEmployee());
-      allow delete: if isValidId(docId) && isAdmin();
-    }
-
-    match /servicePackages/{docId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /internships/{docId} {
-      allow read: if true;
-      allow write: if isAdmin();
+    match /support_tickets/{ticketId} {
+      allow create: if isAuthenticated() && incoming().clientId == request.auth.uid;
+      allow read: if isValidId(ticketId) && (isAdmin() || isEmployee() || (isAuthenticated() && resource.data.clientId == request.auth.uid));
+      allow update: if isValidId(ticketId) && (isAdmin() || isEmployee() || (isAuthenticated() && resource.data.clientId == request.auth.uid));
+      allow delete: if isValidId(ticketId) && isAdmin();
     }
 
     match /internship_applications/{applicationId} {
+      // Public form submissions allowed
       allow create: if true;
       allow read, update: if isValidId(applicationId) && (isAdmin() || isEmployee() || (isAuthenticated() && resource.data.candidateId == request.auth.uid));
       allow delete: if isValidId(applicationId) && isAdmin();
@@ -209,28 +164,15 @@ service cloud.firestore {
       allow delete: if isValidId(projectId) && isAdmin();
     }
 
-    match /supportTickets/{taskId} {
+    match /projectTasks/{taskId} {
       allow read: if isValidId(taskId) && (
         isAdmin() || isEmployee() || isMentor()
-        || (isAuthenticated() && resource.data.clientId == request.auth.uid)
-      );
-      allow create: if isAuthenticated() && incoming().clientId == request.auth.uid;
-      allow update: if isValidId(taskId) && (
-        isAdmin() || isEmployee() || isMentor()
-        || (isAuthenticated() && resource.data.clientId == request.auth.uid)
-      );
-      allow delete: if isValidId(taskId) && (isAdmin() || isEmployee());
-    }
-
-    match /tasks/{taskId} {
-      allow read: if isValidId(taskId) && (
-        isAdmin() || isEmployee() || isMentor()
-        || (isAuthenticated() && resource.data.assigneeId == request.auth.uid)
+        || (isIntern() && resource.data.assigneeId == request.auth.uid)
       );
       allow create: if isAdmin() || isEmployee() || isMentor();
       allow update: if isValidId(taskId) && (
         isAdmin() || isEmployee() || isMentor()
-        || (isAuthenticated() && resource.data.assigneeId == request.auth.uid)
+        || (isIntern() && resource.data.assigneeId == request.auth.uid)
       );
       allow delete: if isValidId(taskId) && (isAdmin() || isEmployee());
     }
@@ -276,59 +218,6 @@ service cloud.firestore {
       allow create: if isAuthenticated();
       allow read: if isAdmin();
       allow update, delete: if false; // Immutable
-    }
-
-    match /notifications/{docId} {
-      allow read: if isValidId(docId) && isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create, update, delete: if isAdmin() || isEmployee();
-    }
-    match /project_requests/{docId} {
-      allow create: if true;
-      allow read, update: if isValidId(docId) && (isAdmin() || isEmployee() || (isAuthenticated() && resource.data.clientId == request.auth.uid));
-      allow delete: if isValidId(docId) && isAdmin();
-    }
-    match /projectTasks/{taskId} {
-      allow read: if isValidId(taskId) && (
-        isAdmin() || isEmployee() || isMentor()
-        || (isAuthenticated() && resource.data.assigneeId == request.auth.uid)
-      );
-      allow create: if isAdmin() || isEmployee() || isMentor();
-      allow update: if isValidId(taskId) && (
-        isAdmin() || isEmployee() || isMentor()
-        || (isAuthenticated() && resource.data.assigneeId == request.auth.uid)
-      );
-      allow delete: if isValidId(taskId) && (isAdmin() || isEmployee());
-    }
-    match /support_tickets/{taskId} {
-      allow read: if isValidId(taskId) && (
-        isAdmin() || isEmployee() || isMentor()
-        || (isAuthenticated() && resource.data.clientId == request.auth.uid)
-      );
-      allow create: if isAuthenticated() && incoming().clientId == request.auth.uid;
-      allow update: if isValidId(taskId) && (
-        isAdmin() || isEmployee() || isMentor()
-        || (isAuthenticated() && resource.data.clientId == request.auth.uid)
-      );
-      allow delete: if isValidId(taskId) && (isAdmin() || isEmployee());
-    }
-    match /attendance/{docId} {
-      allow read: if isAdmin() || isEmployee();
-      allow create, update: if isAdmin() || isEmployee();
-      allow delete: if isAdmin();
-    }
-    match /leaveRequests/{docId} {
-      allow read: if isAdmin() || isEmployee();
-      allow create, update: if isAdmin() || isEmployee();
-      allow delete: if isAdmin();
-    }
-    match /newsletters/{docId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    match /newsletter_subscribers/{docId} {
-      allow read: if isAdmin();
-      allow create: if true;
-      allow update, delete: if isAdmin();
     }
   }
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, orderBy, getDocs, doc, updateDoc, addDoc, serverTimestamp , onSnapshot} from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, doc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Enquiry, Project } from '../../types';
 import { Search, ArrowRightCircle } from 'lucide-react';
@@ -7,11 +7,6 @@ import { Button } from '../../components/ui/Button';
 import { logActivity } from '../../lib/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Mail, X } from 'lucide-react';
-
-
-import { Input } from '../../components/ui/Input';
-import { Textarea } from '../../components/ui/Textarea';
 
 export default function Enquiries() {
   const { userProfile } = useAuth();
@@ -19,91 +14,31 @@ export default function Enquiries() {
   const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [replyModalOpen, setReplyModalOpen] = useState(false);
-  const [selectedEnquiry, setSelectedEnquiry] = useState<Enquiry | null>(null);
-  const [replySubject, setReplySubject] = useState('');
-  const [replyBody, setReplyBody] = useState('');
-  const [sendingEmail, setSendingEmail] = useState(false);
-  const [emailSuccess, setEmailSuccess] = useState('');
-  const [emailError, setEmailError] = useState('');
 
-  
-  const openReplyModal = (enq: Enquiry) => {
-    setSelectedEnquiry(enq);
-    setReplySubject(`Re: Your enquiry regarding ${enq.serviceInterest || 'our services'}`);
-    setReplyBody(`Hi ${enq.firstName},\n\nThank you for reaching out to us. We have received your enquiry regarding ${enq.projectDetails ? 'your project' : 'our services'}.\n\n\n\nBest regards,\n${userProfile?.firstName || 'Our Team'}`);
-    setReplyModalOpen(true);
-    setEmailSuccess('');
-    setEmailError('');
-  };
-
-  const handleSendReply = async () => {
-    if (!selectedEnquiry?.email) return;
-    setSendingEmail(true);
-    setEmailError('');
-    setEmailSuccess('');
-    try {
-      const response = await fetch('/api/email/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: selectedEnquiry.email,
-          subject: replySubject,
-          html: replyBody.replace(/\n/g, '<br/>')
-        })
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to send email');
-      }
-      
-      setEmailSuccess('Email sent successfully!');
-      
-      // Update status to CONTACTED if it was NEW
-      if (selectedEnquiry.status === 'NEW') {
-        handleStatusChange(selectedEnquiry.id!, 'CONTACTED');
-      }
-      
-      setTimeout(() => {
-        setReplyModalOpen(false);
-        setEmailSuccess('');
-        setReplyBody('');
-        setReplySubject('');
-      }, 2000);
-      
-    } catch (error: any) {
-      console.error(error);
-      setEmailError(error.message || 'Failed to send email. Please check server configuration.');
-    } finally {
-      setSendingEmail(false);
-    }
-  };  useEffect(() => {
-    const unsubscribe = setupSubscription();
-    return () => unsubscribe && unsubscribe();
+  useEffect(() => {
+    fetchEnquiries();
   }, []);
 
-  const setupSubscription = () => {
+  const fetchEnquiries = async () => {
     setLoading(true);
-      const q = query(collection(db, 'project_requests'), orderBy('createdAt', 'desc'));
-      return onSnapshot(q, (snapshot) => {
-        const items: any[] = [];
-        snapshot.forEach(doc => {
-          items.push({ id: doc.id, ...doc.data() });
-        });
-        setEnquiries(items);
-        setLoading(false);
-      }, (error) => {
-        console.error("Error in subscription:", error);
-        setLoading(false);
+    try {
+      const q = query(collection(db, 'enquiries'), orderBy('createdAt', 'desc'));
+      const snapshot = await getDocs(q);
+      const items: Enquiry[] = [];
+      snapshot.forEach(doc => {
+        items.push({ id: doc.id, ...doc.data() } as Enquiry);
       });
-
+      setEnquiries(items);
+    } catch (error) {
+      console.error("Error fetching enquiries:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleStatusChange = async (id: string, newStatus: string) => {
     try {
-      await updateDoc(doc(db, 'project_requests', id), {
+      await updateDoc(doc(db, 'enquiries', id), {
         status: newStatus
       });
       setEnquiries(enquiries.map(e => e.id === id ? { ...e, status: newStatus as any } : e));
@@ -141,7 +76,7 @@ export default function Enquiries() {
       const docRef = await addDoc(collection(db, 'projects'), newProjectData);
       
       // Update enquiry status
-      await updateDoc(doc(db, 'project_requests', enquiry.id!), {
+      await updateDoc(doc(db, 'enquiries', enquiry.id!), {
         status: 'CONVERTED'
       });
       
@@ -168,8 +103,7 @@ export default function Enquiries() {
   );
 
   return (
-    <>
-      <div className="space-y-6">
+    <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Enquiries</h1>
@@ -186,7 +120,7 @@ export default function Enquiries() {
               placeholder="Search enquiries..." 
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -231,21 +165,10 @@ export default function Enquiries() {
                       {enq.createdAt?.toDate ? new Date(enq.createdAt.toDate()).toLocaleDateString() : 'N/A'}
                     </td>
                     <td className="px-6 py-4 text-right flex items-center justify-end gap-3">
-                      
-                      <Button
-                        onClick={() => openReplyModal(enq)}
-                        size="sm"
-                        variant="outline"
-                        className="flex items-center gap-1 bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
-                        title="Reply to Enquiry"
-                      >
-                        <Mail className="w-3.5 h-3.5" />
-                      </Button>
-
                       <select 
                         value={enq.status}
                         onChange={(e) => handleStatusChange(enq.id!, e.target.value)}
-                        className="text-sm border border-slate-300 rounded-md px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        className="text-sm border border-slate-300 rounded-md px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                         disabled={enq.status === 'CONVERTED'}
                       >
                         <option value="NEW">New</option>
@@ -263,7 +186,7 @@ export default function Enquiries() {
                           onClick={() => convertToProject(enq)} 
                           size="sm" 
                           variant="outline"
-                          className="flex items-center gap-1 bg-white border-amber-200 text-amber-700 hover:bg-amber-50"
+                          className="flex items-center gap-1 bg-white border-blue-200 text-blue-700 hover:bg-blue-50"
                         >
                           Convert <ArrowRightCircle className="w-3.5 h-3.5" />
                         </Button>
@@ -277,69 +200,5 @@ export default function Enquiries() {
         </div>
       </div>
     </div>
-
-      {replyModalOpen && selectedEnquiry && (
-        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                <Mail className="w-5 h-5 text-amber-600" />
-                Reply to Enquiry
-              </h2>
-              <button onClick={() => setReplyModalOpen(false)} className="text-slate-400 hover:text-slate-500">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            <div className="p-6 overflow-y-auto flex-1 space-y-4">
-              {emailError && (
-                <div className="p-3 bg-red-50 text-red-700 border border-red-200 rounded-lg text-sm">
-                  {emailError}
-                </div>
-              )}
-              {emailSuccess && (
-                <div className="p-3 bg-green-50 text-green-700 border border-green-200 rounded-lg text-sm">
-                  {emailSuccess}
-                </div>
-              )}
-              
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">To</label>
-                <div className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-sm text-slate-600">
-                  {selectedEnquiry.firstName} {selectedEnquiry.lastName} &lt;{selectedEnquiry.email}&gt;
-                </div>
-              </div>
-              
-              <Input
-                label="Subject"
-                value={replySubject}
-                onChange={e => setReplySubject(e.target.value)}
-                placeholder="Email Subject"
-              />
-              
-              <Textarea
-                label="Message Body"
-                value={replyBody}
-                onChange={e => setReplyBody(e.target.value)}
-                rows={10}
-                className="font-sans"
-              />
-              <p className="text-xs text-slate-500">
-                This email will be sent securely via the Sricore mail server.
-              </p>
-            </div>
-            
-            <div className="px-6 py-4 border-t border-slate-200 flex justify-end gap-3 bg-slate-50 rounded-b-xl">
-              <Button variant="outline" onClick={() => setReplyModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSendReply} isLoading={sendingEmail} className="bg-amber-600 hover:bg-amber-700">
-                Send Email
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
   );
 }

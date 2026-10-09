@@ -130,6 +130,16 @@ export interface ProjectTask {
   createdAt?: any;
 }
 
+export interface Milestone {
+  id?: string;
+  projectId: string;
+  title: string;
+  description: string;
+  dueDate: any;
+  status: 'pending' | 'completed';
+  createdAt: any;
+}
+
 export interface InternshipProgram {
   id?: string;
   title: string;

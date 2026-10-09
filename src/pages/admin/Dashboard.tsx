@@ -1,7 +1,6 @@
-import { firebaseService } from '../../lib/firebaseService';
 import React, { useEffect, useState } from 'react';
-import { readFromSheet } from '../../lib/sheets';
-
+import { collection, query, where, getCountFromServer, getDocs, limit, orderBy } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
 import { Users, Briefcase, MessageSquare, GraduationCap, Clock, AlertCircle, Shield, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -24,61 +23,62 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let usersData: any[] = [];
-    let projectsData: any[] = [];
-    let requestsData: any[] = [];
-    let appsData: any[] = [];
-    let paymentsData: any[] = [];
-    let auditLogsData: any[] = [];
-    let tasksData: any[] = [];
+    const fetchData = async () => {
+      try {
+        const [
+          empSnap,
+          activeEmpSnap,
+          internSnap,
+          mentorSnap,
+          clientSnap,
+          projSnap,
+          enqSnap,
+          internAppSnap,
+          paymentSnap
+        ] = await Promise.all([
+          getCountFromServer(query(collection(db, 'users'), where('role', '==', 'EMPLOYEE'))),
+          getCountFromServer(query(collection(db, 'users'), where('role', '==', 'EMPLOYEE'), where('isActive', '==', true))),
+          getCountFromServer(query(collection(db, 'users'), where('role', '==', 'INTERN'))),
+          getCountFromServer(query(collection(db, 'users'), where('role', '==', 'MENTOR'))),
+          getCountFromServer(query(collection(db, 'users'), where('role', '==', 'CLIENT'))),
+          getCountFromServer(query(collection(db, 'projects'), where('status', '==', 'active'))),
+          getCountFromServer(query(collection(db, 'enquiries'), where('status', 'in', ['NEW']))),
+          getCountFromServer(query(collection(db, 'internship_applications'), where('status', '==', 'pending'))),
+          getCountFromServer(query(collection(db, 'payments'), where('status', '==', 'pending')))
+        ]);
+        
+        setStats({
+          employees: empSnap.data().count,
+          activeEmployees: activeEmpSnap.data().count,
+          interns: internSnap.data().count,
+          mentors: mentorSnap.data().count,
+          clients: clientSnap.data().count,
+          activeProjects: projSnap.data().count,
+          pendingEnquiries: enqSnap.data().count,
+          internApplications: internAppSnap.data().count,
+          pendingPayments: paymentSnap.data().count
+        });
 
-    const updateDashboard = () => {
-      setStats({
-        employees: usersData.filter((u: any) => u.role === 'EMPLOYEE').length,
-        activeEmployees: usersData.filter((u: any) => u.role === 'EMPLOYEE' && String(u.isActive) === 'true').length,
-        interns: usersData.filter((u: any) => u.role === 'INTERN').length,
-        mentors: usersData.filter((u: any) => u.role === 'MENTOR').length,
-        clients: usersData.filter((u: any) => u.role === 'CLIENT').length,
-        activeProjects: projectsData.filter((p: any) => String(p.status).toLowerCase() === 'active').length,
-        pendingEnquiries: requestsData.filter((r: any) => String(r.status).toLowerCase() === 'new' || !r.status).length,
-        internApplications: appsData.filter((a: any) => String(a.status).toLowerCase() === 'pending' || !a.status).length,
-        pendingPayments: paymentsData.filter((p: any) => String(p.status).toLowerCase() === 'pending' || !p.status).length
-      });
-      
-      setActivities((auditLogsData || []).sort((a: any, b: any) => new Date(b.timestamp || b.createdAt).getTime() - new Date(a.timestamp || a.createdAt).getTime()).slice(0, 5));
-      
-      const activeTasks = (tasksData || []).filter((t: any) => ['TODO', 'IN_PROGRESS', 'BLOCKED', 'REVIEW'].includes(t.status));
-      setTasks(activeTasks.slice(0, 5));
-      setLoading(false);
+        const activitiesQuery = query(collection(db, 'auditLogs'), orderBy('timestamp', 'desc'), limit(5));
+        const actSnap = await getDocs(activitiesQuery);
+        setActivities(actSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+
+        const tasksQuery = query(collection(db, 'tasks'), where('status', 'in', ['TODO', 'IN_PROGRESS', 'BLOCKED', 'REVIEW']), limit(5));
+        const taskSnap = await getDocs(tasksQuery);
+        setTasks(taskSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+
+      } catch (error) {
+        console.error("Error fetching stats:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    const unsubUsers = firebaseService.subscribeToCollection('users', (data) => { usersData = data; updateDashboard(); });
-    const unsubProjects = firebaseService.subscribeToCollection('projects', (data) => { projectsData = data; updateDashboard(); });
-    const unsubRequests = firebaseService.subscribeToCollection('project_requests', (data) => { requestsData = data; updateDashboard(); });
-    const unsubApps = firebaseService.subscribeToCollection('internship_applications', (data) => { appsData = data; updateDashboard(); });
-    const unsubPayments = firebaseService.subscribeToCollection('payments', (data) => { paymentsData = data; updateDashboard(); });
-    const unsubAudit = firebaseService.subscribeToCollection('auditLogs', (data) => { auditLogsData = data; updateDashboard(); });
-    const unsubTasks = firebaseService.subscribeToCollection('tasks', (data) => { tasksData = data; updateDashboard(); });
-
-    // Safety timeout in case snapshots take too long or are empty
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 400);
-
-    return () => {
-      clearTimeout(timer);
-      if (unsubUsers) unsubUsers();
-      if (unsubProjects) unsubProjects();
-      if (unsubRequests) unsubRequests();
-      if (unsubApps) unsubApps();
-      if (unsubPayments) unsubPayments();
-      if (unsubAudit) unsubAudit();
-      if (unsubTasks) unsubTasks();
-    };
+    fetchData();
   }, []);
 
   const statCards = [
-    { name: 'Active Employees', value: stats.activeEmployees, total: stats.employees, icon: Users, color: 'bg-amber-500', link: '/admin/employees' },
+    { name: 'Active Employees', value: stats.activeEmployees, total: stats.employees, icon: Users, color: 'bg-blue-500', link: '/admin/employees' },
     { name: 'Mentors', value: stats.mentors, total: null, icon: Users, color: 'bg-indigo-500', link: '/admin/mentors' },
     { name: 'Interns', value: stats.interns, total: null, icon: GraduationCap, color: 'bg-teal-500', link: '/admin/interns' },
     { name: 'Clients', value: stats.clients, total: null, icon: Users, color: 'bg-cyan-500', link: '/admin/clients' },
@@ -129,10 +129,10 @@ export default function AdminDashboard() {
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-6 border-b border-slate-200 flex justify-between items-center">
             <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-amber-600" />
+              <Clock className="w-5 h-5 text-blue-600" />
               Recent Activities
             </h2>
-            <Link to="/admin/audit" className="text-sm font-medium text-amber-600 hover:text-amber-700">View All</Link>
+            <Link to="/admin/audit" className="text-sm font-medium text-blue-600 hover:text-blue-700">View All</Link>
           </div>
           <div className="p-0">
             {activities.length > 0 ? (
@@ -165,7 +165,7 @@ export default function AdminDashboard() {
               <AlertCircle className="w-5 h-5 text-amber-500" />
               Tasks Requiring Attention
             </h2>
-            <Link to="/admin/tasks" className="text-sm font-medium text-amber-600 hover:text-amber-700">View All</Link>
+            <Link to="/admin/tasks" className="text-sm font-medium text-blue-600 hover:text-blue-700">View All</Link>
           </div>
           <div className="p-0">
             {tasks.length > 0 ? (
@@ -179,7 +179,7 @@ export default function AdminDashboard() {
                       </div>
                       <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium 
                         ${task.status === 'TODO' ? 'bg-slate-100 text-slate-800' : ''}
-                        ${task.status === 'IN_PROGRESS' ? 'bg-amber-100 text-amber-800' : ''}
+                        ${task.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' : ''}
                         ${task.status === 'BLOCKED' ? 'bg-red-100 text-red-800' : ''}
                         ${task.status === 'REVIEW' ? 'bg-amber-100 text-amber-800' : ''}
                       `}>

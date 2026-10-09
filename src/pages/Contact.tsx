@@ -1,4 +1,3 @@
-import { firebaseService } from '../lib/firebaseService';
 import React, { useState } from 'react';
 import { Container } from '../components/ui/Container';
 import { SectionHeader } from '../components/ui/SectionHeader';
@@ -7,72 +6,20 @@ import { Textarea } from '../components/ui/Textarea';
 import { Button } from '../components/ui/Button';
 import { APP_CONFIG } from '../config';
 import { Mail, Phone, MapPin } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-
-const contactSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
-  subject: z.string().min(3, "Subject is required"),
-  message: z.string().min(10, "Message must be at least 10 characters")
-});
-
-type ContactFormData = z.infer<typeof contactSchema>;
 
 export default function Contact() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<ContactFormData>({
-    resolver: zodResolver(contactSchema)
-  });
-
-  const onSubmit = async (data: ContactFormData) => {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     setIsSubmitting(true);
-    try {
-      const payload = {
-        firstName: data.name,
-        lastName: '',
-        email: data.email,
-        serviceInterest: data.subject,
-        enquiryType: 'general',
-        message: data.message,
-        status: 'NEW'
-      };
-      
-      await firebaseService.create('enquiries', payload);
-      
-      try {
-        fetch('/api/email/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            to: payload.email,
-            subject: 'Thank you for contacting Sricore Solutions',
-            html: `
-              <h3>Message Received</h3>
-              <p>Dear ${payload.firstName},</p>
-              <p>Thank you for reaching out. We have received your message regarding "<strong>${payload.serviceInterest}</strong>".</p>
-              <p>One of our team members will respond to your query shortly.</p>
-              <br/>
-              <p>Best Regards,</p>
-              <p>Sricore Solutions Team</p>
-            `
-          })
-        });
-      } catch (e) {
-        console.error('Failed to send confirmation email', e);
-      }
-      
-      setIsSuccess(true);
-      reset();
-    } catch (error) {
-      console.error(error);
-      alert('Failed to send message. Please try again.');
-    } finally {
+    
+    // Simulate API call
+    setTimeout(() => {
       setIsSubmitting(false);
-    }
+      setIsSuccess(true);
+    }, 1500);
   };
 
   return (
@@ -83,6 +30,7 @@ export default function Contact() {
           description="We're here to help. Reach out to us for general inquiries, support, or partnership opportunities."
           badge="Get in Touch"
         />
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 mt-16">
           {/* Contact Information */}
           <div className="lg:col-span-1 space-y-8">
@@ -90,16 +38,25 @@ export default function Contact() {
               <h3 className="text-xl font-bold text-slate-900 mb-6">Contact Details</h3>
               <div className="space-y-6">
                 <div className="flex items-start">
-                  <Mail className="w-6 h-6 text-amber-600 mt-1 flex-shrink-0" />
+                  <Mail className="w-6 h-6 text-blue-600 mt-1 flex-shrink-0" />
                   <div className="ml-4">
                     <h4 className="text-sm font-semibold text-slate-900">Email</h4>
-                    <a href={`mailto:${APP_CONFIG.company.contact.email}`} className="text-slate-600 hover:text-amber-600 transition-colors">
+                    <a href={`mailto:${APP_CONFIG.company.contact.email}`} className="text-slate-600 hover:text-blue-600 transition-colors">
                       {APP_CONFIG.company.contact.email}
                     </a>
                   </div>
                 </div>
                 <div className="flex items-start">
-                  <MapPin className="w-6 h-6 text-amber-600 mt-1 flex-shrink-0" />
+                  <Phone className="w-6 h-6 text-blue-600 mt-1 flex-shrink-0" />
+                  <div className="ml-4">
+                    <h4 className="text-sm font-semibold text-slate-900">Phone</h4>
+                    <a href={`tel:${APP_CONFIG.company.contact.phone}`} className="text-slate-600 hover:text-blue-600 transition-colors">
+                      {APP_CONFIG.company.contact.phone}
+                    </a>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <MapPin className="w-6 h-6 text-blue-600 mt-1 flex-shrink-0" />
                   <div className="ml-4">
                     <h4 className="text-sm font-semibold text-slate-900">Office</h4>
                     <p className="text-slate-600">
@@ -109,16 +66,18 @@ export default function Contact() {
                 </div>
               </div>
             </div>
-            <div className="bg-amber-600 p-8 rounded-2xl shadow-sm text-white">
+
+            <div className="bg-blue-600 p-8 rounded-2xl shadow-sm text-white">
               <h3 className="text-xl font-bold mb-4">Looking for a quote?</h3>
-              <p className="text-amber-100 mb-6 text-sm leading-relaxed">
+              <p className="text-blue-100 mb-6 text-sm leading-relaxed">
                 If you have a specific project in mind, please use our detailed enquiry form so our engineering team can review your requirements prior to our discussion.
               </p>
-              <a href="/enquiry" className="inline-block px-6 py-3 bg-white text-amber-600 rounded-md font-semibold hover:bg-amber-50 transition-colors w-full text-center">
+              <a href="/enquiry" className="inline-block px-6 py-3 bg-white text-blue-600 rounded-md font-semibold hover:bg-blue-50 transition-colors w-full text-center">
                 Go to Project Enquiry
               </a>
             </div>
           </div>
+
           {/* Contact Form */}
           <div className="lg:col-span-2 bg-white p-8 md:p-10 rounded-3xl border border-slate-200 shadow-xl">
             {isSuccess ? (
@@ -135,14 +94,17 @@ export default function Contact() {
                 <Button onClick={() => setIsSuccess(false)}>Send Another Message</Button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
                 <h3 className="text-2xl font-bold text-slate-900 mb-6">Send us a message</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <Input label="Full Name" {...register('name')} error={errors.name?.message} placeholder="John Doe" />
-                  <Input label="Email Address" type="email" {...register('email')} error={errors.email?.message} placeholder="john@example.com" />
+                  <Input label="Full Name" required placeholder="John Doe" />
+                  <Input label="Email Address" type="email" required placeholder="john@example.com" />
                 </div>
-                <Input label="Subject" {...register('subject')} error={errors.subject?.message} placeholder="How can we help?" />
-                <Textarea label="Message" {...register('message')} error={errors.message?.message} placeholder="Your message here..." 
+                <Input label="Subject" required placeholder="How can we help?" />
+                <Textarea 
+                  label="Message" 
+                  required 
+                  placeholder="Your message here..." 
                   className="min-h-[150px]"
                 />
                 <Button type="submit" isLoading={isSubmitting} className="py-3 px-8 mt-4">

@@ -1,6 +1,5 @@
 import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ScrollToTop } from './components/ScrollToTop';
 import { MainLayout } from './components/layout/MainLayout';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { PagePlaceholder } from './components/ui/PagePlaceholder';
@@ -10,7 +9,6 @@ import { AdminLayout } from './components/layout/AdminLayout';
 const Home = React.lazy(() => import('./pages/Home'));
 const About = React.lazy(() => import('./pages/About'));
 const Enquiry = React.lazy(() => import('./pages/Enquiry'));
-const TellUsYourProblem = React.lazy(() => import('./pages/TellUsYourProblem'));
 const Contact = React.lazy(() => import('./pages/Contact'));
 const InternshipRegistration = React.lazy(() => import('./pages/InternshipRegistration'));
 const Services = React.lazy(() => import('./pages/Services'));
@@ -24,15 +22,6 @@ const Careers = React.lazy(() => import('./pages/Careers'));
 const Privacy = React.lazy(() => import('./pages/Privacy'));
 const Terms = React.lazy(() => import('./pages/Terms'));
 
-
-import { ServiceSkeleton } from './components/ui/ServiceSkeleton';
-
-// New Service Pages
-const TechnologyAudit = React.lazy(() => import('./pages/services/TechnologyAudit'));
-const ProjectRescue = React.lazy(() => import('./pages/services/ProjectRescue'));
-const DigitalTransformation = React.lazy(() => import('./pages/services/DigitalTransformation'));
-const IdeaLab = React.lazy(() => import('./pages/IdeaLab'));
-
 // Auth Pages
 const Login = React.lazy(() => import('./pages/auth/Login'));
 const Register = React.lazy(() => import('./pages/auth/Register'));
@@ -45,11 +34,6 @@ const Dashboard = React.lazy(() => import('./pages/dashboard/Dashboard'));
 
 // Admin Pages
 const AdminDashboard = React.lazy(() => import('./pages/admin/Dashboard'));
-const AdminDiscovery = React.lazy(() => import('./pages/admin/Discovery'));
-const AdminSolutionRequests = React.lazy(() => import('./pages/admin/SolutionRequests'));
-const AdminBusinessInsights = React.lazy(() => import('./pages/admin/BusinessInsights'));
-const AdminOrganization = React.lazy(() => import('./pages/admin/Departments'));
-const AdminProfile = React.lazy(() => import('./pages/admin/Settings'));
 const AdminEmployees = React.lazy(() => import('./pages/admin/Employees'));
 const AdminEnquiries = React.lazy(() => import('./pages/admin/Enquiries'));
 const AdminProjects = React.lazy(() => import('./pages/admin/Projects'));
@@ -58,29 +42,20 @@ const AdminClients = React.lazy(() => import('./pages/admin/Clients'));
 const AdminTasks = React.lazy(() => import('./pages/admin/Tasks'));
 const AdminAudit = React.lazy(() => import('./pages/admin/Audit'));
 const AdminContent = React.lazy(() => import('./pages/admin/Content'));
-const AdminNewsletters = React.lazy(() => import('./pages/admin/Newsletters'));
 const AdminSupport = React.lazy(() => import('./pages/admin/Support'));
 const AdminDocuments = React.lazy(() => import('./pages/admin/Documents'));
 const AdminPayments = React.lazy(() => import('./pages/admin/Payments'));
 const AdminInvoices = React.lazy(() => import('./pages/admin/Invoices'));
-const AdminDepartments = React.lazy(() => import('./pages/admin/Departments'));
-const AdminMentors = React.lazy(() => import('./pages/admin/Mentors'));
-const AdminInterns = React.lazy(() => import('./pages/admin/Interns'));
-const AdminCandidates = React.lazy(() => import('./pages/admin/Candidates'));
-const AdminAttendance = React.lazy(() => import('./pages/admin/Attendance'));
-const AdminLeave = React.lazy(() => import('./pages/admin/Leave'));
-const AdminVendors = React.lazy(() => import('./pages/admin/Vendors'));
-const AdminNotifications = React.lazy(() => import('./pages/admin/Notifications'));
-const AdminReports = React.lazy(() => import('./pages/admin/Reports'));
-const AdminSettings = React.lazy(() => import('./pages/admin/Settings'));
 
-
-import { PageLoader } from './components/ui/Loader';
+const PageLoader = () => (
+  <div className="min-h-[50vh] flex items-center justify-center">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+  </div>
+);
 
 export function AppRouter() {
   return (
     <BrowserRouter>
-      <ScrollToTop />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Admin Routes */}
@@ -90,41 +65,35 @@ export function AppRouter() {
             </ProtectedRoute>
           }>
             <Route index element={<AdminDashboard />} />
+            <Route path="reports" element={<PagePlaceholder title="Reports" />} />
+            <Route path="audit" element={<AdminAudit />} />
+            <Route path="content" element={<AdminContent />} />
             
+            <Route path="departments" element={<PagePlaceholder title="Department Management" />} />
             <Route path="employees" element={<AdminEmployees />} />
-            <Route path="departments" element={<AdminDepartments />} />
-            <Route path="mentors" element={<AdminMentors />} />
-            <Route path="interns" element={<AdminInterns />} />
-            <Route path="candidates" element={<AdminCandidates />} />
-            <Route path="clients" element={<AdminClients />} />
+            <Route path="mentors" element={<PagePlaceholder title="Mentor Management" />} />
             
-            <Route path="projects" element={<AdminProjects />} />
-            <Route path="internships" element={<AdminInternships />} />
             <Route path="enquiries" element={<AdminEnquiries />} />
-            <Route path="discovery" element={<AdminDiscovery />} />
-            <Route path="solution-requests" element={<AdminSolutionRequests />} />
+            <Route path="clients" element={<AdminClients />} />
+            <Route path="projects" element={<AdminProjects />} />
             <Route path="tasks" element={<AdminTasks />} />
+            <Route path="support" element={<AdminSupport />} />
+            <Route path="payments" element={<AdminPayments />} />
+            <Route path="invoices" element={<AdminInvoices />} />
             
-            <Route path="finance/payments" element={<AdminPayments />} />
-            <Route path="finance/invoices" element={<AdminInvoices />} />
+            <Route path="internships" element={<AdminInternships />} />
+            <Route path="candidates" element={<PagePlaceholder title="Candidate Management" />} />
+            <Route path="interns" element={<PagePlaceholder title="Intern Management" />} />
             
-            
-            
+            <Route path="attendance" element={<PagePlaceholder title="Attendance" />} />
+            <Route path="leaves" element={<PagePlaceholder title="Leave Management" />} />
             <Route path="documents" element={<AdminDocuments />} />
+            <Route path="vendors" element={<PagePlaceholder title="Vendor Management" />} />
             
-            <Route path="attendance" element={<AdminAttendance />} />
-            <Route path="leave" element={<AdminLeave />} />
-            <Route path="vendors" element={<AdminVendors />} />
+            <Route path="announcements" element={<PagePlaceholder title="Announcements" />} />
+            <Route path="notifications" element={<PagePlaceholder title="Notifications" />} />
             
-            <Route path="notifications" element={<AdminNotifications />} />
-            <Route path="website" element={<AdminContent />} />
-            <Route path="newsletters" element={<AdminNewsletters />} />
-            <Route path="reports" element={<AdminReports />} />
-            <Route path="business-insights" element={<AdminBusinessInsights />} />
-            <Route path="organization" element={<AdminOrganization />} />
-            <Route path="profile" element={<AdminProfile />} />
-            <Route path="audit-logs" element={<AdminAudit />} />
-            <Route path="settings" element={<AdminSettings />} />
+            <Route path="settings" element={<PagePlaceholder title="Admin Settings" />} />
           </Route>
 
           {/* Main Application Routes */}
@@ -132,21 +101,16 @@ export function AppRouter() {
             <Route index element={<Home />} />
             <Route path="about" element={<About />} />
             <Route path="services" element={<Services />} />
-            <Route path="services/research" element={<Suspense fallback={<ServiceSkeleton />}><ResearchServices /></Suspense>} />
-            <Route path="solutions/software" element={<Suspense fallback={<ServiceSkeleton />}><SoftwareSolutions /></Suspense>} />
-            <Route path="solutions/hardware" element={<Suspense fallback={<ServiceSkeleton />}><HardwareSolutions /></Suspense>} />
-            <Route path="solutions/ai-ml" element={<Suspense fallback={<ServiceSkeleton />}><AISolutions /></Suspense>} />
-            <Route path="services/technology-audit" element={<Suspense fallback={<ServiceSkeleton />}><TechnologyAudit /></Suspense>} />
-            <Route path="services/project-rescue" element={<Suspense fallback={<ServiceSkeleton />}><ProjectRescue /></Suspense>} />
-            <Route path="services/digital-transformation" element={<Suspense fallback={<ServiceSkeleton />}><DigitalTransformation /></Suspense>} />
-            <Route path="idealab" element={<Suspense fallback={<ServiceSkeleton />}><IdeaLab /></Suspense>} />
+            <Route path="services/research" element={<ResearchServices />} />
+            <Route path="solutions/software" element={<SoftwareSolutions />} />
+            <Route path="solutions/hardware" element={<HardwareSolutions />} />
+            <Route path="solutions/ai-ml" element={<AISolutions />} />
             <Route path="internships" element={<Internships />} />
             <Route path="internships/apply" element={<InternshipRegistration />} />
             <Route path="projects" element={<Projects />} />
             <Route path="careers" element={<Careers />} />
             <Route path="contact" element={<Contact />} />
             <Route path="enquiry" element={<Enquiry />} />
-            <Route path="tell-us-your-problem" element={<TellUsYourProblem />} />
             <Route path="privacy" element={<Privacy />} />
             <Route path="terms" element={<Terms />} />
             
@@ -158,7 +122,12 @@ export function AppRouter() {
             <Route path="unauthorized" element={<Unauthorized />} />
             
             {/* Protected Client/Employee Routes */}
-            <Route path="dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            
             <Route path="*" element={<PagePlaceholder title="Page Not Found" />} />
           </Route>
         </Routes>

@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Container } from '../../components/ui/Container';
 import { Button } from '../../components/ui/Button';
-import { auth, db } from '../../lib/firebase';
+import { auth } from '../../lib/firebase';
 import { signOut } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
-import { useNavigate, Link, Navigate } from 'react-router-dom';
-import { Shield, AlertTriangle } from 'lucide-react';
+import { useNavigate, Navigate } from 'react-router-dom';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { UserProfile } from '../../components/user/UserProfile';
+import { MyProjects } from '../../components/dashboard/MyProjects';
 
 // Import role dashboards
 import EmployeeDashboard from './roles/EmployeeDashboard';
@@ -18,7 +19,6 @@ import CandidateDashboard from './roles/CandidateDashboard';
 export default function Dashboard() {
   const { userProfile, currentUser, loading } = useAuth();
   const navigate = useNavigate();
-  
 
   const handleLogout = async () => {
     try {
@@ -29,11 +29,18 @@ export default function Dashboard() {
     }
   };
 
-  // Removed blocking loading check so dashboard renders instantly with fallback role
+  if (loading) {
+    return (
+      <div className="min-h-[80vh] bg-slate-50 py-12">
+        <Container>
+          <LoadingSpinner size="lg" />
+        </Container>
+      </div>
+    );
+  }
 
   const renderRoleDashboard = () => {
-    const role = userProfile?.role || 'CANDIDATE';
-    switch (role) {
+    switch (userProfile?.role) {
       case 'EMPLOYEE':
         return <EmployeeDashboard />;
       case 'MENTOR':
@@ -67,7 +74,7 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-4">
               <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider
-                ${userProfile?.role === 'CLIENT' ? 'bg-amber-100 text-amber-800' :
+                ${userProfile?.role === 'CLIENT' ? 'bg-blue-100 text-blue-800' :
                   userProfile?.role === 'EMPLOYEE' ? 'bg-indigo-100 text-indigo-800' :
                   userProfile?.role === 'MENTOR' ? 'bg-purple-100 text-purple-800' :
                   userProfile?.role === 'INTERN' ? 'bg-emerald-100 text-emerald-800' :
@@ -76,13 +83,21 @@ export default function Dashboard() {
                 {userProfile?.role}
               </span>
               <Button onClick={handleLogout} variant="outline" size="sm">
-                Logout
+                Sign Out
               </Button>
             </div>
           </div>
         </div>
-        
-        
+
+        {/* User Profile */}
+        <div className="mb-6">
+          <UserProfile />
+        </div>
+
+        {/* My Projects */}
+        <div className="mb-6">
+          <MyProjects />
+        </div>
 
         {/* Role-specific content */}
         {renderRoleDashboard()}

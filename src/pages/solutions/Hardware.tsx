@@ -104,7 +104,7 @@ export default function HardwareSolutions() {
             {/* Cloud */}
             <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 text-center relative z-10">
               <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-200 shadow-sm">
-                <Cloud className="w-8 h-8 text-amber-600" />
+                <Cloud className="w-8 h-8 text-blue-600" />
               </div>
               <h4 className="font-bold text-slate-900 mb-2">3. Cloud & Dashboard</h4>
               <p className="text-sm text-slate-600">Data ingestion, analytics, visualization, and remote device management.</p>

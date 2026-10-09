@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, orderBy, getDocs, limit , onSnapshot} from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, limit } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Search, Shield } from 'lucide-react';
 import { format } from 'date-fns';
@@ -10,27 +10,29 @@ export default function AdminAudit() {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    const unsubscribe = setupSubscription();
-    return () => unsubscribe && unsubscribe();
+    fetchLogs();
   }, []);
 
-  const setupSubscription = () => {
+  const fetchLogs = async () => {
     setLoading(true);
-
+    try {
       // Limit to 100 recent logs for performance
       const q = query(
         collection(db, 'auditLogs'),
         orderBy('timestamp', 'desc'),
         limit(100)
       );
-      return onSnapshot(q, (snapshot) => {
-        const items: any[] = [];
-        snapshot.forEach(doc => {
-          items.push({ id: doc.id, ...doc.data() });
-        });
-        setLogs(items);
-        setLoading(false);
+      const snapshot = await getDocs(q);
+      const items: any[] = [];
+      snapshot.forEach(doc => {
+        items.push({ id: doc.id, ...doc.data() });
       });
+      setLogs(items);
+    } catch (error) {
+      console.error("Error fetching audit logs:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filteredLogs = logs.filter(log => 
@@ -45,7 +47,7 @@ export default function AdminAudit() {
           <p className="text-sm text-slate-500">Track sensitive administrator actions and system events</p>
         </div>
         <div className="bg-slate-100 p-2 rounded-lg flex items-center gap-2 text-slate-600 text-sm font-medium border border-slate-200">
-          <Shield className="w-4 h-4 text-amber-600" />
+          <Shield className="w-4 h-4 text-blue-600" />
           Append-Only Log
         </div>
       </div>
@@ -59,7 +61,7 @@ export default function AdminAudit() {
               placeholder="Search actions or users..." 
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         </div>

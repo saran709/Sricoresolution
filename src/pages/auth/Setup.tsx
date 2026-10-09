@@ -26,7 +26,7 @@ export default function Setup() {
           setIsInitialized(false);
         }
       } catch (err) {
-        console.warn('Error checking setup:', err);
+        console.error("Error checking setup:", err);
         // If we get permission denied on read, it might still mean we can't create it,
         // but our rule allows read: if true;
       }
@@ -80,7 +80,7 @@ export default function Setup() {
     return (
       <div className="min-h-[80vh] flex items-center justify-center bg-slate-50 p-6">
         <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 text-center max-w-md w-full">
-          <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -99,9 +99,9 @@ export default function Setup() {
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-xl w-full space-y-8 bg-white p-10 rounded-2xl shadow-xl border border-amber-100">
+      <div className="max-w-xl w-full space-y-8 bg-white p-10 rounded-2xl shadow-xl border border-blue-100">
         <div className="text-center">
-          <span className="inline-block py-1 px-3 rounded-full bg-amber-100 text-amber-700 text-sm font-bold tracking-wide mb-4">
+          <span className="inline-block py-1 px-3 rounded-full bg-blue-100 text-blue-700 text-sm font-bold tracking-wide mb-4">
             SYSTEM BOOTSTRAP
           </span>
           <h2 className="text-3xl font-extrabold text-slate-900">

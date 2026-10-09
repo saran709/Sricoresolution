@@ -24,7 +24,7 @@ export default function Careers() {
             <p className="text-lg md:text-xl text-slate-300 leading-relaxed mb-8">
               Join a team of dedicated engineers, researchers, and technologists building robust solutions for complex industrial problems.
             </p>
-            <a href="#open-roles" className="inline-flex items-center justify-center px-6 py-3 text-base font-medium rounded-md bg-amber-600 text-white hover:bg-amber-700 transition-colors">
+            <a href="#open-roles" className="inline-flex items-center justify-center px-6 py-3 text-base font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors">
               View Open Roles
             </a>
           </div>

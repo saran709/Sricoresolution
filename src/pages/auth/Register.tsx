@@ -1,70 +1,53 @@
-import { firebaseService } from '../../lib/firebaseService';
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../../lib/firebase';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '../../lib/firebase';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { UserRole } from '../../types';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-
-function mapAuthError(err: any) {
-  if (err.code === 'auth/operation-not-allowed') return 'Email/Password sign-in is not enabled in Firebase.';
-  if (err.code === 'auth/weak-password') return 'Your password must be at least 6 characters long.';
-  if (err.code === 'auth/email-already-in-use') return 'An account already exists with this email.';
-  if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') return 'Incorrect email or password.';
-  return err.message || 'An error occurred';
-}
-
-const registerSchema = z.object({
-  firstName: z.string().min(2, "First name must be at least 2 characters"),
-  lastName: z.string().min(2, "Last name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string(),
-  role: z.enum(['CANDIDATE', 'CLIENT'])
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"]
-});
-
-type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function Register() {
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState<UserRole>('CANDIDATE');
+  
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const { register, handleSubmit, formState: { errors } } = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: {
-      role: 'CANDIDATE'
-    }
-  });
-
-  const onSubmit = async (data: RegisterFormData) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError('');
+
+    if (password !== confirmPassword) {
+      return setError('Passwords do not match');
+    }
+
     setLoading(true);
-    
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-      
-      await firebaseService.create('users', {
-        uid: user.uid,
+
+      // Create user profile in Firestore
+      // Note: role is restricted to CANDIDATE or CLIENT for public registration
+      await setDoc(doc(db, 'users', user.uid), {
         email: user.email,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        role: data.role,
+        firstName,
+        lastName,
+        role: role === 'CLIENT' ? 'CLIENT' : 'CANDIDATE',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
         isActive: true,
       });
-      
+
       navigate('/dashboard');
     } catch (err: any) {
       console.error(err);
-      setError(mapAuthError(err));
+      setError(err.message || 'Failed to create an account');
     } finally {
       setLoading(false);
     }
@@ -79,7 +62,7 @@ export default function Register() {
           </h2>
           <p className="mt-2 text-center text-sm text-slate-600">
             Already have an account?{' '}
-            <Link to="/login" className="font-medium text-amber-600 hover:text-amber-500 transition-colors">
+            <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
               Sign in here
             </Link>
           </p>
@@ -91,26 +74,30 @@ export default function Register() {
           </div>
         )}
         
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input 
               label="First Name"
-              {...register('firstName')}
-              error={errors.firstName?.message}
+              required 
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
               placeholder="John"
             />
             <Input 
               label="Last Name"
-              {...register('lastName')}
-              error={errors.lastName?.message}
+              required 
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
               placeholder="Doe"
             />
           </div>
+
           <Input 
             label="Email address"
             type="email" 
-            {...register('email')}
-            error={errors.email?.message}
+            required 
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
           />
           
@@ -118,36 +105,40 @@ export default function Register() {
             <Input 
               label="Password"
               type="password" 
-              {...register('password')}
-              error={errors.password?.message}
+              required 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
             />
             <Input 
               label="Confirm Password"
               type="password" 
-              {...register('confirmPassword')}
-              error={errors.confirmPassword?.message}
+              required 
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="••••••••"
             />
           </div>
+
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
               Account Type
             </label>
             <select 
-              {...register('role')}
-              className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-colors"
+              value={role}
+              onChange={(e) => setRole(e.target.value as UserRole)}
+              className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
             >
               <option value="CANDIDATE">Candidate / Student</option>
               <option value="CLIENT">Client / Business Partner</option>
             </select>
-            {errors.role && <p className="mt-1 text-sm text-red-500">{errors.role.message}</p>}
             <p className="mt-1 text-xs text-slate-500">
               Note: Employee and Administrator accounts must be created internally.
             </p>
           </div>
-          <Button type="submit" isLoading={loading} className="w-full justify-center py-3 text-base">
-            Create Account
+
+          <Button type="submit" className="w-full justify-center py-3 text-base" disabled={loading}>
+            {loading ? 'Creating Account...' : 'Create Account'}
           </Button>
         </form>
       </div>

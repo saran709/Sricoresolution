@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, orderBy, getDocs, doc, updateDoc, serverTimestamp , onSnapshot} from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { SupportTicket } from '../../types';
 import { Search } from 'lucide-react';
@@ -23,26 +23,24 @@ export default function AdminSupport() {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    const unsubscribe = setupSubscription();
-    return () => unsubscribe && unsubscribe();
+    fetchTickets();
   }, []);
 
-  const setupSubscription = () => {
+  const fetchTickets = async () => {
     setLoading(true);
-
+    try {
       const q = query(collection(db, 'support_tickets'), orderBy('createdAt', 'desc'));
-      return onSnapshot(q, (snapshot) => {
-        const items: any[] = [];
-        snapshot.forEach(doc => {
-          items.push({ id: doc.id, ...doc.data() });
-        });
-        setTickets(items);
-        setLoading(false);
-      }, (error) => {
-        console.error("Error in subscription:", error);
-        setLoading(false);
+      const snapshot = await getDocs(q);
+      const items: SupportTicket[] = [];
+      snapshot.forEach(doc => {
+        items.push({ id: doc.id, ...doc.data() } as SupportTicket);
       });
-
+      setTickets(items);
+    } catch (error) {
+      console.error("Error fetching support tickets:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleStatusChange = async (ticket: SupportTicket, newStatus: SupportTicket['status']) => {
@@ -91,7 +89,7 @@ export default function AdminSupport() {
               placeholder="Search tickets by subject..." 
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -132,7 +130,7 @@ export default function AdminSupport() {
                       <span className={`uppercase text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full
                         ${ticket.priority === 'critical' ? 'bg-red-100 text-red-700' :
                           ticket.priority === 'high' ? 'bg-orange-100 text-orange-700' :
-                          ticket.priority === 'medium' ? 'bg-amber-100 text-amber-700' :
+                          ticket.priority === 'medium' ? 'bg-blue-100 text-blue-700' :
                           'bg-slate-100 text-slate-700'}`}
                       >
                         {ticket.priority}
@@ -145,7 +143,7 @@ export default function AdminSupport() {
                       <select 
                         value={ticket.status}
                         onChange={(e) => handleStatusChange(ticket, e.target.value as any)}
-                        className="text-sm border border-slate-300 rounded-md px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 w-[160px]"
+                        className="text-sm border border-slate-300 rounded-md px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-[160px]"
                       >
                         {STATUSES.map(status => (
                           <option key={status.value} value={status.value}>

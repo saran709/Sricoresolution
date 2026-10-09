@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, orderBy, getDocs, doc, updateDoc, addDoc, serverTimestamp , onSnapshot} from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, doc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Project, ProjectStage, ActivityHistory } from '../../types';
 import { Search, Plus, Filter, FileText } from 'lucide-react';
@@ -64,53 +64,25 @@ export default function AdminProjects() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newProjectName, setNewProjectName] = useState('');
-  const [newProjectType, setNewProjectType] = useState('commercial');
-  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = setupSubscription();
-    return () => unsubscribe && unsubscribe();
+    fetchProjects();
   }, []);
 
-  const setupSubscription = () => {
+  const fetchProjects = async () => {
     setLoading(true);
-
-      const q = query(collection(db, 'projects'), orderBy('createdAt', 'desc'));
-      return onSnapshot(q, (snapshot) => {
-        const items: any[] = [];
-        snapshot.forEach(doc => {
-          items.push({ id: doc.id, ...doc.data() });
-        });
-        setProjects(items);
-        setLoading(false);
-      }, (error) => {
-        console.error("Error in subscription:", error);
-        setLoading(false);
-      });
-
-  };
-
-  const handleCreateProject = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newProjectName.trim()) return;
-    setSubmitting(true);
     try {
-      await addDoc(collection(db, 'projects'), {
-        name: newProjectName,
-        projectType: newProjectType,
-        status: 'active',
-        stage: getStagesForType(newProjectType)[0].value,
-        createdAt: new Date().toISOString()
+      const q = query(collection(db, 'projects'), orderBy('createdAt', 'desc'));
+      const snapshot = await getDocs(q);
+      const items: Project[] = [];
+      snapshot.forEach(doc => {
+        items.push({ id: doc.id, ...doc.data() } as Project);
       });
-      setIsModalOpen(false);
-      setNewProjectName('');
-    } catch (err) {
-      console.error(err);
-      alert('Failed to create project');
+      setProjects(items);
+    } catch (error) {
+      console.error("Error fetching projects:", error);
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
 
@@ -157,7 +129,7 @@ export default function AdminProjects() {
           <h1 className="text-2xl font-bold text-slate-900">Projects Workflow</h1>
           <p className="text-sm text-slate-500">Manage all operational project stages and deliveries</p>
         </div>
-        <Button className="flex items-center gap-2" onClick={() => setIsModalOpen(true)}>
+        <Button className="flex items-center gap-2">
           <Plus className="w-4 h-4" />
           Create Project
         </Button>
@@ -172,7 +144,7 @@ export default function AdminProjects() {
               placeholder="Search projects by name..." 
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           
@@ -181,7 +153,7 @@ export default function AdminProjects() {
             <select
               value={filterType}
               onChange={e => setFilterType(e.target.value)}
-              className="border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Types</option>
               <option value="commercial">Commercial Workflow</option>
@@ -233,7 +205,7 @@ export default function AdminProjects() {
                           <span className={`uppercase text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full
                             ${project.status === 'active' ? 'bg-emerald-100 text-emerald-700' :
                               project.status === 'on_hold' ? 'bg-amber-100 text-amber-700' :
-                              project.status === 'completed' ? 'bg-amber-100 text-amber-700' :
+                              project.status === 'completed' ? 'bg-blue-100 text-blue-700' :
                               'bg-red-100 text-red-700'}`}
                           >
                             {project.status.replace('_', ' ')}
@@ -244,7 +216,7 @@ export default function AdminProjects() {
                         <select 
                           value={project.stage || stageOptions[0].value}
                           onChange={(e) => handleStageChange(project, e.target.value as ProjectStage)}
-                          className="text-sm border border-slate-300 rounded-md px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 w-full max-w-[200px]"
+                          className="text-sm border border-slate-300 rounded-md px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-full max-w-[200px]"
                         >
                           {stageOptions.map(stage => (
                             <option key={stage.value} value={stage.value}>
@@ -267,42 +239,6 @@ export default function AdminProjects() {
           </table>
         </div>
       </div>
-    
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-              <h2 className="text-lg font-bold text-slate-900">Create New Project</h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
-                <span className="sr-only">Close</span>
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <form onSubmit={handleCreateProject}>
-              <div className="p-6 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Project Name</label>
-                  <input required type="text" value={newProjectName} onChange={e => setNewProjectName(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Project Type</label>
-                  <select required value={newProjectType} onChange={e => setNewProjectType(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
-                    <option value="commercial">Commercial Workflow</option>
-                    <option value="student">Student Workflow</option>
-                    <option value="research">Research Workflow</option>
-                  </select>
-                </div>
-              </div>
-              <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
-                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-                <Button type="submit" isLoading={submitting}>Create</Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -9,19 +9,19 @@ interface ServiceCardProps {
   icon: React.ReactNode;
   href: string;
   className?: string;
-  colorScheme?: 'amber' | 'emerald' | 'purple' | 'orange';
+  colorScheme?: 'blue' | 'emerald' | 'purple' | 'orange';
 }
 
-export function ServiceCard({ title, description, icon, href, className, colorScheme = 'amber' }: ServiceCardProps) {
+export function ServiceCard({ title, description, icon, href, className, colorScheme = 'blue' }: ServiceCardProps) {
   const colorStyles = {
-    amber: 'bg-amber-50 text-amber-600 group-hover:bg-amber-600 group-hover:text-white',
+    blue: 'bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white',
     emerald: 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white',
     purple: 'bg-purple-50 text-purple-600 group-hover:bg-purple-600 group-hover:text-white',
     orange: 'bg-orange-50 text-orange-600 group-hover:bg-orange-600 group-hover:text-white',
   };
 
   const borderStyles = {
-    amber: 'hover:border-amber-300',
+    blue: 'hover:border-blue-300',
     emerald: 'hover:border-emerald-300',
     purple: 'hover:border-purple-300',
     orange: 'hover:border-orange-300',

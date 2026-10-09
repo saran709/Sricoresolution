@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { collection, query, orderBy, getDocs, addDoc, serverTimestamp, deleteDoc, doc , onSnapshot} from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from '../../lib/firebase';
 import { Document as AppDocument } from '../../types';
@@ -21,26 +21,24 @@ export default function AdminDocuments() {
   const [accessLevel, setAccessLevel] = useState<AppDocument['accessLevel']>('company');
 
   useEffect(() => {
-    const unsubscribe = setupSubscription();
-    return () => unsubscribe && unsubscribe();
+    fetchDocuments();
   }, []);
 
-  const setupSubscription = () => {
+  const fetchDocuments = async () => {
     setLoading(true);
-
+    try {
       const q = query(collection(db, 'documents'), orderBy('createdAt', 'desc'));
-      return onSnapshot(q, (snapshot) => {
-        const items: any[] = [];
-        snapshot.forEach(doc => {
-          items.push({ id: doc.id, ...doc.data() });
-        });
-        setDocuments(items);
-        setLoading(false);
-      }, (error) => {
-        console.error("Error in subscription:", error);
-        setLoading(false);
+      const snapshot = await getDocs(q);
+      const items: AppDocument[] = [];
+      snapshot.forEach(doc => {
+        items.push({ id: doc.id, ...doc.data() } as AppDocument);
       });
-
+      setDocuments(items);
+    } catch (error) {
+      console.error("Error fetching documents:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -88,7 +86,7 @@ export default function AdminDocuments() {
         `Uploaded document: ${file.name}`
       );
       
-      
+      await fetchDocuments();
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (error) {
       console.error("Failed to upload document", error);
@@ -151,7 +149,7 @@ export default function AdminDocuments() {
             <select
               value={docType}
               onChange={e => setDocType(e.target.value as any)}
-              className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="project_file">Project File</option>
               <option value="requirement">Requirement</option>
@@ -171,7 +169,7 @@ export default function AdminDocuments() {
             <select
               value={accessLevel}
               onChange={e => setAccessLevel(e.target.value as any)}
-              className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="private">Private (Admins Only)</option>
               <option value="company">Company (Employees)</option>
@@ -217,7 +215,7 @@ export default function AdminDocuments() {
               placeholder="Search documents by name..." 
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -253,7 +251,7 @@ export default function AdminDocuments() {
                   <tr key={doc.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
+                        <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
                           <File className="w-4 h-4" />
                         </div>
                         <span className="font-medium text-slate-900 truncate max-w-xs block">{doc.title}</span>
@@ -265,7 +263,7 @@ export default function AdminDocuments() {
                     <td className="px-6 py-4">
                       <span className={`uppercase text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full
                         ${doc.accessLevel === 'public' ? 'bg-emerald-100 text-emerald-700' :
-                          doc.accessLevel === 'client' ? 'bg-amber-100 text-amber-700' :
+                          doc.accessLevel === 'client' ? 'bg-blue-100 text-blue-700' :
                           doc.accessLevel === 'private' ? 'bg-red-100 text-red-700' :
                           'bg-slate-100 text-slate-700'}`}
                       >
@@ -280,7 +278,7 @@ export default function AdminDocuments() {
                         href={doc.fileUrl} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors"
+                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                         title="Download/View"
                       >
                         <Download className="w-4 h-4" />

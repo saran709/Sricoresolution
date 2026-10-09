@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { PWAInstallButton } from '../ui/PWAInstallButton';
 import { Menu, X, ChevronDown, User as UserIcon } from 'lucide-react';
 import { APP_CONFIG } from '../../config';
 import { Container } from '../ui/Container';
@@ -10,7 +9,7 @@ import { useAuth } from '../../contexts/AuthContext';
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
-  const { currentUser, userProfile, loading } = useAuth();
+  const { currentUser, userProfile } = useAuth();
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
@@ -21,8 +20,8 @@ export function Navbar() {
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center">
             <Link to="/" className="flex items-center gap-2" onClick={closeMobileMenu}>
-              <img loading="lazy" src="/logo.png" alt="Sricore Solutions Logo" className="h-10 w-auto object-contain" />
-              <span className="text-xl font-bold tracking-tight text-slate-900">SRICORE<span className="text-amber-600">SOLUTIONS</span></span>
+              <img src="/logo.png" alt="Sricore Solutions Logo" className="h-10 w-auto object-contain" />
+              <span className="text-xl font-bold tracking-tight text-slate-900">SRICORE<span className="text-blue-600">SOLUTIONS</span></span>
             </Link>
           </div>
 
@@ -43,8 +42,8 @@ export function Navbar() {
                             key={child.name}
                             to={child.href}
                             className={cn(
-                              "block px-4 py-2 text-sm text-slate-600 hover:text-amber-600 hover:bg-slate-50",
-                              location.pathname === child.href && "text-amber-600 bg-slate-50"
+                              "block px-4 py-2 text-sm text-slate-600 hover:text-blue-600 hover:bg-slate-50",
+                              location.pathname === child.href && "text-blue-600 bg-slate-50"
                             )}
                           >
                             {child.name}
@@ -64,8 +63,8 @@ export function Navbar() {
                   className={cn(
                     "px-3 py-2 text-sm font-medium rounded-md transition-colors",
                     isActive 
-                      ? "text-amber-600 border-b-2 border-amber-600 rounded-none" 
-                      : "text-slate-600 hover:text-amber-600 hover:bg-slate-50"
+                      ? "text-blue-600 border-b-2 border-blue-600 rounded-none" 
+                      : "text-slate-600 hover:text-blue-600 hover:bg-slate-50"
                   )}
                 >
                   {item.name}
@@ -74,31 +73,25 @@ export function Navbar() {
             })}
           </nav>
 
-          <div className="hidden md:flex items-center space-x-3">
+          <div className="hidden md:flex items-center space-x-4">
             {currentUser ? (
               <Link 
-                 to="/dashboard" 
-                 className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded text-white bg-slate-900 hover:bg-slate-800 transition-colors shadow-sm"
+                to="/dashboard" 
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
               >
                 <UserIcon className="w-4 h-4" />
                 {userProfile?.firstName || 'Dashboard'}
               </Link>
             ) : (
-              <>
-                <Link
-                    to="/login"
-                    className="inline-flex items-center justify-center px-4 py-2 text-sm font-bold rounded bg-amber-600 text-white hover:bg-amber-700 transition-all shadow-md active:scale-95"
-                >
-                  LOGIN
-                </Link>
-                <Link
-                    to="/register"
-                    className="inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded text-slate-700 bg-slate-100 hover:bg-slate-200 transition-all"
-                >
-                  Register
-                </Link>
-              </>
+              <Link 
+                to="/login" 
+                className="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded text-slate-600 hover:text-blue-600 transition-colors"
+              >
+                Sign In
+              </Link>
             )}
+            
+
           </div>
 
           {/* Mobile menu button */}
@@ -163,11 +156,12 @@ export function Navbar() {
                 <Link
                   to="/login"
                   onClick={closeMobileMenu}
-                  className="block w-full text-center px-4 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-amber-600 hover:bg-amber-700"
+                  className="block w-full text-center px-4 py-3 border-2 border-slate-200 rounded-md shadow-sm text-base font-medium text-slate-900 hover:border-slate-900"
                 >
-                  LOGIN
+                  Sign In
                 </Link>
               )}
+
             </div>
           </div>
         </div>

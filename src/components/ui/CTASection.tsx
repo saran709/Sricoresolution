@@ -20,7 +20,7 @@ export function CTASection({ title, description, primaryAction, secondaryAction,
   const isDark = theme === 'dark';
   
   return (
-    <section className={`py-20 lg:py-24 ${isDark ? 'bg-slate-900 text-white' : 'bg-amber-50 text-slate-900'}`}>
+    <section className={`py-20 lg:py-24 ${isDark ? 'bg-slate-900 text-white' : 'bg-blue-50 text-slate-900'}`}>
       <Container>
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-6">
@@ -34,8 +34,8 @@ export function CTASection({ title, description, primaryAction, secondaryAction,
               to={primaryAction.href}
               className={`inline-flex items-center justify-center px-8 py-4 text-base font-medium rounded-md transition-colors w-full sm:w-auto ${
                 isDark 
-                  ? 'bg-amber-500 text-white hover:bg-amber-600' 
-                  : 'bg-amber-600 text-white hover:bg-amber-700'
+                  ? 'bg-blue-500 text-white hover:bg-blue-600' 
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
             >
               {primaryAction.label}
@@ -47,7 +47,7 @@ export function CTASection({ title, description, primaryAction, secondaryAction,
                 className={`inline-flex items-center justify-center px-8 py-4 text-base font-medium rounded-md border-2 transition-colors w-full sm:w-auto ${
                   isDark 
                     ? 'border-slate-700 text-white hover:bg-slate-800 hover:border-slate-600' 
-                    : 'border-amber-200 text-amber-700 hover:bg-amber-100 hover:border-amber-300'
+                    : 'border-blue-200 text-blue-700 hover:bg-blue-100 hover:border-blue-300'
                 }`}
               >
                 {secondaryAction.label}

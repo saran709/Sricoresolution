@@ -1,5 +1,7 @@
 {
-  "project_id": "ai-studio-sricoresolutions-785f07d0-b63b-4478-95d4-3d4e52e3e41f",
+  "projectInfo": {
+    "name": "Sricore Solutions"
+  },
   "roles": [
     "ADMINISTRATOR",
     "EMPLOYEE",
@@ -11,160 +13,206 @@
   "collections": [
     {
       "name": "users",
-      "purpose": "Manages platform authentication, profiles, and role-based access",
-      "access": "Read/write own profile; Admin has full access",
-      "fields": {
+      "description": "Core user records containing role and authentication data",
+      "schema": {
         "email": "string",
         "role": "string",
-        "firstName": "string?",
-        "lastName": "string?",
-        "phone": "string?",
-        "department": "string?",
-        "designation": "string?",
-        "status": "string?",
         "createdAt": "timestamp"
+      },
+      "permissions": {
+        "read": "request.auth.uid == documentId || request.auth.token.role == 'ADMINISTRATOR'",
+        "create": "request.auth.token.role == 'ADMINISTRATOR'",
+        "update": "request.auth.uid == documentId && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) || request.auth.token.role == 'ADMINISTRATOR'",
+        "delete": "request.auth.token.role == 'ADMINISTRATOR'"
+      }
+    },
+    {
+      "name": "employees",
+      "permissions": {
+        "read": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.uid == documentId || request.auth.token.role == 'EMPLOYEE'",
+        "create": "request.auth.token.role == 'ADMINISTRATOR'",
+        "update": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.uid == documentId",
+        "delete": "request.auth.token.role == 'ADMINISTRATOR'"
       }
     },
     {
       "name": "departments",
-      "purpose": "Company departments",
-      "access": "Admin full access, read-only for employees",
-      "fields": {
-        "name": "string",
-        "headId": "string?",
-        "status": "string",
-        "createdAt": "timestamp"
+      "permissions": {
+        "read": "request.auth != null",
+        "create": "request.auth.token.role == 'ADMINISTRATOR'",
+        "update": "request.auth.token.role == 'ADMINISTRATOR'",
+        "delete": "request.auth.token.role == 'ADMINISTRATOR'"
       }
     },
     {
-      "name": "enquiries",
-      "purpose": "Stores project requests submitted by clients",
-      "access": "Public create; Read/update for submitter and admins",
-      "fields": {
-        "clientId": "string?",
-        "name": "string",
-        "email": "string",
-        "service": "string",
-        "message": "string",
-        "status": "string",
-        "assignedTo": "string?",
-        "createdAt": "timestamp"
+      "name": "mentors",
+      "permissions": {
+        "read": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.token.role == 'MENTOR' || request.auth.token.role == 'EMPLOYEE'",
+        "create": "request.auth.token.role == 'ADMINISTRATOR'",
+        "update": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.uid == documentId",
+        "delete": "request.auth.token.role == 'ADMINISTRATOR'"
       }
     },
     {
-      "name": "internships",
-      "purpose": "Internship programs available",
-      "access": "Public read, Admin manage",
-      "fields": {
-        "title": "string",
-        "description": "string",
-        "duration": "string",
-        "status": "string",
-        "createdAt": "timestamp"
+      "name": "interns",
+      "permissions": {
+        "read": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.uid == documentId || request.auth.token.role == 'MENTOR' || request.auth.token.role == 'EMPLOYEE'",
+        "create": "request.auth.token.role == 'ADMINISTRATOR'",
+        "update": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.uid == documentId || request.auth.token.role == 'MENTOR'",
+        "delete": "request.auth.token.role == 'ADMINISTRATOR'"
       }
     },
     {
-      "name": "internship_applications",
-      "purpose": "Stores internship applications from candidates",
-      "access": "Public create; Read/update for submitter and admins",
-      "fields": {
-        "candidateId": "string?",
-        "programId": "string",
-        "firstName": "string",
-        "lastName": "string",
-        "email": "string",
-        "status": "string",
-        "createdAt": "timestamp"
+      "name": "clients",
+      "permissions": {
+        "read": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.token.role == 'EMPLOYEE' || request.auth.uid == documentId",
+        "create": "request.auth.token.role == 'ADMINISTRATOR'",
+        "update": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.uid == documentId",
+        "delete": "request.auth.token.role == 'ADMINISTRATOR'"
+      }
+    },
+    {
+      "name": "candidates",
+      "permissions": {
+        "read": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.uid == documentId || request.auth.token.role == 'EMPLOYEE'",
+        "create": "true",
+        "update": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.uid == documentId",
+        "delete": "request.auth.token.role == 'ADMINISTRATOR'"
       }
     },
     {
       "name": "projects",
-      "purpose": "Active client and internal projects",
-      "access": "Admin, Employees assigned, Client owner",
-      "fields": {
-        "name": "string",
-        "description": "string",
-        "clientId": "string?",
-        "leadId": "string?",
-        "status": "string",
-        "deadline": "timestamp?",
-        "createdAt": "timestamp"
+      "permissions": {
+        "read": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.token.role == 'EMPLOYEE' || (request.auth.token.role == 'CLIENT' && resource.data.clientId == request.auth.uid) || (request.auth.token.role == 'INTERN' && resource.data.assignedInterns.hasAny([request.auth.uid]))",
+        "create": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.token.role == 'EMPLOYEE'",
+        "update": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.token.role == 'EMPLOYEE'",
+        "delete": "request.auth.token.role == 'ADMINISTRATOR'"
       }
     },
     {
-      "name": "tasks",
-      "purpose": "Tasks for projects or internal work",
-      "access": "Admin, Assignee, Project Lead",
-      "fields": {
-        "title": "string",
-        "description": "string?",
-        "projectId": "string?",
-        "assigneeId": "string?",
-        "status": "string",
-        "priority": "string",
-        "dueDate": "timestamp?",
-        "createdAt": "timestamp"
+      "name": "projectTasks",
+      "permissions": {
+        "read": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.token.role == 'EMPLOYEE' || (request.auth.token.role == 'INTERN' && resource.data.assigneeId == request.auth.uid) || (request.auth.token.role == 'MENTOR')",
+        "create": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.token.role == 'EMPLOYEE' || request.auth.token.role == 'MENTOR'",
+        "update": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.token.role == 'EMPLOYEE' || request.auth.token.role == 'MENTOR' || request.auth.uid == resource.data.assigneeId",
+        "delete": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.token.role == 'EMPLOYEE'"
+      }
+    },
+    {
+      "name": "internshipPrograms",
+      "permissions": {
+        "read": "true",
+        "create": "request.auth.token.role == 'ADMINISTRATOR'",
+        "update": "request.auth.token.role == 'ADMINISTRATOR'",
+        "delete": "request.auth.token.role == 'ADMINISTRATOR'"
+      }
+    },
+    {
+      "name": "internshipApplications",
+      "permissions": {
+        "read": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.token.role == 'EMPLOYEE' || request.auth.uid == resource.data.candidateId",
+        "create": "request.auth != null",
+        "update": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.token.role == 'EMPLOYEE' || request.auth.uid == resource.data.candidateId",
+        "delete": "request.auth.token.role == 'ADMINISTRATOR'"
+      }
+    },
+    {
+      "name": "enquiries",
+      "permissions": {
+        "read": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.token.role == 'EMPLOYEE' || request.auth.uid == resource.data.clientId",
+        "create": "true",
+        "update": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.token.role == 'EMPLOYEE'",
+        "delete": "request.auth.token.role == 'ADMINISTRATOR'"
       }
     },
     {
       "name": "payments",
-      "purpose": "Financial transactions",
-      "access": "Admin, Client owner",
-      "fields": {
-        "amount": "number",
-        "currency": "string",
-        "status": "string",
-        "clientId": "string",
-        "projectId": "string?",
-        "createdAt": "timestamp"
+      "permissions": {
+        "read": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.uid == resource.data.userId",
+        "create": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.uid == resource.data.userId",
+        "update": "request.auth.token.role == 'ADMINISTRATOR'",
+        "delete": "request.auth.token.role == 'ADMINISTRATOR'"
       }
     },
     {
       "name": "invoices",
-      "purpose": "Billing invoices",
-      "access": "Admin, Client owner",
-      "fields": {
-        "invoiceNumber": "string",
-        "amount": "number",
-        "status": "string",
-        "clientId": "string",
-        "dueDate": "timestamp",
-        "createdAt": "timestamp"
+      "permissions": {
+        "read": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.token.role == 'EMPLOYEE' || request.auth.uid == resource.data.clientId",
+        "create": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.token.role == 'EMPLOYEE'",
+        "update": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.token.role == 'EMPLOYEE'",
+        "delete": "request.auth.token.role == 'ADMINISTRATOR'"
       }
     },
     {
       "name": "documents",
-      "purpose": "Secure file metadata",
-      "access": "Admin, Owner, Role-based",
-      "fields": {
-        "title": "string",
-        "url": "string",
-        "ownerId": "string",
-        "accessLevel": "string",
-        "createdAt": "timestamp"
+      "permissions": {
+        "read": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.token.role == 'EMPLOYEE' || request.auth.uid == resource.data.ownerId",
+        "create": "request.auth != null",
+        "update": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.uid == resource.data.ownerId",
+        "delete": "request.auth.token.role == 'ADMINISTRATOR'"
+      }
+    },
+    {
+      "name": "notifications",
+      "permissions": {
+        "read": "request.auth.uid == resource.data.userId",
+        "create": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.token.role == 'EMPLOYEE'",
+        "update": "request.auth.uid == resource.data.userId",
+        "delete": "request.auth.uid == resource.data.userId"
+      }
+    },
+    {
+      "name": "attendance",
+      "permissions": {
+        "read": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.token.role == 'EMPLOYEE' || request.auth.uid == resource.data.userId",
+        "create": "request.auth.uid == resource.data.userId || request.auth.token.role == 'ADMINISTRATOR'",
+        "update": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.uid == resource.data.userId",
+        "delete": "request.auth.token.role == 'ADMINISTRATOR'"
+      }
+    },
+    {
+      "name": "leaveRequests",
+      "permissions": {
+        "read": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.token.role == 'EMPLOYEE' || request.auth.uid == resource.data.userId",
+        "create": "request.auth.uid == resource.data.userId",
+        "update": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.token.role == 'EMPLOYEE'",
+        "delete": "request.auth.token.role == 'ADMINISTRATOR'"
+      }
+    },
+    {
+      "name": "announcements",
+      "permissions": {
+        "read": "request.auth != null",
+        "create": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.token.role == 'EMPLOYEE'",
+        "update": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.token.role == 'EMPLOYEE'",
+        "delete": "request.auth.token.role == 'ADMINISTRATOR'"
+      }
+    },
+    {
+      "name": "vendors",
+      "permissions": {
+        "read": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.token.role == 'EMPLOYEE'",
+        "create": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.token.role == 'EMPLOYEE'",
+        "update": "request.auth.token.role == 'ADMINISTRATOR' || request.auth.token.role == 'EMPLOYEE'",
+        "delete": "request.auth.token.role == 'ADMINISTRATOR'"
       }
     },
     {
       "name": "auditLogs",
-      "purpose": "System audit trail",
-      "access": "Admin read only, System create",
-      "fields": {
-        "action": "string",
-        "userId": "string",
-        "resourceType": "string",
-        "resourceId": "string",
-        "createdAt": "timestamp"
+      "permissions": {
+        "read": "request.auth.token.role == 'ADMINISTRATOR'",
+        "create": "request.auth != null",
+        "update": "false",
+        "delete": "false"
       }
     },
     {
-      "name": "settings",
-      "purpose": "Company global settings",
-      "access": "Admin full access",
-      "fields": {
-        "companyName": "string",
-        "email": "string",
-        "phone": "string",
-        "createdAt": "timestamp"
+      "name": "websiteContent",
+      "permissions": {
+        "read": "true",
+        "create": "request.auth.token.role == 'ADMINISTRATOR'",
+        "update": "request.auth.token.role == 'ADMINISTRATOR'",
+        "delete": "request.auth.token.role == 'ADMINISTRATOR'"
       }
     }
   ]
