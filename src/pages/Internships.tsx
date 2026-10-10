@@ -54,9 +54,7 @@ export default function Internships() {
               Launch your technical career with Sricore Solutions. Gain hands-on experience working on real-world industry projects alongside experienced mentors and senior engineers.
             </p>
             <a 
-              href="https://docs.google.com/forms/d/e/1FAIpQLSdweKLUrwYY3JiyvuK-WaUz2Y1QL9CGwNmW3EwTeXJ3no_aAw/viewform?usp=header" 
-              target="_blank"
-              rel="noopener noreferrer"
+              href="#available-programs" 
               className="inline-flex items-center justify-center px-6 py-3 text-base font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
             >
               Apply for Internship
@@ -89,7 +87,7 @@ export default function Internships() {
           description="Explore our currently open internship roles and apply to join our development teams."
         />
         
-        <div className="mt-16">
+        <div className="mt-16" id="available-programs">
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {[1, 2, 3, 4].map(i => (
