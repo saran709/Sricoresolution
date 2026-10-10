@@ -5,7 +5,6 @@ import { APP_CONFIG } from '../../config';
 import { Container } from '../ui/Container';
 import { cn } from '../../utils/cn';
 import { useAuth } from '../../contexts/AuthContext';
-import { ThemeToggle } from '../ui/ThemeToggle';
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -16,7 +15,7 @@ export function Navbar() {
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md">
       <Container>
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center">
@@ -75,7 +74,6 @@ export function Navbar() {
           </nav>
 
           <div className="hidden md:flex items-center space-x-4">
-            <ThemeToggle />
             {currentUser ? (
               <Link 
                 to="/dashboard" 
