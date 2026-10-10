@@ -6,6 +6,7 @@ import { Search, GraduationCap } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { logActivity } from '../../lib/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
+import { SeedInternshipsButton } from '../../components/admin/SeedInternshipsButton';
 
 const STATUSES: { value: InternshipApplication['status']; label: string }[] = [
   { value: 'internship_enquiry', label: 'Enquiry' },
@@ -97,6 +98,7 @@ export default function AdminInternships() {
           <h1 className="text-2xl font-bold text-slate-900">Internship Workflow</h1>
           <p className="text-sm text-slate-500">Manage operational stages for internships and training</p>
         </div>
+        <SeedInternshipsButton />
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">

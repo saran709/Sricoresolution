@@ -2,6 +2,7 @@ import React from 'react';
 import { Container } from '../components/ui/Container';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { CTASection } from '../components/ui/CTASection';
+import { AdSenseSlot } from '../components/ui/AdSenseSlot';
 
 export default function Services() {
   const services = [
@@ -51,6 +52,8 @@ export default function Services() {
           title="Capabilities Overview" 
           description="Explore our specialized practice areas. Our cross-functional teams work collaboratively to deliver integrated end-to-end solutions."
         />
+        
+        <AdSenseSlot />
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-16">
           {services.map((service, index) => (

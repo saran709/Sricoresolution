@@ -4,13 +4,13 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 
 export const firebaseConfig = {
-  apiKey: "AIzaSyAsYnbzBU3UmuwmCrnJiHEMZ9A7f2NPzL8",
-  authDomain: "sri-core-solutions.firebaseapp.com",
-  projectId: "sri-core-solutions",
-  storageBucket: "sri-core-solutions.firebasestorage.app",
-  messagingSenderId: "520057348164",
-  appId: "1:520057348164:web:ebd951a3bcd83461e0dc11",
-  measurementId: "G-1F5YXP36TC"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase

@@ -4,6 +4,7 @@ import { db } from '../../lib/firebase';
 import { Users, Briefcase, MessageSquare, GraduationCap, Clock, AlertCircle, Shield, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -124,6 +125,51 @@ export default function AdminDashboard() {
           ))}
         </div>
       )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+          <h3 className="text-lg font-bold text-slate-900 mb-4">Application Trends</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={[
+                { name: 'Mon', applications: 4 },
+                { name: 'Tue', applications: 7 },
+                { name: 'Wed', applications: 5 },
+                { name: 'Thu', applications: 10 },
+                { name: 'Fri', applications: 8 },
+              ]}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="applications" stroke="#2563eb" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+          <h3 className="text-lg font-bold text-slate-900 mb-4">User Login Activity</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={[
+                { name: 'Mon', logins: 20 },
+                { name: 'Tue', logins: 25 },
+                { name: 'Wed', logins: 30 },
+                { name: 'Thu', logins: 35 },
+                { name: 'Fri', logins: 40 },
+              ]}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="logins" fill="#818cf8" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">

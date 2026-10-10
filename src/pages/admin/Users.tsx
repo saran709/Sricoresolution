@@ -4,7 +4,7 @@ import { db } from '../../lib/firebase';
 import { User, UserRole } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { Search, Edit2, Trash2, UserPlus, X } from 'lucide-react';
+import { Search, Edit2, Trash2, UserPlus, X, KeyRound } from 'lucide-react';
 import { logActivity } from '../../lib/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -119,6 +119,30 @@ export default function Users() {
     }
   };
 
+  const handlePasswordReset = async (email: string) => {
+    if (!confirm(`Send password reset instructions to ${email}?`)) return;
+    
+    try {
+      const response = await fetch('/api/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: email,
+          subject: "Password Reset Request - Sricore Solutions",
+          html: `<p>Hello,</p>
+                 <p>An administrator has initiated a password reset request for your account.</p>
+                 <p>Please follow the instructions from the login page or contact support if you need further assistance.</p>`
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to send email');
+      alert('Password reset instructions sent!');
+    } catch (err) {
+      console.error(err);
+      setError('Failed to send reset instructions.');
+    }
+  };
+
   const filteredUsers = users.filter(u => 
     `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -165,6 +189,7 @@ export default function Users() {
                         <td className="p-4">{u.isActive ? 'Active' : 'Inactive'}</td>
                         <td className="p-4 flex gap-2">
                             <Button variant="outline" size="sm" onClick={() => openEditModal(u)}><Edit2 className="w-4 h-4"/></Button>
+                            <Button variant="outline" size="sm" onClick={() => handlePasswordReset(u.email)} title="Reset Password"><KeyRound className="w-4 h-4 text-amber-600"/></Button>
                             <Button variant="outline" size="sm" className="text-red-600" onClick={() => handleDelete(u.id!)}><Trash2 className="w-4 h-4"/></Button>
                         </td>
                     </tr>

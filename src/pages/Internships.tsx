@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Container } from '../components/ui/Container';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { CTASection } from '../components/ui/CTASection';
+import { AdSenseSlot } from '../components/ui/AdSenseSlot';
 import { Briefcase, Code, Cpu, Brain, ArrowRight } from 'lucide-react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -68,6 +69,8 @@ export default function Internships() {
           title="Training Domains" 
           description="We offer comprehensive technical training and project-based learning across multiple engineering disciplines."
         />
+        
+        <AdSenseSlot />
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-16">
           {domains.map((domain, index) => (
