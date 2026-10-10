@@ -69,8 +69,8 @@ export default function Register() {
       const userCredential = await createUserWithEmailAndPassword(auth, trimmedEmail, password);
       const user = userCredential.user;
 
-      // Create user profile in Firestore
-      await setDoc(doc(db, 'users', user.uid), {
+      // Create user profile in Firestore (async background task)
+      setDoc(doc(db, 'users', user.uid), {
         email: user.email,
         firstName: trimmedFirst,
         lastName: trimmedLast,
@@ -78,7 +78,7 @@ export default function Register() {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         isActive: true,
-      });
+      }).catch(err => console.error("Profile creation background error:", err));
 
       navigate('/dashboard');
     } catch (err: any) {
