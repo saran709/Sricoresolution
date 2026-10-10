@@ -97,6 +97,17 @@ service cloud.firestore {
     }
 
     // =========================================================================
+    // =========================================================================
+    // User Profiles
+    // =========================================================================
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (isAdmin() || request.auth.uid == userId);
+      // Allow users to create their own profile during registration
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isAuthenticated() && (isAdmin() || request.auth.uid == userId);
+      allow delete: if isAdmin();
+    }
+
     // Entities (Clients, Candidates, Employees, Mentors, Interns)
     // =========================================================================
     match /employees/{docId} {

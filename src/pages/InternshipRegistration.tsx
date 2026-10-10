@@ -9,6 +9,23 @@ import { Link } from 'react-router-dom';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
+import { z } from 'zod';
+
+const internshipSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  email: z.string().email("Invalid email address"),
+  phone: z.string().min(10, "Invalid phone number"),
+  institution: z.string().min(2, "Institution is required"),
+  degree: z.string().min(2, "Degree is required"),
+  graduationYear: z.string().length(4, "Invalid graduation year"),
+  gpa: z.string().min(1, "GPA is required"),
+  domain: z.string().min(1, "Domain is required"),
+  duration: z.string().min(1, "Duration is required"),
+  resumeLink: z.string().url("Invalid URL"),
+  motivation: z.string().min(20, "Motivation should be at least 20 characters"),
+});
+
 export default function InternshipRegistration() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -20,25 +37,24 @@ export default function InternshipRegistration() {
     setError(null);
     
     const formData = new FormData(e.currentTarget);
-    const data = {
-      firstName: formData.get('firstName'),
-      lastName: formData.get('lastName'),
-      email: formData.get('email'),
-      phone: formData.get('phone'),
-      institution: formData.get('institution'),
-      degree: formData.get('degree'),
-      graduationYear: formData.get('graduationYear'),
-      gpa: formData.get('gpa'),
-      domain: formData.get('domain'),
-      duration: formData.get('duration'),
-      resumeLink: formData.get('resumeLink'),
-      motivation: formData.get('motivation'),
+    const data = Object.fromEntries(formData.entries());
+
+    // Validation
+    const result = internshipSchema.safeParse(data);
+    if (!result.success) {
+      setError(result.error.issues[0].message);
+      setIsSubmitting(false);
+      return;
+    }
+
+    const payload = {
+      ...result.data,
       createdAt: serverTimestamp(),
       status: 'pending'
     };
     
     try {
-      await addDoc(collection(db, 'internship_applications'), data);
+      await addDoc(collection(db, 'internship_applications'), payload);
       setIsSuccess(true);
     } catch (err) {
       console.error("Error submitting application:", err);

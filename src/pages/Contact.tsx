@@ -7,6 +7,14 @@ import { Button } from '../components/ui/Button';
 import { APP_CONFIG } from '../config';
 import { Mail, Phone, MapPin } from 'lucide-react';
 
+import { z } from 'zod';
+
+const contactSchema = z.object({
+  fullName: z.string().min(2, "Full name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  message: z.string().min(10, "Message must be at least 10 characters"),
+});
+
 export default function Contact() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -18,19 +26,29 @@ export default function Contact() {
     setError('');
     
     const formData = new FormData(e.currentTarget);
-    const data = {
+    const data = Object.fromEntries(formData.entries());
+
+    // Validation
+    const result = contactSchema.safeParse(data);
+    if (!result.success) {
+      setError(result.error.issues[0].message);
+      setIsSubmitting(false);
+      return;
+    }
+
+    const payload = {
       to: APP_CONFIG.company.contact.email,
-      subject: `New Contact Message from ${formData.get('fullName')}`,
-      html: `<p>Name: ${formData.get('fullName')}</p>
-             <p>Email: ${formData.get('email')}</p>
-             <p>Message: ${formData.get('message')}</p>`
+      subject: `New Contact Message from ${data.fullName}`,
+      html: `<p>Name: ${data.fullName}</p>
+             <p>Email: ${data.email}</p>
+             <p>Message: ${data.message}</p>`
     };
 
     try {
       const response = await fetch('/api/email/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify(payload)
       });
       
       if (!response.ok) throw new Error('Failed to send');

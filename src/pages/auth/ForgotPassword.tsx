@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '../../lib/firebase';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { AlertCircle, CheckCircle } from 'lucide-react';
+import { APP_CONFIG } from '../../config';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -24,18 +23,27 @@ export default function ForgotPassword() {
 
     setLoading(true);
     try {
-      await sendPasswordResetEmail(auth, email.trim());
-      setMessage('Password reset instructions have been sent to your email.');
+      // Send reset request notification to admin
+      const data = {
+        to: APP_CONFIG.company.contact.email,
+        subject: `Password Reset Request: ${email}`,
+        html: `<p>A user has requested a password reset for the following account:</p>
+               <p>Email: ${email}</p>
+               <p>Please initiate the password reset process via the Firebase console.</p>`
+      };
+      
+      const response = await fetch('/api/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      
+      if (!response.ok) throw new Error('Failed to send request');
+      
+      setMessage('Password reset request has been sent to the administrator.');
     } catch (err: any) {
-      console.error("Password reset error:", err);
-      const code = err?.code || '';
-      if (code === 'auth/user-not-found') {
-        setError('No account exists with this email address.');
-      } else if (code === 'auth/invalid-email') {
-        setError('Please enter a valid email address.');
-      } else {
-        setError(err?.message || 'Failed to send password reset email. Please try again.');
-      }
+      console.error("Password reset request error:", err);
+      setError('Failed to send request. Please contact support via the contact page.');
     } finally {
       setLoading(false);
     }
@@ -51,10 +59,10 @@ export default function ForgotPassword() {
             </span>
           </Link>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-            Reset Password
+            Request Password Reset
           </h2>
           <p className="mt-2 text-sm text-slate-600">
-            Enter your account email to receive a password reset link.
+            Enter your email to request a password reset from the administrator.
           </p>
         </div>
 
@@ -88,7 +96,7 @@ export default function ForgotPassword() {
             className="w-full justify-center py-2.5 text-base font-semibold shadow-sm" 
             isLoading={loading}
           >
-            {loading ? 'Sending Instructions...' : 'Send Reset Link'}
+            {loading ? 'Sending Request...' : 'Request Reset'}
           </Button>
           
           <div className="text-center pt-2">

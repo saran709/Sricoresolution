@@ -30,16 +30,31 @@ export function CTASection({ title, description, primaryAction, secondaryAction,
             {description}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link 
-              to={primaryAction.href}
-              className={`inline-flex items-center justify-center px-8 py-4 text-base font-medium rounded-md transition-colors w-full sm:w-auto ${
-                isDark 
-                  ? 'bg-blue-500 text-white hover:bg-blue-600' 
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
-              }`}
-            >
-              {primaryAction.label}
-            </Link>
+            {primaryAction.href.startsWith('/') ? (
+              <Link 
+                to={primaryAction.href}
+                className={`inline-flex items-center justify-center px-8 py-4 text-base font-medium rounded-md transition-colors w-full sm:w-auto ${
+                  isDark 
+                    ? 'bg-blue-500 text-white hover:bg-blue-600' 
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                {primaryAction.label}
+              </Link>
+            ) : (
+              <a
+                href={primaryAction.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`inline-flex items-center justify-center px-8 py-4 text-base font-medium rounded-md transition-colors w-full sm:w-auto ${
+                  isDark 
+                    ? 'bg-blue-500 text-white hover:bg-blue-600' 
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                {primaryAction.label}
+              </a>
+            )}
             
             {secondaryAction && (
               <Link 

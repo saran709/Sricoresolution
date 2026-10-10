@@ -53,12 +53,14 @@ export default function Internships() {
             <p className="text-lg md:text-xl text-slate-300 leading-relaxed mb-8">
               Launch your technical career with Sricore Solutions. Gain hands-on experience working on real-world industry projects alongside experienced mentors and senior engineers.
             </p>
-            <Link 
-              to="/internships/apply" 
+            <a 
+              href="https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform" 
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center justify-center px-6 py-3 text-base font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
             >
               Apply for Internship
-            </Link>
+            </a>
           </div>
         </Container>
       </div>
@@ -114,12 +116,14 @@ export default function Internships() {
                     ))}
                   </div>
 
-                  <Link 
-                    to="/internships/apply" 
+                  <a 
+                    href="https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="inline-flex items-center font-semibold text-blue-600 hover:text-blue-700 transition-colors mt-auto"
                   >
                     Apply Now <ArrowRight className="w-4 h-4 ml-1" />
-                  </Link>
+                  </a>
                 </div>
               ))}
             </div>
@@ -128,11 +132,11 @@ export default function Internships() {
               <Briefcase className="w-12 h-12 text-slate-300 mx-auto mb-4" />
               <h3 className="text-xl font-bold text-slate-900 mb-2">No Open Programs</h3>
               <p className="text-slate-500 mb-6">Check back later for new internship opportunities.</p>
-              <Link to="/internships/apply">
+              <a href="https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform" target="_blank" rel="noopener noreferrer">
                 <button className="px-6 py-2 bg-slate-900 text-white rounded-md font-medium hover:bg-slate-800 transition-colors">
                   Submit General Application
                 </button>
-              </Link>
+              </a>
             </div>
           )}
         </div>
@@ -141,7 +145,7 @@ export default function Internships() {
       <CTASection 
         title="Ready to begin your journey?"
         description="Submit your application today. Our technical team will review your profile and reach out to you."
-        primaryAction={{ label: "Apply Now", href: "/internships/apply" }}
+        primaryAction={{ label: "Apply Now", href: "https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform" }}
       />
     </div>
   );
