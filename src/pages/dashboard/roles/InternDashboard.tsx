@@ -25,35 +25,46 @@ export default function InternDashboard() {
 
     const fetchData = async () => {
       try {
-        if (userProfile.mentorId) {
-          const mDoc = await getDoc(doc(db, 'users', userProfile.mentorId));
-          if (mDoc.exists()) {
-            setMentor({ id: mDoc.id, ...mDoc.data() } as User);
-          }
-        }
-        
-        if (userProfile.programId) {
-          const pDoc = await getDoc(doc(db, 'internship_programs', userProfile.programId));
-          if (pDoc.exists()) {
-            setProgram({ id: pDoc.id, ...pDoc.data() } as InternshipProgram);
-          }
-        }
+        const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000));
 
-        const taskQuery = query(
+        const mentorPromise = userProfile.mentorId 
+          ? getDoc(doc(db, 'users', userProfile.mentorId)) 
+          : Promise.resolve(null);
+        
+        const programPromise = userProfile.programId 
+          ? getDoc(doc(db, 'internship_programs', userProfile.programId)) 
+          : Promise.resolve(null);
+
+        const taskPromise = getDocs(query(
           collection(db, 'projectTasks'),
           where('assignedTo', '==', userProfile.uid)
-        );
-        const taskSnap = await getDocs(taskQuery);
-        setTasks(taskSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProjectTask)));
-        
-        const fbQuery = query(
+        ));
+
+        const fbPromise = getDocs(query(
           collection(db, 'auditLogs'),
           where('resourceId', '==', userProfile.uid),
           where('action', 'in', ['INTERN_FEEDBACK', 'INTERN_EVALUATION'])
-        );
-        const fbSnap = await getDocs(fbQuery);
-        setFeedback(fbSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ActivityHistory)));
+        ));
 
+        const [mentorRes, programRes, taskRes, fbRes] = await Promise.allSettled([
+          Promise.race([mentorPromise, timeout]),
+          Promise.race([programPromise, timeout]),
+          Promise.race([taskPromise, timeout]),
+          Promise.race([fbPromise, timeout]),
+        ]);
+
+        if (mentorRes.status === 'fulfilled' && mentorRes.value && 'exists' in mentorRes.value && mentorRes.value.exists()) {
+          setMentor({ id: mentorRes.value.id, ...mentorRes.value.data() } as User);
+        }
+        if (programRes.status === 'fulfilled' && programRes.value && 'exists' in programRes.value && programRes.value.exists()) {
+          setProgram({ id: programRes.value.id, ...programRes.value.data() } as InternshipProgram);
+        }
+        if (taskRes.status === 'fulfilled' && taskRes.value && 'docs' in taskRes.value) {
+          setTasks(taskRes.value.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProjectTask)));
+        }
+        if (fbRes.status === 'fulfilled' && fbRes.value && 'docs' in fbRes.value) {
+          setFeedback(fbRes.value.docs.map(doc => ({ id: doc.id, ...doc.data() } as ActivityHistory)));
+        }
       } catch (error) {
         console.error("Error fetching intern data:", error);
       } finally {

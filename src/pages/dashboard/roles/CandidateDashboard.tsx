@@ -7,61 +7,16 @@ import { FileText, Clock, CheckCircle, Search, FolderOpen, Bell, Download } from
 import { Link } from 'react-router-dom';
 import { Button } from '../../../components/ui/Button';
 
+import { useCandidateDashboard } from '../../../hooks/useDashboardQueries';
+
 export default function CandidateDashboard() {
   const { userProfile } = useAuth();
-  const [applications, setApplications] = useState<(InternshipApplication & { programTitle?: string })[]>([]);
-  const [documents, setDocuments] = useState<AppDocument[]>([]);
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading } = useCandidateDashboard(userProfile?.uid);
+
+  const applications = data?.applications || [];
+  const documents = data?.documents || [];
+  const notifications = data?.notifications || [];
   const [activeTab, setActiveTab] = useState<'applications' | 'documents' | 'notifications'>('applications');
-
-  useEffect(() => {
-    if (!userProfile?.uid) return;
-
-    const fetchData = async () => {
-      try {
-        const appQuery = query(
-          collection(db, 'internship_applications'),
-          where('candidateId', '==', userProfile.uid)
-        );
-        const appSnap = await getDocs(appQuery);
-        
-        const apps = await Promise.all(appSnap.docs.map(async (docSnap) => {
-          const appData = { id: docSnap.id, ...docSnap.data() } as InternshipApplication;
-          let programTitle = 'Unknown Program';
-          
-          if (appData.programId) {
-            try {
-              const progDoc = await getDoc(doc(db, 'internship_programs', appData.programId));
-              if (progDoc.exists()) {
-                programTitle = progDoc.data().title || 'Unknown Program';
-              }
-            } catch (e) {
-              // ignore
-            }
-          }
-          return { ...appData, programTitle };
-        }));
-        
-        setApplications(apps);
-        
-        const docQuery = query(collection(db, 'documents'), where('ownerId', '==', userProfile.uid));
-        const docSnap = await getDocs(docQuery);
-        setDocuments(docSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppDocument)));
-
-        const notifQuery = query(collection(db, 'notifications'), where('userId', '==', userProfile.uid));
-        const notifSnap = await getDocs(notifQuery);
-        setNotifications(notifSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppNotification)));
-
-      } catch (error) {
-        console.error("Error fetching candidate data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [userProfile]);
 
   if (loading) return <div className="animate-pulse h-32 bg-slate-100 rounded-xl"></div>;
 
@@ -96,19 +51,19 @@ export default function CandidateDashboard() {
                       <div className="flex justify-between items-start mb-2">
                         <p className="font-medium text-slate-900 text-lg">{app.programTitle}</p>
                         <span className={`text-xs px-3 py-1.5 rounded-full font-medium flex items-center gap-1.5
-                          ${app.status === 'pending' ? 'bg-amber-100 text-amber-700' :
-                            app.status === 'under_review' ? 'bg-blue-100 text-blue-700' :
-                            app.status === 'approved' || app.status === 'active' ? 'bg-emerald-100 text-emerald-700' :
-                            app.status === 'completed' ? 'bg-indigo-100 text-indigo-700' :
-                            app.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                          {(app.status as string) === 'pending' || (app.status as string) === 'internship_enquiry' || (app.status as string) === 'application_verification' ? 'bg-amber-100 text-amber-700' :
+                            (app.status as string) === 'under_review' || (app.status as string) === 'training' || (app.status as string) === 'assignments' ? 'bg-blue-100 text-blue-700' :
+                            (app.status as string) === 'approved' || (app.status as string) === 'active' || (app.status as string) === 'onboarding' ? 'bg-emerald-100 text-emerald-700' :
+                            (app.status as string) === 'completed' || (app.status as string) === 'certificate' ? 'bg-indigo-100 text-indigo-700' :
+                            (app.status as string) === 'rejected' ? 'bg-red-100 text-red-700' :
                             'bg-slate-100 text-slate-700'}`}
                         >
-                          {app.status === 'completed' || app.status === 'active' || app.status === 'approved' ? 
+                          {(app.status as string) === 'completed' || (app.status as string) === 'certificate' || (app.status as string) === 'approved' ? 
                             <CheckCircle className="w-3.5 h-3.5" /> : 
-                            app.status === 'rejected' ? null :
+                            (app.status as string) === 'rejected' ? null :
                             <Clock className="w-3.5 h-3.5" />
                           }
-                          {app.status.replace('_', ' ').toUpperCase()}
+                          {String(app.status).replace(/_/g, ' ').toUpperCase()}
                         </span>
                       </div>
                       <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 mt-4">

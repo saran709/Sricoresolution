@@ -8,6 +8,8 @@ import { useNavigate, Navigate } from 'react-router-dom';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { UserProfile } from '../../components/user/UserProfile';
 import { MyProjects } from '../../components/dashboard/MyProjects';
+import { AdSlot } from '../../components/ui/AdSlot';
+import { queryClient } from '../../lib/queryClient';
 
 // Import role dashboards
 import EmployeeDashboard from './roles/EmployeeDashboard';
@@ -22,6 +24,7 @@ export default function Dashboard() {
 
   const handleLogout = async () => {
     try {
+      queryClient.clear();
       await signOut(auth);
       navigate('/login');
     } catch (error) {
@@ -94,13 +97,17 @@ export default function Dashboard() {
           <UserProfile />
         </div>
 
-        {/* My Projects */}
-        <div className="mb-6">
-          <MyProjects />
-        </div>
+        {/* My Projects (shown for clients & employees) */}
+        {(userProfile?.role === 'CLIENT' || userProfile?.role === 'EMPLOYEE') && (
+          <div className="mb-6">
+            <MyProjects />
+          </div>
+        )}
 
         {/* Role-specific content */}
         {renderRoleDashboard()}
+        
+        <AdSlot isLoading={loading} />
         
       </Container>
     </div>

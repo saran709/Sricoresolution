@@ -28,28 +28,33 @@ export default function MentorDashboard() {
 
     const fetchData = async () => {
       try {
+        const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000));
         const internQuery = query(
           collection(db, 'users'),
           where('role', '==', 'INTERN'),
           where('mentorId', '==', userProfile.uid)
         );
-        const snap = await getDocs(internQuery);
-        const fetchedInterns = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-        setInterns(fetchedInterns);
-        
-        if (fetchedInterns.length > 0) {
-          const internIds = fetchedInterns.map(i => i.id!);
-          const tasksRef = collection(db, 'projectTasks');
+        const snap = await Promise.race([getDocs(internQuery), timeout]);
+        if (snap) {
+          const fetchedInterns = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+          setInterns(fetchedInterns);
           
-          // Note: query arrays max 10
-          const tasksList: ProjectTask[] = [];
-          for (let i = 0; i < internIds.length; i += 10) {
-            const batch = internIds.slice(i, i + 10);
-            const taskQuery = query(tasksRef, where('assignedTo', 'in', batch));
-            const tSnap = await getDocs(taskQuery);
-            tSnap.docs.forEach(d => tasksList.push({ id: d.id, ...d.data() } as ProjectTask));
+          if (fetchedInterns.length > 0) {
+            const internIds = fetchedInterns.map(i => i.id!);
+            const tasksRef = collection(db, 'projectTasks');
+            
+            // Note: query arrays max 10
+            const tasksList: ProjectTask[] = [];
+            for (let i = 0; i < Math.min(internIds.length, 20); i += 10) {
+              const batch = internIds.slice(i, i + 10);
+              const taskQuery = query(tasksRef, where('assignedTo', 'in', batch));
+              const tSnap = await Promise.race([getDocs(taskQuery), timeout]);
+              if (tSnap) {
+                tSnap.docs.forEach(d => tasksList.push({ id: d.id, ...d.data() } as ProjectTask));
+              }
+            }
+            setTasks(tasksList);
           }
-          setTasks(tasksList);
         }
       } catch (error) {
         console.error("Error fetching mentor data:", error);

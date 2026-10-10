@@ -34,6 +34,7 @@ export function AdminLayout() {
       title: 'Overview',
       items: [
         { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
+        { name: 'Users', path: '/admin/users', icon: Users },
         { name: 'Reports', path: '/admin/reports', icon: FileText },
         { name: 'Audit Logs', path: '/admin/audit', icon: Shield },
       ]

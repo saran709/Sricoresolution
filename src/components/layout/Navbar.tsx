@@ -5,6 +5,7 @@ import { APP_CONFIG } from '../../config';
 import { Container } from '../ui/Container';
 import { cn } from '../../utils/cn';
 import { useAuth } from '../../contexts/AuthContext';
+import { ThemeToggle } from '../ui/ThemeToggle';
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -15,7 +16,7 @@ export function Navbar() {
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md">
       <Container>
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center">
@@ -74,6 +75,7 @@ export function Navbar() {
           </nav>
 
           <div className="hidden md:flex items-center space-x-4">
+            <ThemeToggle />
             {currentUser ? (
               <Link 
                 to="/dashboard" 
@@ -83,12 +85,20 @@ export function Navbar() {
                 {userProfile?.firstName || 'Dashboard'}
               </Link>
             ) : (
-              <Link 
-                to="/login" 
-                className="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded text-slate-600 hover:text-blue-600 transition-colors"
-              >
-                Sign In
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link 
+                  to="/login" 
+                  className="inline-flex items-center justify-center px-3.5 py-1.5 text-sm font-semibold rounded text-slate-700 hover:text-blue-600 transition-colors"
+                >
+                  Sign In
+                </Link>
+                <Link 
+                  to="/register" 
+                  className="inline-flex items-center justify-center px-3.5 py-1.5 text-sm font-semibold rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
+                >
+                  Sign Up
+                </Link>
+              </div>
             )}
             
 
@@ -153,13 +163,22 @@ export function Navbar() {
                   Dashboard
                 </Link>
               ) : (
-                <Link
-                  to="/login"
-                  onClick={closeMobileMenu}
-                  className="block w-full text-center px-4 py-3 border-2 border-slate-200 rounded-md shadow-sm text-base font-medium text-slate-900 hover:border-slate-900"
-                >
-                  Sign In
-                </Link>
+                <div className="space-y-2">
+                  <Link
+                    to="/login"
+                    onClick={closeMobileMenu}
+                    className="block w-full text-center px-4 py-2.5 border border-slate-300 rounded-md shadow-sm text-base font-semibold text-slate-800 hover:bg-slate-50"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    to="/register"
+                    onClick={closeMobileMenu}
+                    className="block w-full text-center px-4 py-2.5 bg-blue-600 rounded-md shadow-sm text-base font-semibold text-white hover:bg-blue-700"
+                  >
+                    Sign Up
+                  </Link>
+                </div>
               )}
 
             </div>

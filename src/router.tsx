@@ -42,6 +42,7 @@ const AdminClients = React.lazy(() => import('./pages/admin/Clients'));
 const AdminTasks = React.lazy(() => import('./pages/admin/Tasks'));
 const AdminAudit = React.lazy(() => import('./pages/admin/Audit'));
 const AdminContent = React.lazy(() => import('./pages/admin/Content'));
+const AdminUsers = React.lazy(() => import('./pages/admin/Users'));
 const AdminSupport = React.lazy(() => import('./pages/admin/Support'));
 const AdminDocuments = React.lazy(() => import('./pages/admin/Documents'));
 const AdminPayments = React.lazy(() => import('./pages/admin/Payments'));
@@ -68,6 +69,7 @@ export function AppRouter() {
             <Route path="reports" element={<PagePlaceholder title="Reports" />} />
             <Route path="audit" element={<AdminAudit />} />
             <Route path="content" element={<AdminContent />} />
+            <Route path="users" element={<AdminUsers />} />
             
             <Route path="departments" element={<PagePlaceholder title="Department Management" />} />
             <Route path="employees" element={<AdminEmployees />} />

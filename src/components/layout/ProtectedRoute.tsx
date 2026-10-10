@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
-  const { currentUser, userProfile, loading } = useAuth();
+  const { currentUser, userProfile, loading, profileLoading } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -26,6 +26,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
 
   // If roles are specified, check if user has permission
   if (allowedRoles && allowedRoles.length > 0) {
+    if (profileLoading) {
+      return (
+        <div className="flex h-screen w-full items-center justify-center bg-slate-50">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+        </div>
+      );
+    }
     if (!userProfile || !allowedRoles.includes(userProfile.role)) {
       return <Navigate to="/unauthorized" replace />;
     }

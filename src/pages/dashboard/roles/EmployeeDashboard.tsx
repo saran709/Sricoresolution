@@ -9,71 +9,31 @@ import { Input } from '../../../components/ui/Input';
 import { Textarea } from '../../../components/ui/Textarea';
 import { logActivity } from '../../../lib/activityLogger';
 
+import { useEmployeeDashboard } from '../../../hooks/useDashboardQueries';
+import { queryClient } from '../../../lib/queryClient';
+
 export default function EmployeeDashboard() {
   const { userProfile } = useAuth();
-  const [employeeData, setEmployeeData] = useState<Employee | null>(null);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [tasks, setTasks] = useState<ProjectTask[]>([]);
-  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
-  const [attendances, setAttendances] = useState<Attendance[]>([]);
-  const [loading, setLoading] = useState(true);
+  const employeeData = userProfile as Employee | null;
+  const { data, isLoading: loading } = useEmployeeDashboard(userProfile?.uid);
+
+  const projects = data?.projects || [];
+  const tasks = data?.tasks || [];
+  const leaveRequests = data?.leaveRequests || [];
+  const attendances = data?.attendances || [];
   
   const [activeTab, setActiveTab] = useState<'overview' | 'tasks' | 'projects' | 'attendance' | 'reports'>('overview');
-  
   const [showLeaveForm, setShowLeaveForm] = useState(false);
   const [submittingLeave, setSubmittingLeave] = useState(false);
-
-  useEffect(() => {
-    if (!userProfile?.uid) return;
-
-    const fetchData = async () => {
-      try {
-        setEmployeeData(userProfile as Employee);
-      
-        const projQuery = query(
-          collection(db, 'projects'),
-          where('assignedEmployees', 'array-contains', userProfile.uid)
-        );
-        const projSnap = await getDocs(projQuery);
-        setProjects(projSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project)));
-
-        const taskQuery = query(
-          collection(db, 'projectTasks'),
-          where('assignedTo', '==', userProfile.uid)
-        );
-        const taskSnap = await getDocs(taskQuery);
-        setTasks(taskSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProjectTask)));
-        
-        const leaveQuery = query(
-          collection(db, 'leaveRequests'),
-          where('userId', '==', userProfile.uid),
-        );
-        const leaveSnap = await getDocs(leaveQuery);
-        setLeaveRequests(leaveSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as LeaveRequest)));
-        
-        const attQuery = query(
-          collection(db, 'attendance'),
-          where('userId', '==', userProfile.uid)
-        );
-        const attSnap = await getDocs(attQuery);
-        setAttendances(attSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Attendance)).sort((a,b) => b.date - a.date));
-        
-      } catch (error) {
-        console.error("Error fetching employee data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [userProfile]);
 
   const updateTaskStatus = async (taskId: string, newStatus: string) => {
     try {
       await updateDoc(doc(db, 'projectTasks', taskId), {
         status: newStatus
       });
-      setTasks(tasks.map(t => t.id === taskId ? { ...t, status: newStatus as any } : t));
+      if (userProfile?.uid) {
+        queryClient.invalidateQueries({ queryKey: ['employee-dashboard', userProfile.uid] });
+      }
       
       if (userProfile?.uid) {
         await logActivity(
@@ -105,14 +65,14 @@ export default function EmployeeDashboard() {
     };
     
     try {
-      const docRef = await addDoc(collection(db, 'leaveRequests'), data);
-      setLeaveRequests([...leaveRequests, { id: docRef.id, ...data } as LeaveRequest]);
+      await addDoc(collection(db, 'leaveRequests'), data);
+      queryClient.invalidateQueries({ queryKey: ['employee-dashboard', userProfile.uid] });
       setShowLeaveForm(false);
       
       await logActivity(
         'LEAVE_REQUESTED',
         userProfile.uid,
-        docRef.id,
+        userProfile.uid,
         'user',
         `Employee requested leave for ${data.startDate.toLocaleDateString()}`
       );
@@ -136,8 +96,8 @@ export default function EmployeeDashboard() {
         status: 'present'
       };
       
-      const docRef = await addDoc(collection(db, 'attendance'), attData);
-      setAttendances([{ id: docRef.id, ...attData } as Attendance, ...attendances]);
+      await addDoc(collection(db, 'attendance'), attData);
+      queryClient.invalidateQueries({ queryKey: ['employee-dashboard', userProfile.uid] });
     } catch (err) {
       console.error("Failed to check in", err);
     }

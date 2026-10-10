@@ -10,16 +10,38 @@ import { Mail, Phone, MapPin } from 'lucide-react';
 export default function Contact() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError('');
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
+    const formData = new FormData(e.currentTarget);
+    const data = {
+      to: APP_CONFIG.company.contact.email,
+      subject: `New Contact Message from ${formData.get('fullName')}`,
+      html: `<p>Name: ${formData.get('fullName')}</p>
+             <p>Email: ${formData.get('email')}</p>
+             <p>Message: ${formData.get('message')}</p>`
+    };
+
+    try {
+      const response = await fetch('/api/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      
+      if (!response.ok) throw new Error('Failed to send');
+      
       setIsSuccess(true);
-    }, 1500);
+    } catch (err) {
+      console.error(err);
+      setError('Failed to send message. Please try again later.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -97,12 +119,13 @@ export default function Contact() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <h3 className="text-2xl font-bold text-slate-900 mb-6">Send us a message</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <Input label="Full Name" required placeholder="John Doe" />
-                  <Input label="Email Address" type="email" required placeholder="john@example.com" />
+                  <Input label="Full Name" name="fullName" required placeholder="John Doe" />
+                  <Input label="Email Address" name="email" type="email" required placeholder="john@example.com" />
                 </div>
-                <Input label="Subject" required placeholder="How can we help?" />
+                <Input label="Subject" name="subject" required placeholder="How can we help?" />
                 <Textarea 
                   label="Message" 
+                  name="message"
                   required 
                   placeholder="Your message here..." 
                   className="min-h-[150px]"

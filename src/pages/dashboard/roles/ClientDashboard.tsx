@@ -11,53 +11,22 @@ import { logActivity } from '../../../lib/activityLogger';
 
 import { CheckoutButton } from '../../../components/payments/CheckoutButton';
 
+import { useClientDashboard } from '../../../hooks/useDashboardQueries';
+import { queryClient } from '../../../lib/queryClient';
+
 export default function ClientDashboard() {
   const { userProfile } = useAuth();
-  const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [tickets, setTickets] = useState<SupportTicket[]>([]);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [documents, setDocuments] = useState<AppDocument[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading } = useClientDashboard(userProfile?.uid);
+
+  const enquiries = data?.enquiries || [];
+  const projects = data?.projects || [];
+  const tickets = data?.tickets || [];
+  const invoices = data?.invoices || [];
+  const documents = data?.documents || [];
   const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'enquiries' | 'support' | 'invoices' | 'documents'>('overview');
   
   const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
   const [showNewTicketForm, setShowNewTicketForm] = useState(false);
-
-  useEffect(() => {
-    if (!userProfile?.uid) return;
-
-    const fetchData = async () => {
-      try {
-        const enqQuery = query(collection(db, 'enquiries'), where('clientId', '==', userProfile.uid));
-        const enqSnap = await getDocs(enqQuery);
-        setEnquiries(enqSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Enquiry)));
-
-        const projQuery = query(collection(db, 'projects'), where('clientId', '==', userProfile.uid));
-        const projSnap = await getDocs(projQuery);
-        setProjects(projSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project)));
-        
-        const tickQuery = query(collection(db, 'support_tickets'), where('clientId', '==', userProfile.uid));
-        const tickSnap = await getDocs(tickQuery);
-        setTickets(tickSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as SupportTicket)));
-        
-        const invQuery = query(collection(db, 'invoices'), where('clientId', '==', userProfile.uid));
-        const invSnap = await getDocs(invQuery);
-        setInvoices(invSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Invoice)));
-        
-        const docQuery = query(collection(db, 'documents'), where('ownerId', '==', userProfile.uid));
-        const docSnap = await getDocs(docQuery);
-        setDocuments(docSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppDocument)));
-        
-      } catch (error) {
-        console.error("Error fetching client data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [userProfile]);
 
   const handleCreateTicket = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -87,7 +56,7 @@ export default function ClientDashboard() {
         `Client created support ticket: ${data.subject}`
       );
       
-      setTickets([...tickets, { id: docRef.id, ...data } as SupportTicket]);
+      queryClient.invalidateQueries({ queryKey: ['client-dashboard', userProfile.uid] });
       setShowNewTicketForm(false);
     } catch (err) {
       console.error("Error creating ticket:", err);
@@ -243,12 +212,12 @@ export default function ClientDashboard() {
                         <p className="text-xs text-slate-500 uppercase tracking-wider mt-0.5">{enq.enquiryType || 'commercial'}</p>
                       </div>
                       <span className={`text-xs px-3 py-1.5 rounded-full font-medium
-                        ${enq.status === 'pending' ? 'bg-amber-100 text-amber-700' :
-                          enq.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
-                          enq.status === 'converted' ? 'bg-indigo-100 text-indigo-700' :
+                        ${enq.status === 'NEW' ? 'bg-amber-100 text-amber-700' :
+                          enq.status === 'QUALIFIED' || enq.status === 'PROPOSAL' ? 'bg-blue-100 text-blue-700' :
+                          enq.status === 'CONVERTED' || enq.status === 'APPROVED' ? 'bg-indigo-100 text-indigo-700' :
                           'bg-emerald-100 text-emerald-700'}`}
                       >
-                        {enq.status.replace('_', ' ').toUpperCase()}
+                        {String(enq.status).replace('_', ' ').toUpperCase()}
                       </span>
                     </div>
                     <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
@@ -302,8 +271,9 @@ export default function ClientDashboard() {
                           referenceId={invoice.id!}
                           referenceType="service"
                           onSuccess={() => {
-                            // Update local state temporarily for UX
-                            setInvoices(invoices.map(i => i.id === invoice.id ? {...i, status: 'paid'} : i));
+                            if (userProfile?.uid) {
+                              queryClient.invalidateQueries({ queryKey: ['client-dashboard', userProfile.uid] });
+                            }
                           }}
                         />
                       )}
