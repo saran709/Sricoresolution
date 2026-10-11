@@ -6,13 +6,13 @@ import { getStorage } from "firebase/storage";
 import appletConfig from "../../firebase-applet-config.json";
 
 export const firebaseConfig = {
-  apiKey: appletConfig.apiKey || import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: appletConfig.authDomain || import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: appletConfig.projectId || import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: appletConfig.storageBucket || import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: appletConfig.messagingSenderId || import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: appletConfig.appId || import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: appletConfig.measurementId || import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || appletConfig.apiKey || "AIzaSyAsYnbzBU3UmuwmCrnJiHEMZ9A7f2NPzL8",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || appletConfig.authDomain || "sri-core-solutions.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || appletConfig.projectId || "sri-core-solutions",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || appletConfig.storageBucket || "sri-core-solutions.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || appletConfig.messagingSenderId || "520057348164",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || appletConfig.appId || "1:520057348164:web:ebd951a3bcd83461e0dc11",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || appletConfig.measurementId || "G-1F5YXP36TC"
 };
 
 // Initialize Firebase

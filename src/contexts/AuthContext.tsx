@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { UserRole } from '../types';
 
@@ -67,12 +67,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       // 2. Fetch fresh data in background
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      if (userDoc.exists()) {
-        const rawData = userDoc.data();
+      // First attempt: check doc by auth.currentUser.uid
+      let userDoc = await getDoc(doc(db, 'users', user.uid));
+      let rawData: any = userDoc.exists() ? userDoc.data() : null;
+
+      // Second attempt: if doc was saved under a random or custom ID, query by email
+      if (!rawData && user.email) {
+        try {
+          const q = query(collection(db, 'users'), where('email', '==', user.email.trim()));
+          const querySnap = await getDocs(q);
+          if (!querySnap.empty) {
+            const firstDoc = querySnap.docs[0];
+            rawData = firstDoc.data();
+            // Re-sync to doc(users, user.uid) if missing so Firestore rules can match request.auth.uid
+            try {
+              await setDoc(doc(db, 'users', user.uid), {
+                ...rawData,
+                uid: user.uid,
+                updatedAt: serverTimestamp()
+              }, { merge: true });
+            } catch (e) {
+              console.warn("Could not auto-sync user document ID:", e);
+            }
+          }
+        } catch (queryErr) {
+          console.warn("Could not query users by email:", queryErr);
+        }
+      }
+
+      const ADMIN_EMAILS = ['saranramesh709@gmail.com'];
+      const isConfiguredAdmin = user.email && ADMIN_EMAILS.includes(user.email.toLowerCase().trim());
+
+      if (rawData) {
         let rawRole = (rawData.role || '').toUpperCase();
         if (rawRole === 'USER') rawRole = 'CLIENT';
-        if (rawRole === 'ADMIN') rawRole = 'ADMINISTRATOR';
+        if (rawRole === 'ADMIN' || isConfiguredAdmin) rawRole = 'ADMINISTRATOR';
 
         const profileData = { 
           uid: user.uid, 
@@ -84,16 +113,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem(`sricore_profile_${user.uid}`, JSON.stringify(profileData));
         localStorage.setItem('sricore_active_profile', JSON.stringify(profileData));
       } else {
-         // Fallback
+        // Fallback profile if Firestore document does not exist yet
         const displayNameParts = (user.displayName || '').split(' ');
         const fallback: UserProfile = {
           uid: user.uid,
           email: user.email || '',
           firstName: displayNameParts[0] || 'User',
           lastName: displayNameParts.slice(1).join(' ') || '',
-          role: 'CANDIDATE',
+          role: isConfiguredAdmin ? 'ADMINISTRATOR' : 'CANDIDATE',
         };
+
+        // If this is the admin email, automatically initialize the admin record in Firestore
+        if (isConfiguredAdmin) {
+          try {
+            await setDoc(doc(db, 'users', user.uid), {
+              email: user.email,
+              firstName: fallback.firstName,
+              lastName: fallback.lastName,
+              role: 'ADMINISTRATOR',
+              isActive: true,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp()
+            }, { merge: true });
+          } catch (initErr) {
+            console.warn("Could not auto-create admin doc:", initErr);
+          }
+        }
+
         setUserProfile(fallback);
+        localStorage.setItem(`sricore_profile_${user.uid}`, JSON.stringify(fallback));
+        localStorage.setItem('sricore_active_profile', JSON.stringify(fallback));
       }
     } catch (error) {
       console.warn("Could not fetch profile:", error);

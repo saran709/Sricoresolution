@@ -75,13 +75,23 @@ export function Navbar() {
 
           <div className="hidden md:flex items-center space-x-4">
             {currentUser ? (
-              <Link 
-                to="/dashboard" 
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
-              >
-                <UserIcon className="w-4 h-4" />
-                {userProfile?.firstName || 'Dashboard'}
-              </Link>
+              <div className="flex items-center gap-2">
+                {userProfile?.role === 'ADMINISTRATOR' && (
+                  <Link 
+                    to="/admin" 
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded bg-amber-500 hover:bg-amber-600 text-white uppercase tracking-wider transition-colors shadow-sm"
+                  >
+                    Admin Portal
+                  </Link>
+                )}
+                <Link 
+                  to="/dashboard" 
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
+                >
+                  <UserIcon className="w-4 h-4" />
+                  {userProfile?.firstName || 'Dashboard'}
+                </Link>
+              </div>
             ) : (
               <div className="flex items-center gap-2">
                 <Link 
