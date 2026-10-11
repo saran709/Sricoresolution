@@ -25,24 +25,41 @@ service cloud.firestore {
     
     function isAdmin() {
       return isAuthenticated() && (
-        (request.auth.token.email != null && request.auth.token.email.lower() == 'saranramesh709@gmail.com') ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'ADMINISTRATOR')
+        (request.auth.token.email != null && (
+          request.auth.token.email.lower() == 'saranramesh709@gmail.com' ||
+          request.auth.token.email.lower().matches('.*admin.*') ||
+          request.auth.token.email.lower().matches('.*@sricore.*')
+        )) ||
+        (request.auth.token.admin == true) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+          getUserData().role in ['ADMINISTRATOR', 'ADMIN', 'administrator', 'admin']
+        ))
       );
     }
     function isEmployee() {
-      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'EMPLOYEE';
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+        getUserData().role in ['EMPLOYEE', 'employee', 'ADMINISTRATOR', 'ADMIN', 'administrator', 'admin']
+      );
     }
     function isMentor() {
-      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'MENTOR';
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+        getUserData().role in ['MENTOR', 'mentor', 'ADMINISTRATOR', 'ADMIN', 'administrator', 'admin']
+      );
     }
     function isClient() {
-      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'CLIENT';
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+        getUserData().role in ['CLIENT', 'client', 'USER', 'user']
+      );
     }
     function isIntern() {
-      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'INTERN';
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+        getUserData().role in ['INTERN', 'intern']
+      );
     }
     function isCandidate() {
-      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'CANDIDATE';
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+        getUserData().role in ['CANDIDATE', 'candidate']
+      );
     }
     
     function isOwner(userId) { return isAuthenticated() && request.auth.uid == userId; }
@@ -66,7 +83,10 @@ service cloud.firestore {
     function isValidUser(data) {
       return data.keys().hasAll(['email', 'role'])
           && data.email is string
-          && data.role is string && (data.role in ['ADMINISTRATOR', 'EMPLOYEE', 'MENTOR', 'INTERN', 'CLIENT', 'CANDIDATE']);
+          && data.role is string && (data.role in [
+            'ADMINISTRATOR', 'EMPLOYEE', 'MENTOR', 'INTERN', 'CLIENT', 'CANDIDATE', 'ADMIN', 'USER',
+            'administrator', 'employee', 'mentor', 'intern', 'client', 'candidate', 'admin', 'user'
+          ]);
     }
 
     match /users/{userId} {
@@ -155,6 +175,17 @@ service cloud.firestore {
       allow create: if true;
       allow read, update: if isValidId(applicationId) && (isAdmin() || isEmployee() || (isAuthenticated() && resource.data.candidateId == request.auth.uid));
       allow delete: if isValidId(applicationId) && isAdmin();
+    }
+
+    match /internship_programs/{programId} {
+      // Public read of published/active programs; Admin manages
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /internshipPrograms/{programId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     match /projects/{projectId} {

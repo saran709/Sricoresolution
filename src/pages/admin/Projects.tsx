@@ -2,10 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, addDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Project, ProjectStage, ActivityHistory } from '../../types';
-import { Search, Plus, Filter, FileText, Trash2 } from 'lucide-react';
+import { Search, Plus, Filter, FileText, Trash2, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { logActivity } from '../../lib/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
+import { ConfirmModal } from '../../components/ui/ConfirmModal';
 
 const COMMERCIAL_STAGES: { value: ProjectStage; label: string }[] = [
   { value: 'enquiry', label: 'Enquiry' },
@@ -74,6 +75,10 @@ export default function AdminProjects() {
     status: 'active' as 'active' | 'on_hold' | 'completed' | 'cancelled'
   });
 
+  const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [feedback, setFeedback] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProject.name.trim()) {
@@ -107,6 +112,7 @@ export default function AdminProjects() {
         );
       }
 
+      setFeedback({ message: `Project "${newProject.name.trim()}" created successfully and saved to Firestore!`, type: 'success' });
       setIsModalOpen(false);
       setNewProject({
         name: '',
@@ -114,6 +120,7 @@ export default function AdminProjects() {
         projectType: 'commercial',
         status: 'active'
       });
+      setTimeout(() => setFeedback(null), 5000);
     } catch (err: any) {
       console.error("Error creating project:", err);
       setError(err?.message || 'Failed to create project.');
@@ -127,8 +134,8 @@ export default function AdminProjects() {
     const q = query(collection(db, 'projects'), orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const items: Project[] = [];
-      snapshot.forEach(doc => {
-        items.push({ id: doc.id, ...doc.data() } as Project);
+      snapshot.forEach(docSnap => {
+        items.push({ id: docSnap.id, ...docSnap.data() } as Project);
       });
       setProjects(items);
       setLoading(false);
@@ -140,24 +147,29 @@ export default function AdminProjects() {
     return () => unsubscribe();
   }, []);
 
-  const handleDeleteProject = async (project: Project) => {
-    if (!project.id) return;
-    if (!confirm(`Are you sure you want to delete project "${project.name}"?`)) return;
+  const executeDeleteProject = async () => {
+    if (!deleteTarget || !deleteTarget.id) return;
+    setIsDeleting(true);
 
     try {
-      await deleteDoc(doc(db, 'projects', project.id));
+      await deleteDoc(doc(db, 'projects', deleteTarget.id));
       if (userProfile?.uid) {
         await logActivity(
           'PROJECT_DELETED',
           userProfile.uid,
-          project.id,
+          deleteTarget.id,
           'project',
-          `Deleted project ${project.name}`
+          `Deleted project ${deleteTarget.name}`
         );
       }
+      setFeedback({ message: `Project "${deleteTarget.name}" deleted from Firestore.`, type: 'success' });
+      setTimeout(() => setFeedback(null), 5000);
     } catch (err: any) {
       console.error("Failed to delete project:", err);
-      alert(err?.message || "Failed to delete project.");
+      setFeedback({ message: err?.message || "Failed to delete project.", type: 'error' });
+    } finally {
+      setIsDeleting(false);
+      setDeleteTarget(null);
     }
   };
 
@@ -209,6 +221,21 @@ export default function AdminProjects() {
           Create Project
         </Button>
       </div>
+
+      {feedback && (
+        <div className={`p-4 rounded-xl flex items-center gap-2.5 text-sm font-medium border transition-all ${
+          feedback.type === 'success' 
+            ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
+            : 'bg-red-50 text-red-800 border-red-200'
+        }`}>
+          {feedback.type === 'success' ? (
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+          ) : (
+            <ShieldAlert className="w-5 h-5 text-red-600 shrink-0" />
+          )}
+          <span>{feedback.message}</span>
+        </div>
+      )}
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50">
@@ -310,7 +337,7 @@ export default function AdminProjects() {
                             variant="outline" 
                             size="sm" 
                             className="inline-flex items-center gap-1 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                            onClick={() => handleDeleteProject(project)}
+                            onClick={() => setDeleteTarget(project)}
                             title="Delete Project"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -397,6 +424,17 @@ export default function AdminProjects() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        title="Delete Project"
+        message={`Are you sure you want to delete project "${deleteTarget?.name}"? All associated stage workflows will be permanently removed from Firestore.`}
+        confirmLabel="Delete Project"
+        variant="danger"
+        isLoading={isDeleting}
+        onConfirm={executeDeleteProject}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

@@ -44,10 +44,13 @@ export default function AdminSettings() {
     }
   };
 
+  const [errorMessage, setErrorMessage] = useState('');
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setSuccess(false);
+    setErrorMessage('');
     try {
       await setDoc(doc(db, 'settings', 'company_billing'), {
         ...settings,
@@ -59,10 +62,10 @@ export default function AdminSettings() {
       }
 
       setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
-    } catch (err) {
+      setTimeout(() => setSuccess(false), 4000);
+    } catch (err: any) {
       console.error("Failed to save settings:", err);
-      alert("Failed to save settings.");
+      setErrorMessage(err?.message || "Failed to save settings to database.");
     } finally {
       setSaving(false);
     }
@@ -80,7 +83,13 @@ export default function AdminSettings() {
       {success && (
         <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center gap-2 text-sm">
           <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-          <span>Organization settings saved and synced successfully!</span>
+          <span>Organization settings saved and synced successfully to Firestore!</span>
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl flex items-center gap-2 text-sm">
+          <span>{errorMessage}</span>
         </div>
       )}
 

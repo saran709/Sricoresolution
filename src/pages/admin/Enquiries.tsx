@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, orderBy, getDocs, doc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, getDocs, doc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Enquiry, Project } from '../../types';
 import { Search, ArrowRightCircle } from 'lucide-react';
@@ -16,32 +16,34 @@ export default function Enquiries() {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    fetchEnquiries();
-  }, []);
-
-  const fetchEnquiries = async () => {
     setLoading(true);
-    try {
-      const q = query(collection(db, 'enquiries'), orderBy('createdAt', 'desc'));
-      const snapshot = await getDocs(q);
+    const q = query(collection(db, 'enquiries'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
       const items: Enquiry[] = [];
-      snapshot.forEach(doc => {
-        items.push({ id: doc.id, ...doc.data() } as Enquiry);
+      snapshot.forEach(docSnap => {
+        items.push({ id: docSnap.id, ...docSnap.data() } as Enquiry);
       });
       setEnquiries(items);
-    } catch (error) {
-      console.error("Error fetching enquiries:", error);
-    } finally {
       setLoading(false);
-    }
-  };
+    }, (error) => {
+      console.warn("Realtime enquiries listener error, falling back:", error);
+      const fallbackUnsub = onSnapshot(collection(db, 'enquiries'), (snap) => {
+        const items: Enquiry[] = [];
+        snap.forEach(d => items.push({ id: d.id, ...d.data() } as Enquiry));
+        setEnquiries(items);
+        setLoading(false);
+      });
+      return () => fallbackUnsub();
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleStatusChange = async (id: string, newStatus: string) => {
     try {
       await updateDoc(doc(db, 'enquiries', id), {
         status: newStatus
       });
-      setEnquiries(enquiries.map(e => e.id === id ? { ...e, status: newStatus as any } : e));
     } catch (error) {
       console.error("Failed to update status", error);
     }
@@ -49,10 +51,7 @@ export default function Enquiries() {
 
   const convertToProject = async (enquiry: Enquiry) => {
     try {
-      if (!enquiry.clientId) {
-        alert("Enquiry must have a linked Client ID to be converted to a Project. (Guest enquiries need accounts)");
-        return;
-      }
+      const effectiveClientId = enquiry.clientId || enquiry.id || 'guest_client';
       
       const pType = enquiry.enquiryType === 'student' ? 'student' : enquiry.enquiryType === 'research' ? 'research' : 'commercial';
       
@@ -61,7 +60,7 @@ export default function Enquiries() {
       if (pType === 'research') startingStage = 'topic_discussion';
 
       const newProjectData: Omit<Project, 'id'> = {
-        clientId: enquiry.clientId,
+        clientId: effectiveClientId,
         name: `${enquiry.serviceInterest || 'Project'} for ${enquiry.company || enquiry.firstName}`,
         description: enquiry.projectDetails || enquiry.message || '',
         projectType: pType,

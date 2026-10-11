@@ -91,17 +91,21 @@ export default function AdminInvoices() {
     }
   };
 
+  const [settingsFeedback, setSettingsFeedback] = useState<string | null>(null);
+
   const handleUpdateSettings = async () => {
     try {
       await setDoc(doc(db, 'settings', 'company_billing'), newSettings);
       setSettings(newSettings as CompanySettings);
-      alert('Settings updated successfully');
+      setSettingsFeedback('Settings updated successfully in Firestore!');
+      setTimeout(() => setSettingsFeedback(null), 4000);
       
       if (userProfile?.uid) {
         await logActivity('SETTINGS_UPDATED', userProfile.uid, 'company_billing', 'user', `Updated company billing settings`);
       }
     } catch (error) {
       console.error("Error saving settings", error);
+      setSettingsFeedback('Failed to save settings.');
     }
   };
 
@@ -414,6 +418,12 @@ export default function AdminInvoices() {
                 onChange={e => setNewSettings({...newSettings, termsAndConditions: e.target.value})}
               />
             </div>
+
+            {settingsFeedback && (
+              <div className="p-3 bg-emerald-50 text-emerald-800 rounded-lg text-xs font-medium border border-emerald-200 mt-4">
+                {settingsFeedback}
+              </div>
+            )}
 
             <div className="pt-4 flex justify-end border-t border-slate-200 mt-6">
               <Button onClick={handleUpdateSettings}>Save Settings</Button>

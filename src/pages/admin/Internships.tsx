@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, orderBy, getDocs, doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, getDocs, doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { InternshipApplication, User } from '../../types';
 import { Search, GraduationCap } from 'lucide-react';
@@ -34,14 +34,9 @@ export default function AdminInternships() {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    fetchApplications();
-  }, []);
-
-  const fetchApplications = async () => {
     setLoading(true);
-    try {
-      const q = query(collection(db, 'internship_applications'), orderBy('createdAt', 'desc'));
-      const snapshot = await getDocs(q);
+    const q = query(collection(db, 'internship_applications'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
       const items = await Promise.all(snapshot.docs.map(async (d) => {
         const app = { id: d.id, ...d.data() } as InternshipApplication;
         let candidate: User | undefined;
@@ -56,12 +51,19 @@ export default function AdminInternships() {
         return { ...app, candidate };
       }));
       setApplications(items);
-    } catch (error) {
-      console.error("Error fetching internship applications:", error);
-    } finally {
       setLoading(false);
-    }
-  };
+    }, (error) => {
+      console.warn("Realtime internship listener error, falling back:", error);
+      const fallbackUnsub = onSnapshot(collection(db, 'internship_applications'), async (snap) => {
+        const items = snap.docs.map(d => ({ id: d.id, ...d.data() } as InternshipApplication));
+        setApplications(items);
+        setLoading(false);
+      });
+      return () => fallbackUnsub();
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleStatusChange = async (app: InternshipApplication, newStatus: InternshipApplication['status']) => {
     try {

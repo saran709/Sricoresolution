@@ -11,47 +11,63 @@ service firebase.storage {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // =========================================================================
-    // Employee Documents (Private)
-    // =========================================================================
-    match /employees/{userId}/{document=**} {
-      allow read, write: if isOwner(userId);
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.email == 'saranramesh709@gmail.com' ||
+        request.auth.token.role == 'ADMINISTRATOR'
+      );
+    }
+
+    function isSafeFileSize() {
+      return request.resource.size < 15 * 1024 * 1024; // 15MB limit
     }
 
     // =========================================================================
-    // Intern Documents (Private)
+    // Employee Documents (Private to owner & Admin)
+    // =========================================================================
+    match /employees/{userId}/{document=**} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if (isOwner(userId) || isAdmin()) && isSafeFileSize();
+    }
+
+    // =========================================================================
+    // Intern Documents (Private to owner & Admin)
     // =========================================================================
     match /interns/{userId}/{document=**} {
-      allow read, write: if isOwner(userId);
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if (isOwner(userId) || isAdmin()) && isSafeFileSize();
     }
     
     // =========================================================================
-    // Client Documents (Private)
+    // Client Documents (Private to owner & Admin)
     // =========================================================================
     match /clients/{userId}/{document=**} {
-      allow read, write: if isOwner(userId);
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if (isOwner(userId) || isAdmin()) && isSafeFileSize();
     }
 
     // =========================================================================
     // Project Files (Protected)
     // =========================================================================
     match /projects/{projectId}/{document=**} {
-      allow read, write: if isAuthenticated(); 
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isSafeFileSize();
     }
 
     // =========================================================================
     // Invoices (Protected)
     // =========================================================================
     match /invoices/{userId}/{document=**} {
-      allow read, write: if isOwner(userId);
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isAdmin() && isSafeFileSize();
     }
 
     // =========================================================================
-    // Certificates (Publicly readable, restricted write)
+    // Certificates (Publicly readable, admin created)
     // =========================================================================
     match /certificates/{userId}/{document=**} {
       allow read: if true;
-      allow write: if isOwner(userId);
+      allow write: if isAdmin() && isSafeFileSize();
     }
 
     // =========================================================================
@@ -59,20 +75,26 @@ service firebase.storage {
     // =========================================================================
     match /research/{document=**} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
+      allow write: if isAuthenticated() && isSafeFileSize();
     }
 
     // =========================================================================
-    // Company Assets (Public)
+    // Company Assets (Public Read, Admin Write)
     // =========================================================================
     match /assets/{document=**} {
       allow read: if true;
-      allow write: if isAuthenticated(); 
+      allow write: if isAdmin() && isSafeFileSize(); 
     }
 
     match /admin_documents/{document=**} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
+      allow read: if isAdmin();
+      allow write: if isAdmin() && isSafeFileSize();
+    }
+
+    // Resumes (Candidates can upload their own resume)
+    match /resumes/{userId}/{fileName} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if (isOwner(userId) || isAdmin()) && isSafeFileSize();
     }
 
     // Default deny

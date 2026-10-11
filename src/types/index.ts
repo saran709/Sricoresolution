@@ -285,7 +285,7 @@ export interface ActivityHistory {
   action: string;
   performedBy: string; // userId
   resourceId: string;
-  resourceType: 'project' | 'enquiry' | 'internship' | 'payment' | 'task' | 'ticket' | 'user';
+  resourceType: 'project' | 'enquiry' | 'internship' | 'payment' | 'task' | 'ticket' | 'user' | 'system' | 'content';
   details: string;
   timestamp: any;
 }
@@ -303,15 +303,18 @@ export interface Notification {
 export interface Attendance {
   id?: string;
   userId: string;
+  userName?: string;
   date: any;
   checkIn: any;
   checkOut?: any;
-  status: 'present' | 'absent' | 'late' | 'half_day';
+  status: 'present' | 'absent' | 'late' | 'half_day' | 'remote';
 }
 
 export interface LeaveRequest {
   id?: string;
   userId: string;
+  userName?: string;
+  type?: string;
   startDate: any;
   endDate: any;
   reason: string;

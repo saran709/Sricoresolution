@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { collection, onSnapshot, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, where } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, where } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Department, User } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { Plus, Building2, Edit2, Trash2, Users } from 'lucide-react';
+import { Plus, Building2, Edit2, Trash2, Users, CheckCircle2, ShieldAlert, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { logActivity } from '../../lib/activityLogger';
+import { ConfirmModal } from '../../components/ui/ConfirmModal';
 
 export default function Departments() {
   const { currentUser } = useAuth();
@@ -17,8 +18,12 @@ export default function Departments() {
   const [editingDept, setEditingDept] = useState<Department | null>(null);
   const [name, setName] = useState('');
   const [managerId, setManagerId] = useState('');
+  const [description, setDescription] = useState('');
   const [saving, setSaving] = useState(false);
+  const [deleteConfirmTarget, setDeleteConfirmTarget] = useState<Department | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState('');
+  const [feedback, setFeedback] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -30,27 +35,30 @@ export default function Departments() {
       setLoading(false);
     }, (err) => {
       console.error("Realtime departments listener error:", err);
+      setError("Failed to stream departments: " + (err?.message || "Permission issue"));
       setLoading(false);
     });
 
-    // 2. Fetch active staff for manager dropdown
-    const fetchStaff = async () => {
-      try {
-        const empSnap = await getDocs(query(collection(db, 'users'), where('role', 'in', ['EMPLOYEE', 'ADMINISTRATOR', 'MENTOR'])));
-        setEmployees(empSnap.docs.map(d => ({ id: d.id, ...d.data() } as User)));
-      } catch (e) {
-        console.warn("Could not fetch staff for manager dropdown:", e);
-      }
-    };
-    fetchStaff();
+    // 2. Live real-time listener for employees
+    const qStaff = query(collection(db, 'users'));
+    const unsubStaff = onSnapshot(qStaff, (snapshot) => {
+      const allUsers: User[] = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as User));
+      setEmployees(allUsers);
+    }, (err) => {
+      console.warn("Realtime staff listener error in departments:", err);
+    });
 
-    return () => unsubDept();
+    return () => {
+      unsubDept();
+      unsubStaff();
+    };
   }, []);
 
   const openAddModal = () => {
     setEditingDept(null);
     setName('');
     setManagerId('');
+    setDescription('');
     setError('');
     setIsModalOpen(true);
   };
@@ -59,13 +67,15 @@ export default function Departments() {
     setEditingDept(dept);
     setName(dept.name);
     setManagerId(dept.managerId || '');
+    setDescription((dept as any).description || '');
     setError('');
     setIsModalOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) {
+    const cleanName = name.trim();
+    if (!cleanName) {
       setError('Please provide a department name.');
       return;
     }
@@ -76,46 +86,64 @@ export default function Departments() {
     try {
       if (editingDept && editingDept.id) {
         await updateDoc(doc(db, 'departments', editingDept.id), {
-          name: name.trim(),
-          managerId,
+          name: cleanName,
+          managerId: managerId || '',
+          description: description.trim(),
           updatedAt: serverTimestamp()
         });
         if (currentUser) {
-          await logActivity('UPDATE_DEPARTMENT', currentUser.uid, editingDept.id, 'user', `Updated department: ${name.trim()}`);
+          await logActivity('UPDATE_DEPARTMENT', currentUser.uid, editingDept.id, 'user', `Updated department: ${cleanName}`);
         }
+        setFeedback({ message: `Department "${cleanName}" updated successfully in Firestore.`, type: 'success' });
       } else {
         const docRef = await addDoc(collection(db, 'departments'), {
-          name: name.trim(),
-          managerId,
+          name: cleanName,
+          managerId: managerId || '',
+          description: description.trim(),
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
         if (currentUser) {
-          await logActivity('CREATE_DEPARTMENT', currentUser.uid, docRef.id, 'user', `Created department: ${name.trim()}`);
+          await logActivity('CREATE_DEPARTMENT', currentUser.uid, docRef.id, 'user', `Created department: ${cleanName}`);
         }
+        setFeedback({ message: `Department "${cleanName}" created successfully and saved to Firestore!`, type: 'success' });
       }
       setIsModalOpen(false);
+      setTimeout(() => setFeedback(null), 5000);
     } catch (err: any) {
       console.error("Error saving department:", err);
-      setError(err?.message || 'Failed to save department.');
+      setError(err?.message || 'Failed to save department to database.');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (dept: Department) => {
-    if (!dept.id) return;
-    if (!confirm(`Are you sure you want to delete "${dept.name}"?`)) return;
+  const executeDelete = async () => {
+    if (!deleteConfirmTarget || !deleteConfirmTarget.id) return;
 
+    setIsDeleting(true);
     try {
-      await deleteDoc(doc(db, 'departments', dept.id));
+      await deleteDoc(doc(db, 'departments', deleteConfirmTarget.id));
       if (currentUser) {
-        await logActivity('DELETE_DEPARTMENT', currentUser.uid, dept.id, 'user', `Deleted department: ${dept.name}`);
+        await logActivity('DELETE_DEPARTMENT', currentUser.uid, deleteConfirmTarget.id, 'user', `Deleted department: ${deleteConfirmTarget.name}`);
       }
-    } catch (err) {
+      setFeedback({ message: `Department "${deleteConfirmTarget.name}" deleted successfully.`, type: 'success' });
+      setTimeout(() => setFeedback(null), 5000);
+    } catch (err: any) {
       console.error("Error deleting department:", err);
-      alert("Failed to delete department.");
+      setFeedback({ message: err?.message || "Failed to delete department.", type: 'error' });
+    } finally {
+      setIsDeleting(false);
+      setDeleteConfirmTarget(null);
     }
+  };
+
+  const getMemberCount = (deptId?: string, deptName?: string) => {
+    if (!deptId) return 0;
+    return employees.filter(e => {
+      const d = (e as any).departmentId;
+      return d === deptId || d === deptName;
+    }).length;
   };
 
   return (
@@ -123,19 +151,34 @@ export default function Departments() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Department Management</h1>
-          <p className="text-sm text-slate-500">Organize teams, assign department managers and oversee units</p>
+          <p className="text-sm text-slate-500">Organize teams, assign department managers, and oversee company divisions</p>
         </div>
-        <Button className="flex items-center gap-2" onClick={openAddModal}>
+        <Button className="flex items-center gap-2 shadow-sm" onClick={openAddModal}>
           <Plus className="w-4 h-4" />
           Add Department
         </Button>
       </div>
 
+      {feedback && (
+        <div className={`p-4 rounded-xl flex items-center gap-2.5 text-sm font-medium border transition-all ${
+          feedback.type === 'success' 
+            ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
+            : 'bg-red-50 text-red-800 border-red-200'
+        }`}>
+          {feedback.type === 'success' ? (
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+          ) : (
+            <ShieldAlert className="w-5 h-5 text-red-600 shrink-0" />
+          )}
+          <span>{feedback.message}</span>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading ? (
           <div className="col-span-full py-12 text-center text-slate-500">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2" />
-            Loading departments...
+            <div className="text-xs font-medium">Streaming departments from Firestore...</div>
           </div>
         ) : departments.length === 0 ? (
           <div className="col-span-full py-12 bg-white rounded-xl border border-dashed border-slate-300 text-center text-slate-500 p-8">
@@ -147,6 +190,7 @@ export default function Departments() {
         ) : (
           departments.map(dept => {
             const manager = employees.find(e => e.id === dept.managerId);
+            const memberCount = getMemberCount(dept.id, dept.name);
             return (
               <div key={dept.id} className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
                 <div>
@@ -163,7 +207,7 @@ export default function Departments() {
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button 
-                        onClick={() => handleDelete(dept)} 
+                        onClick={() => setDeleteConfirmTarget(dept)} 
                         className="p-1.5 text-slate-400 hover:text-red-600 rounded-md hover:bg-slate-50 transition-colors"
                         title="Delete Department"
                       >
@@ -172,9 +216,23 @@ export default function Departments() {
                     </div>
                   </div>
                   <h3 className="font-bold text-lg text-slate-900">{dept.name}</h3>
-                  <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
-                    <Users className="w-3.5 h-3.5" />
-                    <span>Manager: <strong className="text-slate-700">{manager ? `${manager.firstName} ${manager.lastName}` : 'Not assigned'}</strong></span>
+                  {(dept as any).description && (
+                    <p className="text-xs text-slate-500 mt-1 line-clamp-2">{(dept as any).description}</p>
+                  )}
+                  
+                  <div className="mt-4 pt-4 border-t border-slate-100 space-y-2 text-xs text-slate-600">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500 flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-slate-400" /> Staff Assigned:
+                      </span>
+                      <strong className="text-slate-800 bg-slate-100 px-2 py-0.5 rounded-full">{memberCount}</strong>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500">Manager:</span>
+                      <strong className="text-slate-800">
+                        {manager ? `${manager.firstName} ${manager.lastName}` : 'Not designated'}
+                      </strong>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -184,16 +242,24 @@ export default function Departments() {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl border border-slate-200">
-            <h2 className="text-xl font-bold text-slate-900 mb-4">
-              {editingDept ? 'Edit Department' : 'Add New Department'}
-            </h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border border-slate-200">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-slate-900">
+                {editingDept ? 'Edit Department' : 'Add New Department'}
+              </h2>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
             {error && (
-              <div className="p-3 bg-red-50 text-red-700 rounded-lg text-xs mb-4">
-                {error}
+              <div className="p-3 bg-red-50 text-red-700 rounded-xl text-xs mb-4 border border-red-200 flex items-start gap-2">
+                <ShieldAlert className="w-4 h-4 mt-0.5 shrink-0 text-red-600" />
+                <span>{error}</span>
               </div>
             )}
+            
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -201,7 +267,7 @@ export default function Departments() {
                 </label>
                 <Input
                   required
-                  placeholder="e.g. Embedded Systems & IoT"
+                  placeholder="e.g. Software Development"
                   value={name}
                   onChange={e => setName(e.target.value)}
                 />
@@ -209,7 +275,20 @@ export default function Departments() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Department Manager
+                  Brief Description
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Cloud architectures, AI integration & full-stack development"
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Department Head / Manager
                 </label>
                 <select
                   value={managerId}
@@ -217,16 +296,18 @@ export default function Departments() {
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">-- Select Manager (Optional) --</option>
-                  {employees.map(emp => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.firstName} {emp.lastName} ({emp.role})
-                    </option>
-                  ))}
+                  {employees
+                    .filter(emp => ['EMPLOYEE', 'ADMINISTRATOR', 'MENTOR'].includes((emp.role || '').toUpperCase()))
+                    .map(emp => (
+                      <option key={emp.id} value={emp.id}>
+                        {emp.firstName} {emp.lastName} ({emp.role})
+                      </option>
+                    ))}
                 </select>
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
-                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
+                <Button type="button" variant="outline" disabled={saving} onClick={() => setIsModalOpen(false)}>
                   Cancel
                 </Button>
                 <Button type="submit" isLoading={saving}>
@@ -237,6 +318,18 @@ export default function Departments() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={!!deleteConfirmTarget}
+        title="Delete Department"
+        message={`Are you sure you want to delete the department "${deleteConfirmTarget?.name}"? Staff currently assigned will not be deleted, but will become unassigned.`}
+        confirmLabel="Delete Department"
+        variant="danger"
+        isLoading={isDeleting}
+        onConfirm={executeDelete}
+        onCancel={() => setDeleteConfirmTarget(null)}
+      />
     </div>
   );
 }
