@@ -24,7 +24,10 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'ADMINISTRATOR';
+      return isAuthenticated() && (
+        (request.auth.token.email != null && request.auth.token.email.lower() == 'saranramesh709@gmail.com') ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'ADMINISTRATOR')
+      );
     }
     function isEmployee() {
       return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'EMPLOYEE';
@@ -70,19 +73,20 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isValidId(userId) && (isAdmin() || isOwner(userId) || isEmployee() || isMentor());
       
-      allow create: if isValidId(userId) && isAuthenticated() && request.auth.uid == userId && (
-        // Public Candidate/Client Registration
-        (incoming().role in ['CANDIDATE', 'CLIENT'] && isValidUser(incoming()))
-        ||
-        // Admin Bootstrap Strategy
-        (incoming().role == 'ADMINISTRATOR' 
-         && isValidUser(incoming())
-         && !exists(/databases/$(database)/documents/system/setup)
-         && existsAfter(/databases/$(database)/documents/system/setup)
-        )
-        ||
-        // Admin creates other users
+      allow create: if isValidId(userId) && isAuthenticated() && (
+        // Admin creates other users (employees, interns, mentors)
         (isAdmin() && isValidUser(incoming()))
+        ||
+        // Self-registration
+        (request.auth.uid == userId && (
+          (incoming().role in ['CANDIDATE', 'CLIENT'] && isValidUser(incoming()))
+          ||
+          (incoming().role == 'ADMINISTRATOR' 
+           && isValidUser(incoming())
+           && !exists(/databases/$(database)/documents/system/setup)
+           && existsAfter(/databases/$(database)/documents/system/setup)
+          )
+        ))
       );
 
       allow update: if isValidId(userId) && isAuthenticated() && (
