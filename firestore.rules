@@ -223,5 +223,38 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow update, delete: if false; // Immutable
     }
+
+    match /departments/{deptId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /vendors/{vendorId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /attendance/{attId} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create, update: if isAdmin() || (isAuthenticated() && incoming().userId == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+
+    match /leaveRequests/{leaveId} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAuthenticated() && incoming().userId == request.auth.uid;
+      allow update: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+
+    match /announcements/{annId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /notifications/{notifId} {
+      allow read, update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated();
+      allow delete: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+    }
   }
 }

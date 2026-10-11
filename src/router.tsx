@@ -47,6 +47,16 @@ const AdminSupport = React.lazy(() => import('./pages/admin/Support'));
 const AdminDocuments = React.lazy(() => import('./pages/admin/Documents'));
 const AdminPayments = React.lazy(() => import('./pages/admin/Payments'));
 const AdminInvoices = React.lazy(() => import('./pages/admin/Invoices'));
+const AdminDepartments = React.lazy(() => import('./pages/admin/Departments'));
+const AdminMentors = React.lazy(() => import('./pages/admin/Mentors'));
+const AdminCandidates = React.lazy(() => import('./pages/admin/Candidates'));
+const AdminInterns = React.lazy(() => import('./pages/admin/Interns'));
+const AdminAttendance = React.lazy(() => import('./pages/admin/Attendance'));
+const AdminLeaves = React.lazy(() => import('./pages/admin/Leaves'));
+const AdminVendors = React.lazy(() => import('./pages/admin/Vendors'));
+const AdminAnnouncements = React.lazy(() => import('./pages/admin/Announcements'));
+const AdminReports = React.lazy(() => import('./pages/admin/Reports'));
+const AdminSettings = React.lazy(() => import('./pages/admin/Settings'));
 
 const PageLoader = () => (
   <div className="min-h-[50vh] flex items-center justify-center">
@@ -66,14 +76,14 @@ export function AppRouter() {
             </ProtectedRoute>
           }>
             <Route index element={<AdminDashboard />} />
-            <Route path="reports" element={<PagePlaceholder title="Reports" />} />
+            <Route path="reports" element={<AdminReports />} />
             <Route path="audit" element={<AdminAudit />} />
             <Route path="content" element={<AdminContent />} />
             <Route path="users" element={<AdminUsers />} />
             
-            <Route path="departments" element={<PagePlaceholder title="Department Management" />} />
+            <Route path="departments" element={<AdminDepartments />} />
             <Route path="employees" element={<AdminEmployees />} />
-            <Route path="mentors" element={<PagePlaceholder title="Mentor Management" />} />
+            <Route path="mentors" element={<AdminMentors />} />
             
             <Route path="enquiries" element={<AdminEnquiries />} />
             <Route path="clients" element={<AdminClients />} />
@@ -84,18 +94,18 @@ export function AppRouter() {
             <Route path="invoices" element={<AdminInvoices />} />
             
             <Route path="internships" element={<AdminInternships />} />
-            <Route path="candidates" element={<PagePlaceholder title="Candidate Management" />} />
-            <Route path="interns" element={<PagePlaceholder title="Intern Management" />} />
+            <Route path="candidates" element={<AdminCandidates />} />
+            <Route path="interns" element={<AdminInterns />} />
             
-            <Route path="attendance" element={<PagePlaceholder title="Attendance" />} />
-            <Route path="leaves" element={<PagePlaceholder title="Leave Management" />} />
+            <Route path="attendance" element={<AdminAttendance />} />
+            <Route path="leaves" element={<AdminLeaves />} />
             <Route path="documents" element={<AdminDocuments />} />
-            <Route path="vendors" element={<PagePlaceholder title="Vendor Management" />} />
+            <Route path="vendors" element={<AdminVendors />} />
             
-            <Route path="announcements" element={<PagePlaceholder title="Announcements" />} />
+            <Route path="announcements" element={<AdminAnnouncements />} />
             <Route path="notifications" element={<PagePlaceholder title="Notifications" />} />
             
-            <Route path="settings" element={<PagePlaceholder title="Admin Settings" />} />
+            <Route path="settings" element={<AdminSettings />} />
           </Route>
 
           {/* Main Application Routes */}
