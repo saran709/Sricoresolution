@@ -82,7 +82,10 @@ export default function Users() {
       if (editingUser && editingUser.id) {
         // Update existing user profile
         await updateDoc(doc(db, 'users', editingUser.id), {
-          ...formData,
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          role: formData.role,
+          isActive: formData.isActive,
           updatedAt: serverTimestamp()
         });
         
@@ -90,16 +93,28 @@ export default function Users() {
             await logActivity('USER_UPDATED', currentUser.uid, editingUser.id, 'user', `Updated profile for ${formData.email}`);
         }
       } else {
-        // Create - Note: Creating users requires Auth SDK
-        // This is a placeholder as full auth creation needs Auth SDK
-        throw new Error("User creation via Admin is currently restricted to profiles. Please use Auth SDK for full user creation.");
+        // Create new user record
+        const userRef = doc(collection(db, 'users'));
+        await setDoc(userRef, {
+          email: formData.email.trim(),
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          role: formData.role,
+          isActive: formData.isActive,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+
+        if (currentUser?.uid) {
+            await logActivity('USER_CREATED', currentUser.uid, userRef.id, 'user', `Created user record for ${formData.email.trim()}`);
+        }
       }
       
       await fetchUsers();
       setIsModalOpen(false);
     } catch (err: any) {
-      console.error(err);
-      setError(err.message);
+      console.error("Save user error:", err);
+      setError(err?.message || 'Failed to save user record.');
     } finally {
       setSaving(false);
     }
@@ -205,11 +220,46 @@ export default function Users() {
                     <h2 className="text-lg font-bold">{editingUser ? 'Edit User' : 'Add User Profile'}</h2>
                     <button onClick={() => setIsModalOpen(false)}><X/></button>
                 </div>
+                {error && (
+                  <div className="p-3 bg-red-50 text-red-700 rounded-lg text-xs mb-4">
+                    {error}
+                  </div>
+                )}
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <Input label="First Name" value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} required />
                     <Input label="Last Name" value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} required />
                     <Input label="Email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required disabled={!!editingUser} />
-                    <Button type="submit" isLoading={saving} className="w-full">{editingUser ? 'Update' : 'Save'}</Button>
+                    
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Assigned Role</label>
+                      <select
+                        value={formData.role}
+                        onChange={e => setFormData({...formData, role: e.target.value as UserRole})}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
+                      >
+                        <option value="CANDIDATE">Candidate</option>
+                        <option value="INTERN">Intern</option>
+                        <option value="CLIENT">Client</option>
+                        <option value="EMPLOYEE">Employee</option>
+                        <option value="MENTOR">Mentor</option>
+                        <option value="ADMINISTRATOR">Administrator</option>
+                      </select>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-1">
+                      <input
+                        type="checkbox"
+                        id="userIsActive"
+                        checked={formData.isActive}
+                        onChange={e => setFormData({...formData, isActive: e.target.checked})}
+                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <label htmlFor="userIsActive" className="text-xs font-medium text-slate-700 cursor-pointer">
+                        Account Active
+                      </label>
+                    </div>
+
+                    <Button type="submit" isLoading={saving} className="w-full">{editingUser ? 'Update Profile' : 'Save User'}</Button>
                 </form>
             </div>
         </div>

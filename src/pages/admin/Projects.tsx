@@ -64,6 +64,64 @@ export default function AdminProjects() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [newProject, setNewProject] = useState({
+    name: '',
+    description: '',
+    projectType: 'commercial' as 'commercial' | 'student' | 'research',
+    status: 'active' as 'active' | 'on_hold' | 'completed' | 'cancelled'
+  });
+
+  const handleCreateProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newProject.name.trim()) {
+      setError('Please provide a project name.');
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+
+    try {
+      const initialStage: ProjectStage = newProject.projectType === 'student' ? 'student_enquiry' : newProject.projectType === 'research' ? 'topic_discussion' : 'enquiry';
+      const docRef = await addDoc(collection(db, 'projects'), {
+        name: newProject.name.trim(),
+        description: newProject.description.trim(),
+        projectType: newProject.projectType,
+        status: newProject.status,
+        stage: initialStage,
+        assignedEmployees: [],
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+
+      if (userProfile?.uid) {
+        await logActivity(
+          'PROJECT_CREATED',
+          userProfile.uid,
+          docRef.id,
+          'project',
+          `Created project ${newProject.name.trim()} (${newProject.projectType})`
+        );
+      }
+
+      setIsModalOpen(false);
+      setNewProject({
+        name: '',
+        description: '',
+        projectType: 'commercial',
+        status: 'active'
+      });
+      fetchProjects();
+    } catch (err: any) {
+      console.error("Error creating project:", err);
+      setError(err?.message || 'Failed to create project.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   useEffect(() => {
     fetchProjects();
@@ -129,7 +187,7 @@ export default function AdminProjects() {
           <h1 className="text-2xl font-bold text-slate-900">Projects Workflow</h1>
           <p className="text-sm text-slate-500">Manage all operational project stages and deliveries</p>
         </div>
-        <Button className="flex items-center gap-2">
+        <Button className="flex items-center gap-2" onClick={() => setIsModalOpen(true)}>
           <Plus className="w-4 h-4" />
           Create Project
         </Button>
@@ -239,6 +297,77 @@ export default function AdminProjects() {
           </table>
         </div>
       </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl border border-slate-200">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">Create New Project</h2>
+            {error && (
+              <div className="p-3 bg-red-50 text-red-700 rounded-lg text-xs mb-4">
+                {error}
+              </div>
+            )}
+            <form onSubmit={handleCreateProject} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Project Name *</label>
+                <input
+                  required
+                  placeholder="e.g. Smart IoT Agriculture Hub"
+                  value={newProject.name}
+                  onChange={e => setNewProject({ ...newProject, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Project Type</label>
+                <select
+                  value={newProject.projectType}
+                  onChange={e => setNewProject({ ...newProject, projectType: e.target.value as any })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
+                >
+                  <option value="commercial">Commercial Enterprise</option>
+                  <option value="student">Student / Academic</option>
+                  <option value="research">R&D / Research</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Status</label>
+                <select
+                  value={newProject.status}
+                  onChange={e => setNewProject({ ...newProject, status: e.target.value as any })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
+                >
+                  <option value="active">Active</option>
+                  <option value="on_hold">On Hold</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Description</label>
+                <textarea
+                  rows={3}
+                  placeholder="Project specifications and requirements..."
+                  value={newProject.description}
+                  onChange={e => setNewProject({ ...newProject, description: e.target.value })}
+                  className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
+                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" isLoading={saving}>
+                  Save Project
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
