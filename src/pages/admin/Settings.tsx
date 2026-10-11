@@ -15,13 +15,13 @@ export default function AdminSettings() {
   const [success, setSuccess] = useState(false);
   const [settings, setSettings] = useState<CompanySettings>({
     companyName: 'Sricore Solutions',
-    address: '123 Innovation Drive, Tech Park',
+    address: 'Namakkal - 637018, Tamil Nadu, India',
     email: 'contact@sricoresolutions.com',
-    phone: '+91-1234567890',
-    taxId: 'GSTIN33AAAAA0000A1Z5',
-    bankDetails: 'Bank: HDFC Bank\nA/C No: 50200012345678\nIFSC: HDFC0001234',
+    phone: '+91 98402 34567',
+    taxId: '',
+    bankDetails: '',
     termsAndConditions: 'Payment is due within 15 days of invoice date.',
-    upiId: 'sricoresolutions@upi',
+    upiId: '',
     upiName: 'Sricore Solutions',
     qrCodeUrl: ''
   });

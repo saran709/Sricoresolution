@@ -30,9 +30,14 @@ export default function Home() {
                 <Link to="/enquiry" className="inline-flex items-center justify-center px-6 py-3 text-sm font-semibold rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm w-fit">
                   Get a Project Quote
                 </Link>
-                <Link to="/internships" className="inline-flex items-center justify-center px-6 py-3 text-sm font-semibold rounded text-blue-600 border border-blue-600 hover:bg-blue-50 transition-colors w-fit">
+                <a 
+                  href="https://forms.gle/StQmejms3z9voMMU7" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="inline-flex items-center justify-center px-6 py-3 text-sm font-semibold rounded text-blue-600 border border-blue-600 hover:bg-blue-50 transition-colors w-fit"
+                >
                   Apply for Internship
-                </Link>
+                </a>
               </div>
 
               <div className="flex gap-6 mt-4 border-t border-slate-100 pt-6">

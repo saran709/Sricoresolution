@@ -39,9 +39,9 @@ export default function CandidateDashboard() {
                 <FileText className="w-5 h-5 text-slate-500" />
                 My Internship Applications
               </h2>
-              <Link to="/internships/apply">
+              <a href="https://forms.gle/StQmejms3z9voMMU7" target="_blank" rel="noopener noreferrer">
                 <Button size="sm">New Application</Button>
-              </Link>
+              </a>
             </div>
             <div className="p-0">
               {applications.length > 0 ? (
@@ -87,9 +87,9 @@ export default function CandidateDashboard() {
                 <div className="p-12 text-center text-slate-500">
                   <FileText className="w-12 h-12 text-slate-300 mx-auto mb-4" />
                   <p className="mb-4 text-slate-900 font-medium text-lg">You have not submitted any applications yet.</p>
-                  <Link to="/internships/apply">
-                    <Button variant="outline">Browse Internships</Button>
-                  </Link>
+                  <a href="https://forms.gle/StQmejms3z9voMMU7" target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline">Apply for Internship</Button>
+                  </a>
                 </div>
               )}
             </div>

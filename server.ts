@@ -32,10 +32,11 @@ async function startServer() {
   });
 
   // Razorpay Configuration
-  const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID || "dummy_key_id",
-    key_secret: process.env.RAZORPAY_KEY_SECRET || "dummy_key_secret",
-  });
+  const razorpayKeyId = process.env.RAZORPAY_KEY_ID || "";
+  const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET || "";
+  const razorpay = (razorpayKeyId && razorpayKeySecret)
+    ? new Razorpay({ key_id: razorpayKeyId, key_secret: razorpayKeySecret })
+    : null;
 
   // --- API ROUTES ---
 
@@ -46,6 +47,10 @@ async function startServer() {
   // 1. Create Order
   app.post("/api/payments/create-order", async (req, res) => {
     try {
+      if (!razorpay) {
+        return res.status(503).json({ error: "Payment gateway is not configured. Please set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET." });
+      }
+
       const { amount, currency = "INR", receipt, notes } = req.body;
       
       if (!amount) {
@@ -67,7 +72,7 @@ async function startServer() {
     }
   });
 
-      // 2. Verify Payment
+  // 2. Verify Payment
   app.post("/api/payments/verify", async (req, res) => {
     try {
       const { 
@@ -80,9 +85,12 @@ async function startServer() {
         return res.status(400).json({ error: "Missing required payment fields" });
       }
 
+      if (!razorpayKeySecret) {
+        return res.status(503).json({ error: "Payment verification unavailable. Missing gateway credentials." });
+      }
+
       // Verify Signature
-      const secret = process.env.RAZORPAY_KEY_SECRET || "dummy_key_secret";
-      const hmac = crypto.createHmac("sha256", secret);
+      const hmac = crypto.createHmac("sha256", razorpayKeySecret);
       hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
       const generated_signature = hmac.digest("hex");
 

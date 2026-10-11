@@ -378,10 +378,19 @@ export interface Attendance {
   id?: string;
   userId: string;
   userName?: string;
+  userEmail?: string;
+  userRole?: UserRole | string;
+  departmentId?: string;
   date: any;
   checkIn: any;
   checkOut?: any;
   status: 'present' | 'absent' | 'late' | 'half_day' | 'remote';
+  autoMarked?: boolean;
+  modifiedByAdmin?: boolean;
+  adminNotes?: string;
+  notes?: string;
+  createdAt?: any;
+  updatedAt?: any;
 }
 
 export interface LeaveRequest {

@@ -5,14 +5,15 @@ export const APP_CONFIG = {
     description: 'A premier technology partner offering comprehensive solutions in software, hardware, AI/ML, and research.',
     contact: {
       email: 'contact@sricoresolutions.com',
-      phone: '+1 (555) 123-4567',
-      address: '123 Innovation Drive, Tech Park, City, Country',
+      phone: '+91 98402 34567',
+      address: 'Namakkal - 637018, Tamil Nadu, India',
     },
     socials: {
       linkedin: '#',
       twitter: '#',
       github: '#',
-    }
+    },
+    internshipFormUrl: 'https://forms.gle/StQmejms3z9voMMU7'
   },
   navigation: {
     main: [

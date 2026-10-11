@@ -126,7 +126,7 @@ export default function Enquiry() {
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <Input label="Email Address" name="email" type="email" required placeholder="john@company.com" />
-                <Input label="Phone Number" name="phone" type="tel" placeholder="+1 (555) 000-0000" />
+                <Input label="Phone Number" name="phone" type="tel" placeholder="+91 98765 43210" />
               </div>
               
               <Input label="Company / Institution" name="company" placeholder="Your Organization or University" />

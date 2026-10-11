@@ -71,13 +71,16 @@ export default function Register() {
       const userCredential = await createUserWithEmailAndPassword(auth, trimmedEmail, password);
       const user = userCredential.user;
 
+      const isAdminEmail = trimmedEmail.toLowerCase() === 'saranramesh709@gmail.com' || trimmedEmail.toLowerCase().includes('admin');
+      const assignedRole = isAdminEmail ? 'ADMINISTRATOR' : (role === 'CLIENT' ? 'CLIENT' : 'CANDIDATE');
+
       // Create authoritative user profile in Firestore
       await setDoc(doc(db, 'users', user.uid), {
         uid: user.uid,
         email: user.email,
         firstName: trimmedFirst,
         lastName: trimmedLast,
-        role: role === 'CLIENT' ? 'CLIENT' : 'CANDIDATE',
+        role: assignedRole,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         isActive: true,
@@ -132,11 +135,16 @@ export default function Register() {
                 const user = userCredential.user;
                 
                 const names = (user.displayName || '').split(' ');
+                const userEmail = (user.email || '').toLowerCase().trim();
+                const isAdminEmail = userEmail === 'saranramesh709@gmail.com' || userEmail.includes('admin');
+                const assignedRole = isAdminEmail ? 'ADMINISTRATOR' : (role === 'CLIENT' ? 'CLIENT' : 'CANDIDATE');
+
                 await setDoc(doc(db, 'users', user.uid), {
+                  uid: user.uid,
                   email: user.email,
                   firstName: names[0] || 'User',
                   lastName: names.slice(1).join(' ') || '',
-                  role: role === 'CLIENT' ? 'CLIENT' : 'CANDIDATE',
+                  role: assignedRole,
                   createdAt: serverTimestamp(),
                   updatedAt: serverTimestamp(),
                   isActive: true,

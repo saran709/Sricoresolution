@@ -73,7 +73,7 @@ export default function MentorDashboard() {
     
     const formData = new FormData(e.currentTarget);
     const data = {
-      projectId: 'internship_program', // dummy ID for internship tasks
+      projectId: 'internship_program',
       title: formData.get('title') as string,
       description: formData.get('description') as string,
       assignedTo: selectedInternId,

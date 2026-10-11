@@ -3,6 +3,7 @@ import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { UserRole } from '../types';
+import { autoMarkEmployeeAttendance, getLocalDateString } from '../lib/attendanceService';
 
 export interface UserProfile {
   uid: string;
@@ -103,6 +104,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (rawRole === 'USER') rawRole = 'CLIENT';
         if (rawRole === 'ADMIN' || isConfiguredAdmin) rawRole = 'ADMINISTRATOR';
 
+        if (isConfiguredAdmin && rawData.role !== 'ADMINISTRATOR') {
+          try {
+            await setDoc(doc(db, 'users', user.uid), {
+              role: 'ADMINISTRATOR',
+              updatedAt: serverTimestamp()
+            }, { merge: true });
+          } catch (syncErr) {
+            console.warn("Could not sync admin role to Firestore document:", syncErr);
+          }
+        }
+
         const profileData = { 
           uid: user.uid, 
           ...rawData,
@@ -112,6 +124,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUserProfile(profileData);
         localStorage.setItem(`sricore_profile_${user.uid}`, JSON.stringify(profileData));
         localStorage.setItem('sricore_active_profile', JSON.stringify(profileData));
+
+        // Auto-check in employee if logging in between 9:00 AM and 4:00 PM
+        if (['EMPLOYEE', 'MENTOR', 'INTERN'].includes(profileData.role)) {
+          const todayStr = getLocalDateString();
+          const sessionKey = `sricore_att_checked_${user.uid}_${todayStr}`;
+          if (!sessionStorage.getItem(sessionKey)) {
+            sessionStorage.setItem(sessionKey, 'done');
+            autoMarkEmployeeAttendance(profileData).then((res) => {
+              if (res.marked) {
+                console.info(`[Attendance] Employee ${profileData.email} auto-marked PRESENT.`);
+              }
+            }).catch((err) => {
+              console.warn('[Attendance] Auto-checkin failed:', err);
+            });
+          }
+        }
       } else {
         // Fallback profile if Firestore document does not exist yet
         const displayNameParts = (user.displayName || '').split(' ');

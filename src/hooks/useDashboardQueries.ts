@@ -210,7 +210,13 @@ export function useEmployeeDashboard(employeeId?: string) {
         : [];
 
       const attendances: Attendance[] = attRes.status === 'fulfilled' && attRes.value
-        ? attRes.value.docs.map((d) => ({ id: d.id, ...d.data() } as Attendance)).sort((a, b) => b.date - a.date)
+        ? attRes.value.docs
+            .map((d) => ({ id: d.id, ...d.data() } as Attendance))
+            .sort((a, b) => {
+              const dateA = typeof a.date === 'string' ? a.date : (a.date?.toDate ? a.date.toDate().toISOString() : String(a.date || ''));
+              const dateB = typeof b.date === 'string' ? b.date : (b.date?.toDate ? b.date.toDate().toISOString() : String(b.date || ''));
+              return dateB.localeCompare(dateA);
+            })
         : [];
 
       return { projects, tasks, leaveRequests, attendances };

@@ -11,6 +11,13 @@ import { logActivity } from '../../../lib/activityLogger';
 
 import { useEmployeeDashboard } from '../../../hooks/useDashboardQueries';
 import { queryClient } from '../../../lib/queryClient';
+import { 
+  autoMarkEmployeeAttendance, 
+  isWithinAttendanceWindow, 
+  getLocalDateString, 
+  formatTimeDisplay 
+} from '../../../lib/attendanceService';
+import { setDoc } from 'firebase/firestore';
 
 export default function EmployeeDashboard() {
   const { userProfile } = useAuth();
@@ -83,21 +90,49 @@ export default function EmployeeDashboard() {
     }
   };
 
+  const [autoAttendanceNotice, setAutoAttendanceNotice] = useState<string | null>(null);
+
+  // Auto-mark attendance when employee visits dashboard between 9:00 AM and 4:00 PM
+  useEffect(() => {
+    if (userProfile?.uid && ['EMPLOYEE', 'MENTOR', 'INTERN'].includes(userProfile?.role || '')) {
+      autoMarkEmployeeAttendance(userProfile).then((res) => {
+        if (res.marked) {
+          setAutoAttendanceNotice(res.message);
+          queryClient.invalidateQueries({ queryKey: ['employee-dashboard', userProfile.uid] });
+        }
+      }).catch(err => {
+        console.warn('Auto attendance failed:', err);
+      });
+    }
+  }, [userProfile?.uid, userProfile?.role]);
+
   const handleCheckIn = async () => {
     if (!userProfile?.uid) return;
     try {
       const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      
-      const attData = {
+      const todayStr = getLocalDateString(now);
+      const attId = `${userProfile.uid}_${todayStr}`;
+      const checkInTimeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+
+      const attData: Attendance = {
+        id: attId,
         userId: userProfile.uid,
-        date: today,
-        checkIn: now,
-        status: 'present'
+        userName: `${userProfile.firstName || ''} ${userProfile.lastName || ''}`.trim() || userProfile.email || 'Employee',
+        userEmail: userProfile.email || '',
+        userRole: userProfile.role,
+        departmentId: employeeData?.departmentId || '',
+        date: todayStr,
+        checkIn: checkInTimeStr,
+        status: 'present',
+        autoMarked: false,
+        notes: 'Manual check-in by employee',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
       };
-      
-      await addDoc(collection(db, 'attendance'), attData);
+
+      await setDoc(doc(db, 'attendance', attId), attData, { merge: true });
       queryClient.invalidateQueries({ queryKey: ['employee-dashboard', userProfile.uid] });
+      await logActivity('MANUAL_ATTENDANCE', userProfile.uid, attId, 'attendance' as any, `Employee marked attendance as present at ${checkInTimeStr}`);
     } catch (err) {
       console.error("Failed to check in", err);
     }
@@ -105,15 +140,32 @@ export default function EmployeeDashboard() {
 
   if (loading) return <div className="animate-pulse h-32 bg-slate-100 rounded-xl"></div>;
   
-  const todayCheckedIn = attendances.some(a => {
+  const todayStr = getLocalDateString();
+  const todayRecord = attendances.find(a => {
     if (!a.date) return false;
+    if (typeof a.date === 'string') return a.date === todayStr;
     const d = a.date.toDate ? a.date.toDate() : new Date(a.date);
-    const today = new Date();
-    return d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+    return getLocalDateString(d) === todayStr;
   });
+  const todayCheckedIn = !!todayRecord;
 
   return (
     <div className="space-y-6">
+      {autoAttendanceNotice && (
+        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-sm flex items-center justify-between shadow-sm animate-fade-in">
+          <div className="flex items-center gap-2.5">
+            <CheckSquare className="w-5 h-5 text-emerald-600 shrink-0" />
+            <span className="font-medium">{autoAttendanceNotice}</span>
+          </div>
+          <button 
+            onClick={() => setAutoAttendanceNotice(null)} 
+            className="text-xs font-semibold text-emerald-700 hover:text-emerald-900 px-2 py-1 rounded hover:bg-emerald-100 transition-colors"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       <div className="flex space-x-1 bg-white p-1 rounded-lg border border-slate-200 w-fit overflow-x-auto mb-6">
         <button onClick={() => setActiveTab('overview')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'overview' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>Overview</button>
         <button onClick={() => setActiveTab('tasks')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'tasks' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>My Tasks</button>
@@ -123,20 +175,50 @@ export default function EmployeeDashboard() {
 
       {activeTab === 'overview' && (
         <>
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-6 flex justify-between items-center">
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <h3 className="text-lg font-bold text-slate-900">{employeeData?.firstName} {employeeData?.lastName}</h3>
               <p className="text-sm text-slate-500">{employeeData?.position || 'Employee'} • Department: {employeeData?.departmentId || 'Unassigned'}</p>
             </div>
-            {!todayCheckedIn ? (
-              <Button onClick={handleCheckIn} className="flex items-center gap-2">
-                <UserCheck className="w-4 h-4" /> Check In Today
-              </Button>
-            ) : (
-              <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 px-4 py-2 rounded-lg font-medium border border-emerald-100">
-                <CheckSquare className="w-5 h-5" /> Checked In
-              </div>
-            )}
+            
+            <div className="flex flex-wrap items-center gap-2.5">
+              {!todayCheckedIn ? (
+                <div className="flex items-center gap-3">
+                  <div className="text-xs text-slate-500 hidden sm:block">
+                    {isWithinAttendanceWindow() ? (
+                      <span className="text-emerald-600 font-medium">● 9 AM – 4 PM window active</span>
+                    ) : (
+                      <span className="text-amber-600 font-medium">● Outside 9 AM – 4 PM window</span>
+                    )}
+                  </div>
+                  <Button onClick={handleCheckIn} className="flex items-center gap-2 shadow-sm">
+                    <UserCheck className="w-4 h-4" /> Check In Today
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-2 text-emerald-800 bg-emerald-50 px-3.5 py-2 rounded-lg font-medium border border-emerald-200 text-sm">
+                    <CheckSquare className="w-4 h-4 text-emerald-600" />
+                    <span>Status: <strong className="capitalize">{todayRecord?.status?.replace('_', ' ')}</strong></span>
+                    {todayRecord?.checkIn && (
+                      <span className="text-emerald-700 text-xs font-normal ml-1">
+                        ({formatTimeDisplay(todayRecord.checkIn)})
+                      </span>
+                    )}
+                  </div>
+                  {todayRecord?.autoMarked && (
+                    <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1.5 rounded-lg font-medium">
+                      ⚡ Auto-marked (9 AM - 4 PM)
+                    </span>
+                  )}
+                  {todayRecord?.modifiedByAdmin && (
+                    <span className="text-xs bg-purple-50 text-purple-700 border border-purple-200 px-2.5 py-1.5 rounded-lg font-medium">
+                      🛡️ Admin Verified
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -267,16 +349,44 @@ export default function EmployeeDashboard() {
               {attendances.length > 0 ? (
                 <ul className="divide-y divide-slate-100">
                   {attendances.map((a, i) => {
-                    const dateObj = a.date?.toDate ? a.date.toDate() : new Date(a.date);
-                    const checkInObj = a.checkIn?.toDate ? a.checkIn.toDate() : new Date(a.checkIn);
+                    const dateStr = typeof a.date === 'string' 
+                      ? a.date 
+                      : (a.date?.toDate ? a.date.toDate().toLocaleDateString() : String(a.date));
+                    const checkInDisplay = formatTimeDisplay(a.checkIn);
                     return (
-                      <li key={a.id || i} className="p-4 flex justify-between items-center">
+                      <li key={a.id || i} className="p-4 flex flex-col sm:flex-row justify-between sm:items-center gap-2 hover:bg-slate-50 transition-colors">
                         <div>
-                          <p className="font-medium text-slate-900">{dateObj.toLocaleDateString()}</p>
-                          <p className="text-xs text-slate-500">In: {checkInObj.toLocaleTimeString()}</p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-semibold text-slate-900">{dateStr}</p>
+                            {a.autoMarked && (
+                              <span className="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded font-medium">
+                                Auto-logged (9 AM - 4 PM)
+                              </span>
+                            )}
+                            {a.modifiedByAdmin && (
+                              <span className="text-[10px] bg-purple-50 text-purple-700 border border-purple-200 px-1.5 py-0.5 rounded font-medium">
+                                Admin Adjusted
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            {checkInDisplay ? `Check-in: ${checkInDisplay}` : 'No check-in recorded'}
+                            {a.checkOut ? ` • Check-out: ${formatTimeDisplay(a.checkOut)}` : ''}
+                          </p>
+                          {a.adminNotes && (
+                            <p className="text-xs text-slate-600 italic mt-1 bg-slate-50 p-1.5 rounded border border-slate-100">
+                              Admin Remark: {a.adminNotes}
+                            </p>
+                          )}
                         </div>
-                        <span className="text-xs font-medium px-2 py-1 rounded-md bg-emerald-100 text-emerald-700 capitalize">
-                          {a.status.replace('_', ' ')}
+                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-md self-start sm:self-center capitalize ${
+                          a.status === 'present' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
+                          a.status === 'late' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
+                          a.status === 'half_day' ? 'bg-orange-100 text-orange-800 border border-orange-200' :
+                          a.status === 'remote' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                          'bg-red-100 text-red-800 border border-red-200'
+                        }`}>
+                          {a.status?.replace('_', ' ')}
                         </span>
                       </li>
                     );
