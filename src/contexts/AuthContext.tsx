@@ -69,7 +69,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // 2. Fetch fresh data in background
       const userDoc = await getDoc(doc(db, 'users', user.uid));
       if (userDoc.exists()) {
-        const profileData = { uid: user.uid, ...userDoc.data() } as UserProfile;
+        const rawData = userDoc.data();
+        let rawRole = (rawData.role || '').toUpperCase();
+        if (rawRole === 'USER') rawRole = 'CLIENT';
+        if (rawRole === 'ADMIN') rawRole = 'ADMINISTRATOR';
+
+        const profileData = { 
+          uid: user.uid, 
+          ...rawData,
+          role: rawRole || 'CLIENT'
+        } as UserProfile;
+        
         setUserProfile(profileData);
         localStorage.setItem(`sricore_profile_${user.uid}`, JSON.stringify(profileData));
         localStorage.setItem('sricore_active_profile', JSON.stringify(profileData));

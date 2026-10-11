@@ -6,7 +6,7 @@ import { PagePlaceholder } from './components/ui/PagePlaceholder';
 import { AdminLayout } from './components/layout/AdminLayout';
 
 // Main Pages
-const Home = React.lazy(() => import('./pages/Home'));
+import Home from './pages/Home';
 const About = React.lazy(() => import('./pages/About'));
 const Enquiry = React.lazy(() => import('./pages/Enquiry'));
 const Contact = React.lazy(() => import('./pages/Contact'));

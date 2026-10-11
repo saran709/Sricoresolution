@@ -256,7 +256,7 @@ export default function ClientDashboard() {
                       <p className="text-sm text-slate-500 mt-1">Due: {invoice.dueDate?.toDate ? new Date(invoice.dueDate.toDate()).toLocaleDateString() : 'N/A'}</p>
                     </div>
                     <div className="flex items-center gap-6">
-                      <p className="text-xl font-bold text-slate-900">${invoice.amount?.toFixed(2) || '0.00'}</p>
+                      <p className="text-xl font-bold text-slate-900">₹{(invoice.total || invoice.amount)?.toLocaleString('en-IN') || '0'}</p>
                       <span className={`text-xs px-3 py-1.5 rounded-full font-medium uppercase tracking-wider
                         ${invoice.status === 'paid' ? 'bg-emerald-100 text-emerald-700' :
                           invoice.status === 'overdue' ? 'bg-red-100 text-red-700' :
@@ -267,6 +267,7 @@ export default function ClientDashboard() {
                       {invoice.status !== 'paid' && (
                         <CheckoutButton
                           amount={invoice.total || invoice.amount}
+                          label="Scan & Pay"
                           purpose={`Payment for Invoice ${invoice.invoiceNumber || invoice.id}`}
                           referenceId={invoice.id!}
                           referenceType="service"

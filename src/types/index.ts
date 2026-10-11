@@ -215,8 +215,9 @@ export interface SupportTicket {
 
 export interface Payment {
   id?: string;
-  orderId?: string; // From Razorpay
-  paymentId?: string; // From Razorpay after success
+  orderId?: string; // Legacy/reference
+  paymentId?: string; // Reference/UTR number
+  transactionId?: string; // UPI UTR or Ref number entered by payer
   clientId: string;
   projectId?: string;
   invoiceId?: string;
@@ -225,9 +226,11 @@ export interface Payment {
   date: any;
   status: 'PENDING' | 'INITIATED' | 'SUCCESS' | 'FAILED' | 'CANCELLED' | 'REFUNDED';
   verificationStatus?: 'pending' | 'verified' | 'failed';
-  method?: string;
+  method?: string; // e.g. 'UPI_QR' or 'NEFT'
   paymentType: 'advance' | 'milestone' | 'final' | 'internship_fee' | 'other';
   receiptUrl?: string;
+  proofUrl?: string;
+  notes?: string;
   createdAt?: any;
   updatedAt?: any;
 }
@@ -259,6 +262,9 @@ export interface CompanySettings {
   email: string;
   taxId?: string;
   bankDetails?: string;
+  upiId?: string;
+  upiName?: string;
+  qrCodeUrl?: string;
   termsAndConditions?: string;
 }
 

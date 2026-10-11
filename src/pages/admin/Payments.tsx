@@ -72,6 +72,60 @@ export default function AdminPayments() {
     }
   };
 
+  const handleVerifyPayment = async (payment: Payment) => {
+    try {
+      await updateDoc(doc(db, 'payments', payment.id!), {
+        status: 'SUCCESS',
+        verificationStatus: 'verified',
+        updatedAt: serverTimestamp()
+      });
+
+      // If tied to an invoice, mark invoice as paid
+      if (payment.invoiceId) {
+        try {
+          await updateDoc(doc(db, 'invoices', payment.invoiceId), {
+            status: 'paid',
+            paymentId: payment.id
+          });
+        } catch (e) {
+          console.warn("Could not update linked invoice:", e);
+        }
+      }
+
+      if (userProfile?.uid) {
+        await logActivity('PAYMENT_VERIFIED', userProfile.uid, payment.id!, 'payment', `Verified UPI payment of ₹${payment.amount} (Ref: ${payment.transactionId || payment.paymentId})`);
+      }
+
+      fetchPayments();
+      alert("Payment verified and marked as SUCCESS!");
+    } catch (error) {
+      console.error("Error verifying payment", error);
+      alert("Failed to verify payment");
+    }
+  };
+
+  const handleRejectPayment = async (payment: Payment) => {
+    const reason = prompt("Enter rejection reason (optional):") || "Invalid UTR / Payment not received";
+    try {
+      await updateDoc(doc(db, 'payments', payment.id!), {
+        status: 'FAILED',
+        verificationStatus: 'failed',
+        notes: reason,
+        updatedAt: serverTimestamp()
+      });
+
+      if (userProfile?.uid) {
+        await logActivity('PAYMENT_REJECTED', userProfile.uid, payment.id!, 'payment', `Rejected payment of ₹${payment.amount}: ${reason}`);
+      }
+
+      fetchPayments();
+      alert("Payment marked as FAILED.");
+    } catch (error) {
+      console.error("Error rejecting payment", error);
+      alert("Failed to reject payment");
+    }
+  };
+
   const handleRefund = async (payment: Payment) => {
     if (payment.status !== 'SUCCESS') {
       alert("Can only refund successful payments.");
@@ -82,9 +136,6 @@ export default function AdminPayments() {
     if (confirmStr !== "REFUND") return;
 
     try {
-      // In a real app, you would call your backend API here which then calls Razorpay Refunds API
-      // await fetch('/api/payments/refund', { method: 'POST', body: JSON.stringify({ paymentId: payment.id }) })
-      
       await updateDoc(doc(db, 'payments', payment.id!), {
         status: 'REFUNDED',
         updatedAt: serverTimestamp()
@@ -95,7 +146,7 @@ export default function AdminPayments() {
       }
       
       fetchPayments();
-      alert("Refund initiated successfully");
+      alert("Refund recorded successfully");
     } catch (error) {
       console.error("Error processing refund", error);
       alert("Failed to process refund");
@@ -212,7 +263,15 @@ export default function AdminPayments() {
                   <tr key={payment.id} className="border-b border-slate-100 hover:bg-slate-50">
                     <td className="px-6 py-4">
                       <div className="font-medium text-slate-900 capitalize">{payment.paymentType.replace('_', ' ')}</div>
-                      <div className="text-slate-500 text-xs mt-1 font-mono">{payment.paymentId || payment.orderId}</div>
+                      <div className="text-slate-500 text-xs mt-1 font-mono">
+                        UTR: <span className="font-semibold text-slate-800">{payment.transactionId || payment.paymentId || payment.orderId || 'N/A'}</span>
+                      </div>
+                      {payment.method && (
+                        <div className="text-[11px] text-blue-600 mt-0.5">Method: {payment.method}</div>
+                      )}
+                      {payment.notes && (
+                        <div className="text-xs text-slate-500 italic mt-0.5">Note: {payment.notes}</div>
+                      )}
                     </td>
                     <td className="px-6 py-4 font-semibold text-slate-900">
                       ₹{payment.amount?.toLocaleString()}
@@ -220,7 +279,7 @@ export default function AdminPayments() {
                     <td className="px-6 py-4">
                       <span className={`uppercase text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full
                         ${payment.status === 'SUCCESS' ? 'bg-emerald-100 text-emerald-700' :
-                          payment.status === 'PENDING' || payment.status === 'INITIATED' ? 'bg-orange-100 text-orange-700' :
+                          payment.status === 'PENDING' || payment.status === 'INITIATED' ? 'bg-amber-100 text-amber-700' :
                           payment.status === 'FAILED' ? 'bg-red-100 text-red-700' :
                           'bg-slate-100 text-slate-700'}`}
                       >
@@ -231,6 +290,25 @@ export default function AdminPayments() {
                       {payment.createdAt?.toDate ? new Date(payment.createdAt.toDate()).toLocaleString() : 'N/A'}
                     </td>
                     <td className="px-6 py-4 text-right">
+                      {(payment.status === 'PENDING' || payment.status === 'INITIATED') && (
+                        <div className="flex items-center justify-end gap-2">
+                          <Button 
+                            size="sm" 
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2.5 py-1"
+                            onClick={() => handleVerifyPayment(payment)}
+                          >
+                            Verify & Approve
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="text-red-600 border-red-200 hover:bg-red-50 text-xs px-2.5 py-1"
+                            onClick={() => handleRejectPayment(payment)}
+                          >
+                            Reject
+                          </Button>
+                        </div>
+                      )}
                       {payment.status === 'SUCCESS' && (
                         <Button variant="outline" size="sm" onClick={() => handleRefund(payment)}>
                           Refund

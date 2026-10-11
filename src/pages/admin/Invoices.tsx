@@ -366,6 +366,45 @@ export default function AdminInvoices() {
                 onChange={e => setNewSettings({...newSettings, bankDetails: e.target.value})}
               />
             </div>
+            <div className="p-4 bg-blue-50/60 rounded-xl border border-blue-200 space-y-4">
+              <h3 className="font-semibold text-sm text-blue-900">UPI & QR Code Payment Configuration</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">UPI ID / VPA</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. sricoresolutions@okhdfcbank"
+                    className="w-full p-2 border border-slate-300 rounded-md bg-white font-mono text-sm"
+                    value={newSettings.upiId || ''}
+                    onChange={e => setNewSettings({...newSettings, upiId: e.target.value})}
+                  />
+                  <p className="text-[11px] text-slate-500 mt-1">Clients will scan and pay to this UPI ID.</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Payee Name</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Sricore Solutions Pvt Ltd"
+                    className="w-full p-2 border border-slate-300 rounded-md bg-white text-sm"
+                    value={newSettings.upiName || ''}
+                    onChange={e => setNewSettings({...newSettings, upiName: e.target.value})}
+                  />
+                  <p className="text-[11px] text-slate-500 mt-1">Displays on payer's UPI confirmation screen.</p>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Custom Static QR Code Image URL (Optional)</label>
+                <input 
+                  type="url" 
+                  placeholder="https://... (Leave blank to generate dynamic amount QR automatically)"
+                  className="w-full p-2 border border-slate-300 rounded-md bg-white text-sm"
+                  value={newSettings.qrCodeUrl || ''}
+                  onChange={e => setNewSettings({...newSettings, qrCodeUrl: e.target.value})}
+                />
+                <p className="text-[11px] text-slate-500 mt-1">If blank, the system dynamically generates a payment QR with the exact bill amount encoded.</p>
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Terms & Conditions</label>
               <textarea 
