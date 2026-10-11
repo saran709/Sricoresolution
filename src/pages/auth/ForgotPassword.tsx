@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { auth } from '../../lib/firebase';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { AlertCircle, CheckCircle } from 'lucide-react';
@@ -23,27 +25,15 @@ export default function ForgotPassword() {
 
     setLoading(true);
     try {
-      // Send reset request notification to admin
-      const data = {
-        to: APP_CONFIG.company.contact.email,
-        subject: `Password Reset Request: ${email}`,
-        html: `<p>A user has requested a password reset for the following account:</p>
-               <p>Email: ${email}</p>
-               <p>Please initiate the password reset process via the Firebase console.</p>`
-      };
-      
-      const response = await fetch('/api/email/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-      
-      if (!response.ok) throw new Error('Failed to send request');
-      
-      setMessage('Password reset request has been sent to the administrator.');
+      await sendPasswordResetEmail(auth, email.trim());
+      setMessage('Password reset link has been sent to your email! Please check your inbox and spam folder.');
     } catch (err: any) {
-      console.error("Password reset request error:", err);
-      setError('Failed to send request. Please contact support via the contact page.');
+      console.error("Password reset error:", err);
+      if (err?.code === 'auth/user-not-found') {
+        setError('No account found with this email. Please check the spelling or sign up.');
+      } else {
+        setError(err?.message || 'Failed to send password reset email. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
