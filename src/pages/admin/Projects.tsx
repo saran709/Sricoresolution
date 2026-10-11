@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, orderBy, getDocs, doc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, addDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Project, ProjectStage, ActivityHistory } from '../../types';
-import { Search, Plus, Filter, FileText } from 'lucide-react';
+import { Search, Plus, Filter, FileText, Trash2 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { logActivity } from '../../lib/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
@@ -114,7 +114,6 @@ export default function AdminProjects() {
         projectType: 'commercial',
         status: 'active'
       });
-      fetchProjects();
     } catch (err: any) {
       console.error("Error creating project:", err);
       setError(err?.message || 'Failed to create project.');
@@ -124,23 +123,41 @@ export default function AdminProjects() {
   };
 
   useEffect(() => {
-    fetchProjects();
-  }, []);
-
-  const fetchProjects = async () => {
     setLoading(true);
-    try {
-      const q = query(collection(db, 'projects'), orderBy('createdAt', 'desc'));
-      const snapshot = await getDocs(q);
+    const q = query(collection(db, 'projects'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
       const items: Project[] = [];
       snapshot.forEach(doc => {
         items.push({ id: doc.id, ...doc.data() } as Project);
       });
       setProjects(items);
-    } catch (error) {
-      console.error("Error fetching projects:", error);
-    } finally {
       setLoading(false);
+    }, (err) => {
+      console.error("Error listening to projects:", err);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleDeleteProject = async (project: Project) => {
+    if (!project.id) return;
+    if (!confirm(`Are you sure you want to delete project "${project.name}"?`)) return;
+
+    try {
+      await deleteDoc(doc(db, 'projects', project.id));
+      if (userProfile?.uid) {
+        await logActivity(
+          'PROJECT_DELETED',
+          userProfile.uid,
+          project.id,
+          'project',
+          `Deleted project ${project.name}`
+        );
+      }
+    } catch (err: any) {
+      console.error("Failed to delete project:", err);
+      alert(err?.message || "Failed to delete project.");
     }
   };
 
@@ -284,10 +301,22 @@ export default function AdminProjects() {
                         </select>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <Button variant="outline" size="sm" className="inline-flex items-center gap-1">
-                          <FileText className="w-3 h-3" />
-                          Details
-                        </Button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Button variant="outline" size="sm" className="inline-flex items-center gap-1 text-xs">
+                            <FileText className="w-3.5 h-3.5" />
+                            Details
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="inline-flex items-center gap-1 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                            onClick={() => handleDeleteProject(project)}
+                            title="Delete Project"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            Delete
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   )

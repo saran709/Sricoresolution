@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, where, getDocs, updateDoc, doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { User } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { Search, GraduationCap, Award, BookOpen, UserPlus, CheckCircle, XCircle } from 'lucide-react';
+import { Search, GraduationCap, Award, BookOpen, UserPlus, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { logActivity } from '../../lib/activityLogger';
 
@@ -17,31 +17,40 @@ export default function Mentors() {
   const [isPromoteModalOpen, setIsPromoteModalOpen] = useState(false);
   const [selectedEmpId, setSelectedEmpId] = useState('');
   const [saving, setSaving] = useState(false);
+  const [modalError, setModalError] = useState('');
 
   useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
     setLoading(true);
-    try {
-      const [mentorSnap, empSnap] = await Promise.all([
-        getDocs(query(collection(db, 'users'), where('role', '==', 'MENTOR'))),
-        getDocs(query(collection(db, 'users'), where('role', '==', 'EMPLOYEE')))
-      ]);
+    // Listen to all staff/users to flexibly categorize mentors and available candidates
+    const q = collection(db, 'users');
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const allUsers: User[] = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as User));
+      
+      const currentMentors = allUsers.filter(u => {
+        const r = (u.role || '').toUpperCase();
+        return r === 'MENTOR';
+      });
 
-      setMentors(mentorSnap.docs.map(d => ({ id: d.id, ...d.data() } as User)));
-      setAvailableEmployees(empSnap.docs.map(d => ({ id: d.id, ...d.data() } as User)));
-    } catch (err) {
-      console.error("Failed to load mentors:", err);
-    } finally {
+      const employees = allUsers.filter(u => {
+        const r = (u.role || '').toUpperCase();
+        return r === 'EMPLOYEE' || r === 'INTERN' || r === 'CLIENT';
+      });
+
+      setMentors(currentMentors);
+      setAvailableEmployees(employees);
       setLoading(false);
-    }
-  };
+    }, (err) => {
+      console.error("Failed to listen to mentors:", err);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handlePromoteToMentor = async () => {
     if (!selectedEmpId) return;
     setSaving(true);
+    setModalError('');
     try {
       await updateDoc(doc(db, 'users', selectedEmpId), {
         role: 'MENTOR',
@@ -52,10 +61,9 @@ export default function Mentors() {
       }
       setIsPromoteModalOpen(false);
       setSelectedEmpId('');
-      fetchData();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error assigning mentor:", err);
-      alert("Failed to assign mentor role.");
+      setModalError(err?.message || "Failed to assign mentor role.");
     } finally {
       setSaving(false);
     }
@@ -168,6 +176,12 @@ export default function Mentors() {
             <p className="text-xs text-slate-500 mb-4">
               Select an active company employee to elevate to the Mentor role with intern guidance privileges.
             </p>
+            {modalError && (
+              <div className="p-3 bg-red-50 text-red-700 rounded-lg text-xs mb-4 flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                <span>{modalError}</span>
+              </div>
+            )}
             {availableEmployees.length === 0 ? (
               <p className="text-sm text-slate-600 py-4">No employees available to promote. Please create an employee first.</p>
             ) : (

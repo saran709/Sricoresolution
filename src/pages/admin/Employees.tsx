@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { UserRole, User } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { Plus, Search, Edit2, ShieldAlert, X, Mail } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, ShieldAlert, X, Mail } from 'lucide-react';
 import { logActivity } from '../../lib/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -148,6 +148,25 @@ export default function Employees() {
     }
   };
 
+  const handleDelete = async (emp: User) => {
+    if (!emp.id) return;
+    if (emp.role === 'ADMINISTRATOR') {
+      alert("Administrator accounts cannot be deleted directly from employee list.");
+      return;
+    }
+    if (!confirm(`Are you sure you want to delete employee "${emp.firstName} ${emp.lastName}"?`)) return;
+
+    try {
+      await deleteDoc(doc(db, 'users', emp.id));
+      if (currentUser) {
+        await logActivity('DELETE_EMPLOYEE', currentUser.uid, emp.id, 'user', `Deleted employee record for ${emp.email}`);
+      }
+    } catch (err: any) {
+      console.error("Error deleting employee:", err);
+      alert(err?.message || "Failed to delete employee.");
+    }
+  };
+
   const filteredEmployees = employees.filter(emp => 
     `${emp.firstName} ${emp.lastName} ${emp.email}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -235,12 +254,21 @@ export default function Employees() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button 
-                        onClick={() => openEditModal(emp)}
-                        className="text-blue-600 hover:text-blue-900 font-medium text-sm inline-flex items-center gap-1 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" /> Edit
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button 
+                          onClick={() => openEditModal(emp)}
+                          className="text-blue-600 hover:text-blue-900 font-medium text-xs inline-flex items-center gap-1 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-lg transition-colors"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" /> Edit
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(emp)}
+                          className="text-red-600 hover:text-red-900 font-medium text-xs inline-flex items-center gap-1 bg-red-50 hover:bg-red-100 px-2.5 py-1.5 rounded-lg transition-colors"
+                          title="Delete Employee"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
