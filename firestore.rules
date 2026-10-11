@@ -64,18 +64,17 @@ service cloud.firestore {
     // Users Collection
     // =========================================================================
     function isValidUser(data) {
-      return data.keys().hasAll(['email', 'role', 'createdAt'])
-          && data.email is string && data.email.size() <= 150
-          && data.role is string && (data.role in ['ADMINISTRATOR', 'EMPLOYEE', 'MENTOR', 'INTERN', 'CLIENT', 'CANDIDATE'])
-          && data.createdAt == request.time;
+      return data.keys().hasAll(['email', 'role'])
+          && data.email is string
+          && data.role is string && (data.role in ['ADMINISTRATOR', 'EMPLOYEE', 'MENTOR', 'INTERN', 'CLIENT', 'CANDIDATE']);
     }
 
     match /users/{userId} {
       allow read: if isValidId(userId) && (isAdmin() || isOwner(userId) || isEmployee() || isMentor());
       
       allow create: if isValidId(userId) && isAuthenticated() && (
-        // Admin creates other users (employees, interns, mentors)
-        (isAdmin() && isValidUser(incoming()))
+        // Admin creates any user (employees, interns, mentors, users)
+        isAdmin()
         ||
         // Self-registration
         (request.auth.uid == userId && (
@@ -91,10 +90,10 @@ service cloud.firestore {
 
       allow update: if isValidId(userId) && isAuthenticated() && (
         // Admin can update anything, including roles
-        (isAdmin())
+        isAdmin()
         ||
         // Users can update their own profile, but CANNOT change their role
-        (isOwner(userId) && incoming().role == existing().role && incoming().createdAt == existing().createdAt)
+        (isOwner(userId) && incoming().role == existing().role)
       );
 
       allow delete: if isValidId(userId) && isAdmin();
