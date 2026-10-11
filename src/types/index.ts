@@ -100,17 +100,91 @@ export type ProjectStage =
   | 'submission_assistance'
   | 'revision_assistance';
 
+export type ProjectType = 
+  | 'software' 
+  | 'ai_ml' 
+  | 'iot' 
+  | 'android' 
+  | 'research' 
+  | 'academic' 
+  | 'innovation' 
+  | 'other'
+  | 'commercial'
+  | 'student';
+
+export type ProjectOwnershipType = 
+  | 'internal' 
+  | 'academic' 
+  | 'personal' 
+  | 'client' 
+  | 'collaboration' 
+  | 'unknown';
+
+export type ProjectStatus = 
+  | 'proposed' 
+  | 'in_progress' 
+  | 'on_hold' 
+  | 'completed' 
+  | 'cancelled' 
+  | 'unknown'
+  | 'active';
+
+export type DataVerificationStatus = 
+  | 'verified' 
+  | 'partially_verified' 
+  | 'needs_review';
+
 export interface Project {
   id?: string;
-  clientId: string;
-  name: string;
-  description: string;
-  projectType: 'commercial' | 'student' | 'research';
-  status: 'active' | 'on_hold' | 'completed' | 'cancelled';
-  stage: ProjectStage;
-  startDate: any;
+  projectId?: string;
+  projectCode?: string;
+  projectTitle?: string;
+  projectSlug?: string;
+  name: string; // backwards compatibility alias for projectTitle
+  description: string; // backwards compatibility alias for projectDescription
+  projectDescription?: string;
+  problemStatement?: string;
+  proposedSolution?: string;
+  projectCategory?: string;
+  projectType: ProjectType;
+  ownershipType?: ProjectOwnershipType;
+  clientId?: string;
+  clientNameSnapshot?: string;
+  employerId?: string;
+  employerNameSnapshot?: string;
+  projectManagerId?: string;
+  teamMemberIds?: string[];
+  assignedEmployees?: string[]; // backwards compatibility
+  assignedInterns?: string[];
+  departmentId?: string;
+  departmentNameSnapshot?: string;
+  technologyStack?: string[];
+  features?: string[];
+  objectives?: string[];
+  scope?: string;
+  deliverables?: string[];
+  startDate?: any;
+  expectedEndDate?: any;
+  actualEndDate?: any;
   endDate?: any;
-  assignedEmployees: string[];
+  budget?: number | null;
+  currency?: string;
+  paymentStatus?: string;
+  projectStatus?: ProjectStatus;
+  status: 'active' | 'on_hold' | 'completed' | 'cancelled' | 'in_progress' | 'proposed' | 'unknown';
+  stage?: ProjectStage | string;
+  projectStage?: string;
+  progressPercentage?: number;
+  repositoryUrl?: string;
+  demoUrl?: string;
+  documentationPath?: string;
+  portfolioVisibility?: boolean;
+  featured?: boolean;
+  sourceReferences?: string[];
+  dataVerificationStatus?: DataVerificationStatus;
+  verificationNotes?: string;
+  missingInformationFlags?: string[];
+  createdBy?: string;
   createdAt: any;
   updatedAt: any;
 }
