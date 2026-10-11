@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, where } from 'firebase/firestore';
+import { collection, onSnapshot, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, where } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Department, User } from '../../types';
 import { Button } from '../../components/ui/Button';
@@ -21,28 +21,31 @@ export default function Departments() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
     setLoading(true);
-    try {
-      const [deptSnap, empSnap] = await Promise.all([
-        getDocs(collection(db, 'departments')),
-        getDocs(query(collection(db, 'users'), where('role', 'in', ['EMPLOYEE', 'ADMINISTRATOR', 'MENTOR'])))
-      ]);
 
-      const depts: Department[] = deptSnap.docs.map(d => ({ id: d.id, ...d.data() } as Department));
-      const emps: User[] = empSnap.docs.map(d => ({ id: d.id, ...d.data() } as User));
-
+    // 1. Live real-time listener for departments
+    const unsubDept = onSnapshot(collection(db, 'departments'), (snapshot) => {
+      const depts: Department[] = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Department));
       setDepartments(depts);
-      setEmployees(emps);
-    } catch (err) {
-      console.error("Failed to load departments:", err);
-    } finally {
       setLoading(false);
-    }
-  };
+    }, (err) => {
+      console.error("Realtime departments listener error:", err);
+      setLoading(false);
+    });
+
+    // 2. Fetch active staff for manager dropdown
+    const fetchStaff = async () => {
+      try {
+        const empSnap = await getDocs(query(collection(db, 'users'), where('role', 'in', ['EMPLOYEE', 'ADMINISTRATOR', 'MENTOR'])));
+        setEmployees(empSnap.docs.map(d => ({ id: d.id, ...d.data() } as User)));
+      } catch (e) {
+        console.warn("Could not fetch staff for manager dropdown:", e);
+      }
+    };
+    fetchStaff();
+
+    return () => unsubDept();
+  }, []);
 
   const openAddModal = () => {
     setEditingDept(null);
@@ -92,7 +95,6 @@ export default function Departments() {
         }
       }
       setIsModalOpen(false);
-      fetchData();
     } catch (err: any) {
       console.error("Error saving department:", err);
       setError(err?.message || 'Failed to save department.');
@@ -110,7 +112,6 @@ export default function Departments() {
       if (currentUser) {
         await logActivity('DELETE_DEPARTMENT', currentUser.uid, dept.id, 'user', `Deleted department: ${dept.name}`);
       }
-      fetchData();
     } catch (err) {
       console.error("Error deleting department:", err);
       alert("Failed to delete department.");

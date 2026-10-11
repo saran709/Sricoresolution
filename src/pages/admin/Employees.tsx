@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { UserRole, User } from '../../types';
 import { Button } from '../../components/ui/Button';
@@ -29,28 +29,26 @@ export default function Employees() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetchEmployees();
-  }, []);
-
-  const fetchEmployees = async () => {
     setLoading(true);
-    try {
-      const q = query(
-        collection(db, 'users'),
-        where('role', 'in', ['EMPLOYEE', 'MENTOR', 'ADMINISTRATOR'])
-      );
-      const snapshot = await getDocs(q);
+    const q = query(
+      collection(db, 'users'),
+      where('role', 'in', ['EMPLOYEE', 'MENTOR', 'ADMINISTRATOR'])
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
       const emps: User[] = [];
       snapshot.forEach(doc => {
         emps.push({ id: doc.id, ...doc.data() } as User);
       });
       setEmployees(emps);
-    } catch (error) {
-      console.error("Error fetching employees:", error);
-    } finally {
       setLoading(false);
-    }
-  };
+    }, (err) => {
+      console.error("Realtime employee listener error:", err);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const openAddModal = () => {
     setEditingEmployee(null);
@@ -142,10 +140,9 @@ export default function Employees() {
       }
 
       setIsModalOpen(false);
-      fetchEmployees();
     } catch (err: any) {
-      console.error(err);
-      setError(err.message || 'Failed to save employee.');
+      console.error("Save employee error:", err);
+      setError(err?.message || 'Failed to save employee.');
     } finally {
       setSaving(false);
     }

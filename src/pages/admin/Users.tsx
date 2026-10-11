@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, getDocs, doc, updateDoc, deleteDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, onSnapshot, getDocs, doc, updateDoc, deleteDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { User, UserRole } from '../../types';
 import { Button } from '../../components/ui/Button';
@@ -27,25 +27,22 @@ export default function Users() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const fetchUsers = async () => {
     setLoading(true);
-    try {
-      const q = query(collection(db, 'users'));
-      const snapshot = await getDocs(q);
+    const q = query(collection(db, 'users'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
       const userList: User[] = [];
       snapshot.forEach(doc => {
         userList.push({ id: doc.id, ...doc.data() } as User);
       });
       setUsers(userList);
-    } catch (error) {
-      console.error("Error fetching users:", error);
-    } finally {
       setLoading(false);
-    }
-  };
+    }, (err) => {
+      console.error("Error fetching users:", err);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const openAddModal = () => {
     setEditingUser(null);
@@ -110,7 +107,6 @@ export default function Users() {
         }
       }
       
-      await fetchUsers();
       setIsModalOpen(false);
     } catch (err: any) {
       console.error("Save user error:", err);
@@ -127,7 +123,6 @@ export default function Users() {
         if (currentUser?.uid) {
             await logActivity('USER_DELETED', currentUser.uid, userId, 'user', 'Deleted user profile');
         }
-        await fetchUsers();
     } catch (err) {
         console.error(err);
         setError('Failed to delete user.');
