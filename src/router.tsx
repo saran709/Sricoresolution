@@ -4,6 +4,7 @@ import { MainLayout } from './components/layout/MainLayout';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { PagePlaceholder } from './components/ui/PagePlaceholder';
 import { AdminLayout } from './components/layout/AdminLayout';
+import { ScrollToTop } from './components/layout/ScrollToTop';
 
 // Main Pages
 import Home from './pages/Home';
@@ -67,6 +68,7 @@ const PageLoader = () => (
 export function AppRouter() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Admin Routes */}

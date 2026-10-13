@@ -15,55 +15,55 @@ export default function Careers() {
 
   return (
     <div className="bg-slate-50 min-h-screen">
-      <div className="bg-slate-900 text-white py-20 lg:py-32">
+      <div className="bg-slate-900 text-white py-5 md:py-6">
         <Container>
           <div className="max-w-3xl">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-1.5">
               Careers at Sricore
             </h1>
-            <p className="text-lg md:text-xl text-slate-300 leading-relaxed mb-8">
+            <p className="text-sm md:text-base text-slate-300 leading-relaxed mb-3">
               Join a team of dedicated engineers, researchers, and technologists building robust solutions for complex industrial problems.
             </p>
-            <a href="#open-roles" className="inline-flex items-center justify-center px-6 py-3 text-base font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors">
+            <a href="#open-roles" className="inline-flex items-center justify-center px-5 py-2 text-xs font-semibold rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors">
               View Open Roles
             </a>
           </div>
         </Container>
       </div>
 
-      <Container className="py-20 lg:py-32">
+      <Container className="py-4 md:py-5">
         <SectionHeader 
           title="Why Join Us?" 
           description="Sricore Solutions is committed to fostering an environment of technical rigor, continuous learning, and professional excellence."
         />
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-3 md:mt-4">
           {benefits.map((benefit, index) => (
-            <div key={index} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 bg-slate-100 text-slate-700">
+            <div key={index} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-2.5 bg-slate-100 text-slate-700">
                 {benefit.icon}
               </div>
-              <h3 className="text-lg font-bold text-slate-900 mb-2">{benefit.title}</h3>
-              <p className="text-sm text-slate-600">{benefit.desc}</p>
+              <h3 className="text-base font-bold text-slate-900 mb-1">{benefit.title}</h3>
+              <p className="text-xs text-slate-600">{benefit.desc}</p>
             </div>
           ))}
         </div>
       </Container>
 
-      <div id="open-roles" className="pb-20 lg:pb-32 bg-slate-50">
+      <div id="open-roles" className="pb-6 md:pb-8 bg-slate-50">
         <Container>
           <SectionHeader 
             title="Open Positions" 
             description="Currently available roles across our engineering and operations departments."
           />
           
-          <div className="mt-16 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-center p-12">
+          <div className="mt-4 md:mt-5 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden text-center p-6 md:p-8">
             <div className="max-w-md mx-auto">
-              <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-slate-900 mb-2">No Open Engineering Roles</h3>
-              <p className="text-slate-500 mb-6">We are not actively hiring for full-time engineering positions at this moment. However, we are always looking for talented individuals.</p>
+              <Users className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+              <h3 className="text-lg font-bold text-slate-900 mb-1.5">No Open Engineering Roles</h3>
+              <p className="text-slate-500 text-xs md:text-sm mb-4">We are not actively hiring for full-time engineering positions at this moment. However, we are always looking for talented individuals.</p>
               <Link to="/contact">
-                <button className="px-6 py-2 bg-slate-100 text-slate-700 rounded-md font-medium hover:bg-slate-200 transition-colors border border-slate-300">
+                <button className="px-5 py-2 text-xs bg-slate-100 text-slate-700 rounded-md font-medium hover:bg-slate-200 transition-colors border border-slate-300">
                   Send Speculative Application
                 </button>
               </Link>

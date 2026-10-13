@@ -23,6 +23,15 @@ export function AdminLayout() {
   const { userProfile } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const mainRef = React.useRef<HTMLElement | null>(null);
+
+  // Scroll to top of main container whenever admin route changes or redirects
+  React.useEffect(() => {
+    if (mainRef.current) {
+      mainRef.current.scrollTop = 0;
+    }
+    setIsSidebarOpen(false);
+  }, [location.pathname, location.search]);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -181,7 +190,7 @@ export function AdminLayout() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="flex items-center h-16 px-4 sm:px-6 lg:px-8 border-b border-slate-200 bg-white shadow-sm z-10 lg:hidden">
+        <header className="flex items-center h-14 px-4 sm:px-6 lg:px-8 border-b border-slate-200 bg-white shadow-xs z-10 lg:hidden">
           <button
             onClick={() => setIsSidebarOpen(true)}
             className="text-slate-500 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 rounded-md p-2 -ml-2"
@@ -193,7 +202,7 @@ export function AdminLayout() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto bg-slate-50 p-4 sm:p-6 lg:p-8">
+        <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-50 p-3 sm:p-4 lg:p-6">
           <div className="max-w-7xl mx-auto">
             <Outlet />
           </div>

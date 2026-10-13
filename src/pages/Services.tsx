@@ -2,8 +2,6 @@ import React from 'react';
 import { Container } from '../components/ui/Container';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { CTASection } from '../components/ui/CTASection';
-import { AdSenseSlot } from '../components/ui/AdSenseSlot';
-
 import { useWebsiteSettings } from '../contexts/WebsiteSettingsContext';
 
 export default function Services() {
@@ -41,42 +39,40 @@ export default function Services() {
 
   return (
     <div className="bg-slate-50 min-h-screen">
-      <div className="bg-slate-900 text-white py-20 lg:py-32">
+      <div className="bg-slate-900 text-white py-5 md:py-6">
         <Container>
           <div className="max-w-3xl">
             <div 
-              className="inline-block py-1 px-3 rounded-full text-xs font-semibold uppercase tracking-wider mb-4 bg-slate-800"
+              className="inline-block py-0.5 px-2.5 rounded-full text-[11px] font-semibold uppercase tracking-wider mb-1.5 bg-slate-800"
               style={{ color: primaryColor }}
             >
               Engineering Capabilities
             </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-1.5">
               {servicesContent?.heroTitle || 'Our Services'}
             </h1>
-            <p className="text-lg md:text-xl text-slate-300 leading-relaxed">
+            <p className="text-sm md:text-base text-slate-300 leading-relaxed">
               {servicesContent?.introDescription || `${brandName} delivers comprehensive technology services spanning software, hardware, artificial intelligence, and deep technical research. We engineer solutions that drive operational excellence.`}
             </p>
           </div>
         </Container>
       </div>
 
-      <Container className="py-20 lg:py-32">
+      <Container className="py-4 md:py-5">
         <SectionHeader 
           title="Capabilities Overview" 
           description="Explore our specialized practice areas. Our cross-functional teams work collaboratively to deliver integrated end-to-end solutions."
         />
         
-        <AdSenseSlot />
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 md:mt-4">
           {services.map((service, index) => (
-            <div key={index} className="bg-white p-8 md:p-10 rounded-2xl border border-slate-200 shadow-sm flex flex-col h-full hover:shadow-md transition-shadow">
-              <h3 className="text-2xl font-bold text-slate-900 mb-4">{service.title}</h3>
-              <p className="text-slate-600 mb-8 flex-grow">{service.description}</p>
+            <div key={index} className="bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col h-full hover:shadow-md transition-shadow">
+              <h3 className="text-xl font-bold text-slate-900 mb-2">{service.title}</h3>
+              <p className="text-slate-600 text-sm mb-4 flex-grow">{service.description}</p>
               
-              <div className="mb-8">
-                <h4 className="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-4">Core Focus Areas</h4>
-                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="mb-4">
+                <h4 className="text-xs font-semibold text-slate-900 uppercase tracking-wider mb-2">Core Focus Areas</h4>
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {service.features.map((feature, fIndex) => (
                     <li key={fIndex} className="flex items-center text-sm text-slate-600">
                       <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2"></div>

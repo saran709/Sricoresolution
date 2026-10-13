@@ -8,7 +8,6 @@ import { useNavigate, Navigate } from 'react-router-dom';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { UserProfile } from '../../components/user/UserProfile';
 import { MyProjects } from '../../components/dashboard/MyProjects';
-import { AdSlot } from '../../components/ui/AdSlot';
 import { queryClient } from '../../lib/queryClient';
 
 // Import role dashboards
@@ -34,7 +33,7 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-[80vh] bg-slate-50 py-12">
+      <div className="min-h-[70vh] bg-slate-50 py-6">
         <Container>
           <LoadingSpinner size="lg" />
         </Container>
@@ -58,18 +57,18 @@ export default function Dashboard() {
         return <Navigate to="/admin" replace />;
       default:
         return (
-          <div className="text-center p-8 bg-amber-50 rounded-xl border border-amber-200 text-amber-800">
+          <div className="text-center p-6 bg-amber-50 rounded-xl border border-amber-200 text-amber-800">
             <p>Your account role is not fully configured or recognized.</p>
-            <p className="text-sm mt-2">Please contact support.</p>
+            <p className="text-sm mt-1.5">Please contact support.</p>
           </div>
         );
     }
   };
 
   return (
-    <div className="min-h-[80vh] bg-slate-50 py-12">
+    <div className="min-h-[70vh] bg-slate-50 py-4 md:py-6">
       <Container>
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 mb-6">
+        <div className="bg-white p-5 md:p-6 rounded-xl shadow-xs border border-slate-200 mb-4">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
@@ -106,9 +105,6 @@ export default function Dashboard() {
 
         {/* Role-specific content */}
         {renderRoleDashboard()}
-        
-        <AdSlot isLoading={loading} />
-        
       </Container>
     </div>
   );

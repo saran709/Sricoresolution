@@ -1,20 +1,14 @@
 import React from 'react';
-import { useAdVisibility } from '../../hooks/useAdVisibility';
 
 interface AdSlotProps {
-  isLoading: boolean;
+  isLoading?: boolean;
 }
 
+/**
+ * Hides placeholder ad space completely so empty dashed boxes and allocated space
+ * do not disrupt the clean user interface.
+ */
 export function AdSlot({ isLoading }: AdSlotProps) {
-  const isReady = useAdVisibility(isLoading);
-
-  return (
-    <div className="my-6 min-h-[250px] w-full bg-slate-100 rounded-xl flex items-center justify-center border-2 border-dashed border-slate-300">
-      {isReady ? (
-        <span className="text-slate-400">Ad Space (Auto-managed)</span>
-      ) : (
-        <span className="text-slate-400">Loading...</span>
-      )}
-    </div>
-  );
+  // Do not render empty dashed box or allocate blank space on the page
+  return null;
 }

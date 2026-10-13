@@ -11,17 +11,17 @@ export default function InternshipRegistration() {
   }, []);
 
   return (
-    <div className="py-24 lg:py-36 bg-slate-50 min-h-[75vh] flex items-center justify-center">
+    <div className="py-5 md:py-8 bg-slate-50 min-h-[60vh] flex items-center justify-center">
       <Container className="max-w-xl text-center">
-        <div className="bg-white p-10 md:p-12 rounded-3xl border border-slate-200 shadow-xl">
-          <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
-            <GraduationCap className="w-8 h-8" />
+        <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-lg">
+          <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-xs">
+            <GraduationCap className="w-6 h-6" />
           </div>
 
-          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-3 tracking-tight">
+          <h1 className="text-xl md:text-2xl font-extrabold text-slate-900 mb-2 tracking-tight">
             Redirecting to Application Form
           </h1>
-          <p className="text-slate-600 leading-relaxed mb-8">
+          <p className="text-slate-600 text-sm leading-relaxed mb-6">
             You are being redirected to the official Sricore Solutions Internship Application Form on Google Forms.
           </p>
 

@@ -68,7 +68,7 @@ export default function Contact() {
   const primaryColor = settings?.theme?.primary || '#2563eb';
 
   return (
-    <div className="py-20 lg:py-32 bg-slate-50">
+    <div className="py-4 md:py-6 bg-slate-50">
       <Container>
         <SectionHeader 
           title="Contact Us"
@@ -76,49 +76,49 @@ export default function Contact() {
           badge="Get in Touch"
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 mt-16">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-3 md:mt-4">
           {/* Contact Information */}
-          <div className="lg:col-span-1 space-y-8">
-            <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-              <h3 className="text-xl font-bold text-slate-900 mb-6">Contact Details</h3>
-              <div className="space-y-6">
+          <div className="lg:col-span-1 space-y-4">
+            <div className="bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-xs">
+              <h3 className="text-lg font-bold text-slate-900 mb-3">Contact Details</h3>
+              <div className="space-y-3.5">
                 <div className="flex items-start">
-                  <Mail className="w-6 h-6 mt-1 flex-shrink-0" style={{ color: primaryColor }} />
-                  <div className="ml-4">
-                    <h4 className="text-sm font-semibold text-slate-900">Email</h4>
-                    <a href={`mailto:${contact.primaryEmail || APP_CONFIG.company.contact.email}`} className="text-slate-600 hover:underline transition-colors">
+                  <Mail className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: primaryColor }} />
+                  <div className="ml-3">
+                    <h4 className="text-xs font-semibold text-slate-900">Email</h4>
+                    <a href={`mailto:${contact.primaryEmail || APP_CONFIG.company.contact.email}`} className="text-xs text-slate-600 hover:underline transition-colors">
                       {contact.primaryEmail || APP_CONFIG.company.contact.email}
                     </a>
                     {contact.supportEmail && contact.supportEmail !== contact.primaryEmail && (
-                      <p className="text-xs text-slate-400 mt-0.5">
+                      <p className="text-[11px] text-slate-400 mt-0.5">
                         Support: <a href={`mailto:${contact.supportEmail}`} className="hover:underline">{contact.supportEmail}</a>
                       </p>
                     )}
                   </div>
                 </div>
                 <div className="flex items-start">
-                  <Phone className="w-6 h-6 mt-1 flex-shrink-0" style={{ color: primaryColor }} />
-                  <div className="ml-4">
-                    <h4 className="text-sm font-semibold text-slate-900">Phone</h4>
-                    <a href={`tel:${contact.primaryPhone || APP_CONFIG.company.contact.phone}`} className="text-slate-600 hover:underline transition-colors">
+                  <Phone className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: primaryColor }} />
+                  <div className="ml-3">
+                    <h4 className="text-xs font-semibold text-slate-900">Phone</h4>
+                    <a href={`tel:${contact.primaryPhone || APP_CONFIG.company.contact.phone}`} className="text-xs text-slate-600 hover:underline transition-colors">
                       {contact.primaryPhone || APP_CONFIG.company.contact.phone}
                     </a>
                     {contact.altPhone && (
-                      <p className="text-xs text-slate-400 mt-0.5">
+                      <p className="text-[11px] text-slate-400 mt-0.5">
                         Alt: <a href={`tel:${contact.altPhone}`} className="hover:underline">{contact.altPhone}</a>
                       </p>
                     )}
                   </div>
                 </div>
                 <div className="flex items-start">
-                  <MapPin className="w-6 h-6 mt-1 flex-shrink-0" style={{ color: primaryColor }} />
-                  <div className="ml-4">
-                    <h4 className="text-sm font-semibold text-slate-900">Office Location</h4>
-                    <p className="text-slate-600">
+                  <MapPin className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: primaryColor }} />
+                  <div className="ml-3">
+                    <h4 className="text-xs font-semibold text-slate-900">Office Location</h4>
+                    <p className="text-xs text-slate-600">
                       {contact.address || APP_CONFIG.company.contact.address}
                     </p>
                     {contact.workingHours && (
-                      <p className="text-xs text-slate-500 mt-1 font-medium">
+                      <p className="text-[11px] text-slate-500 mt-0.5 font-medium">
                         Hours: {contact.workingHours}
                       </p>
                     )}
@@ -128,16 +128,16 @@ export default function Contact() {
             </div>
 
             <div 
-              className="p-8 rounded-2xl shadow-sm text-white"
+              className="p-5 md:p-6 rounded-xl shadow-xs text-white"
               style={{ backgroundColor: primaryColor }}
             >
-              <h3 className="text-xl font-bold mb-4">Looking for a quote?</h3>
-              <p className="text-white/90 mb-6 text-sm leading-relaxed">
+              <h3 className="text-lg font-bold mb-2">Looking for a quote?</h3>
+              <p className="text-white/90 mb-4 text-xs leading-relaxed">
                 If you have a specific project in mind, please use our detailed enquiry form so our engineering team can review your requirements prior to our discussion.
               </p>
               <a 
                 href="/enquiry" 
-                className="inline-block px-6 py-3 bg-white rounded-md font-semibold hover:bg-slate-50 transition-colors w-full text-center"
+                className="inline-block px-5 py-2.5 bg-white text-xs rounded-md font-semibold hover:bg-slate-50 transition-colors w-full text-center shadow-xs"
                 style={{ color: primaryColor }}
               >
                 Go to Project Enquiry
@@ -146,24 +146,24 @@ export default function Contact() {
           </div>
 
           {/* Contact Form */}
-          <div className="lg:col-span-2 bg-white p-8 md:p-10 rounded-3xl border border-slate-200 shadow-xl">
+          <div className="lg:col-span-2 bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-xs">
             {isSuccess ? (
-              <div className="h-full flex flex-col items-center justify-center text-center py-12">
-                <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="h-full flex flex-col items-center justify-center text-center py-8">
+                <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h3 className="text-2xl font-bold text-slate-900 mb-4">Message Sent</h3>
-                <p className="text-slate-600 mb-8 max-w-md mx-auto">
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Message Sent</h3>
+                <p className="text-slate-600 text-sm mb-6 max-w-md mx-auto">
                   Thank you for contacting us. We have received your message and will get back to you shortly.
                 </p>
                 <Button onClick={() => setIsSuccess(false)}>Send Another Message</Button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <h3 className="text-2xl font-bold text-slate-900 mb-6">Send us a message</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <h3 className="text-xl font-bold text-slate-900 mb-3">Send us a message</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input label="Full Name" name="fullName" required placeholder="John Doe" />
                   <Input label="Email Address" name="email" type="email" required placeholder="john@example.com" />
                 </div>
@@ -173,9 +173,9 @@ export default function Contact() {
                   name="message"
                   required 
                   placeholder="Your message here..." 
-                  className="min-h-[150px]"
+                  className="min-h-[120px]"
                 />
-                <Button type="submit" isLoading={isSubmitting} className="py-3 px-8 mt-4">
+                <Button type="submit" isLoading={isSubmitting} className="py-2.5 px-6 mt-2 text-xs">
                   Send Message
                 </Button>
               </form>

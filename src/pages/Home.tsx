@@ -17,12 +17,12 @@ export default function Home() {
   return (
     <div className="flex flex-col w-full">
       {/* Hero Section */}
-      <section className="py-12 bg-slate-50 border-b border-slate-200">
+      <section className="py-2.5 md:py-3.5 bg-slate-50 border-b border-slate-200">
         <Container>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center bg-white rounded-2xl p-8 md:p-12 border border-slate-200 shadow-sm">
-            <div className="flex flex-col gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-center bg-white rounded-xl p-4 md:p-6 border border-slate-200 shadow-xs">
+            <div className="flex flex-col gap-2.5">
               <div 
-                className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider w-fit"
+                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider w-fit"
                 style={{ 
                   backgroundColor: `${primaryColor}15`, 
                   color: primaryColor 
@@ -30,21 +30,21 @@ export default function Home() {
               >
                 {hero?.badge || 'Professional Technology Services'}
               </div>
-              <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight">
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight">
                 {hero?.title || 'Engineering Enterprise'}{' '}
                 <br />
                 <span style={{ color: primaryColor }}>
                   {hero?.titleHighlight || 'Digital Foundations'}
                 </span>
               </h1>
-              <p className="text-lg text-slate-600 leading-relaxed max-w-md">
+              <p className="text-sm md:text-base text-slate-600 leading-relaxed max-w-md">
                 {hero?.description || 'Sricore Solutions delivers high-performance software development, industrial IoT, and AI-driven research services. We bridge the gap between academic innovation and commercial engineering excellence.'}
               </p>
               
-              <div className="flex flex-col sm:flex-row gap-4 mt-2">
+              <div className="flex flex-col sm:flex-row gap-2.5 mt-1">
                 <Link 
                   to={hero?.primaryCtaLink || "/enquiry"} 
-                  className="inline-flex items-center justify-center px-6 py-3 text-sm font-semibold rounded text-white shadow-sm w-fit transition-opacity hover:opacity-90"
+                  className="inline-flex items-center justify-center px-5 py-2.5 text-xs font-semibold rounded text-white shadow-xs w-fit transition-opacity hover:opacity-90"
                   style={{ backgroundColor: primaryColor }}
                 >
                   {hero?.primaryCtaText || 'Get a Project Quote'}
@@ -54,7 +54,7 @@ export default function Home() {
                     href={hero.secondaryCtaLink} 
                     target="_blank" 
                     rel="noopener noreferrer" 
-                    className="inline-flex items-center justify-center px-6 py-3 text-sm font-semibold rounded border transition-colors w-fit hover:bg-slate-50"
+                    className="inline-flex items-center justify-center px-5 py-2.5 text-xs font-semibold rounded border transition-colors w-fit hover:bg-slate-50"
                     style={{ color: primaryColor, borderColor: primaryColor }}
                   >
                     {hero?.secondaryCtaText || 'Apply for Internship'}
@@ -62,7 +62,7 @@ export default function Home() {
                 ) : (
                   <Link 
                     to={hero?.secondaryCtaLink || "/internships"} 
-                    className="inline-flex items-center justify-center px-6 py-3 text-sm font-semibold rounded border transition-colors w-fit hover:bg-slate-50"
+                    className="inline-flex items-center justify-center px-5 py-2.5 text-xs font-semibold rounded border transition-colors w-fit hover:bg-slate-50"
                     style={{ color: primaryColor, borderColor: primaryColor }}
                   >
                     {hero?.secondaryCtaText || 'Apply for Internship'}
@@ -71,22 +71,22 @@ export default function Home() {
               </div>
 
               {/* Stats badges under Hero */}
-              <div className="flex flex-wrap gap-4 mt-4 border-t border-slate-100 pt-6">
+              <div className="flex flex-wrap gap-3 mt-2 border-t border-slate-100 pt-3">
                 {(hero?.statsBadges && hero.statsBadges.length > 0 ? hero.statsBadges : ['ISO Standards', 'Industrial IoT', 'AI Certified']).map((badge, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
+                  <div key={idx} className="flex items-center gap-1.5">
                     <div 
-                      className="w-6 h-6 rounded-full flex items-center justify-center"
+                      className="w-5 h-5 rounded-full flex items-center justify-center"
                       style={{ backgroundColor: `${primaryColor}15` }}
                     >
-                      <CheckCircle2 className="w-4 h-4" style={{ color: primaryColor }} />
+                      <CheckCircle2 className="w-3.5 h-3.5" style={{ color: primaryColor }} />
                     </div>
-                    <span className="text-xs font-semibold text-slate-700 uppercase tracking-wide">{badge}</span>
+                    <span className="text-[11px] font-semibold text-slate-700 uppercase tracking-wide">{badge}</span>
                   </div>
                 ))}
               </div>
             </div>
             
-            <div className="relative h-full min-h-[320px] lg:min-h-[400px] bg-slate-100 rounded-xl overflow-hidden border border-slate-200">
+            <div className="relative h-full min-h-[260px] lg:min-h-[320px] bg-slate-100 rounded-lg overflow-hidden border border-slate-200">
               <div className="absolute inset-0 flex items-center justify-center opacity-10">
                  <div className="grid grid-cols-6 gap-2 w-full px-6">
                    <div className="h-40 bg-slate-900 rounded"></div>
@@ -97,21 +97,21 @@ export default function Home() {
                    <div className="h-32 bg-slate-900 rounded self-center"></div>
                  </div>
               </div>
-              <div className="absolute inset-0 flex flex-col p-8 justify-end bg-gradient-to-t from-slate-900/40 to-transparent">
-                 <div className="bg-white/95 backdrop-blur-sm p-5 rounded-lg shadow-xl border border-white/50 w-full max-w-xs">
+              <div className="absolute inset-0 flex flex-col p-6 justify-end bg-gradient-to-t from-slate-900/40 to-transparent">
+                 <div className="bg-white/95 backdrop-blur-sm p-4 rounded-lg shadow-lg border border-white/50 w-full max-w-xs">
                    <div 
-                     className="text-[10px] font-bold uppercase tracking-wider mb-2"
+                     className="text-[10px] font-bold uppercase tracking-wider mb-1.5"
                      style={{ color: primaryColor }}
                    >
                      {hero?.monitorLabel || 'Live Monitoring Interface'}
                    </div>
-                   <div className="h-2 bg-slate-200 rounded-full w-full mb-3 overflow-hidden">
+                   <div className="h-1.5 bg-slate-200 rounded-full w-full mb-2 overflow-hidden">
                      <div 
-                       className="h-2 rounded-full" 
+                       className="h-1.5 rounded-full" 
                        style={{ width: hero?.cpuLoad || '74%', backgroundColor: primaryColor }}
                      ></div>
                    </div>
-                   <div className="flex justify-between text-xs text-slate-500 font-mono font-medium">
+                   <div className="flex justify-between text-[11px] text-slate-500 font-mono font-medium">
                      <span>CPU Load: {hero?.cpuLoad || '74%'}</span>
                      <span>Uptime: {hero?.uptime || '99.9%'}</span>
                    </div>
@@ -124,22 +124,22 @@ export default function Home() {
 
       {/* Dynamic Key Metrics & Milestones */}
       {metrics && metrics.length > 0 && (
-        <section className="py-12 bg-white border-b border-slate-200">
+        <section className="py-2.5 md:py-3.5 bg-white border-b border-slate-200">
           <Container>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
               {metrics.map((metric) => (
-                <div key={metric.id} className="p-6 rounded-xl bg-slate-50 border border-slate-200 text-center flex flex-col items-center justify-center hover:shadow-sm transition-shadow">
+                <div key={metric.id} className="p-3 md:p-4 rounded-lg bg-slate-50 border border-slate-200 text-center flex flex-col items-center justify-center hover:shadow-xs transition-shadow">
                   <div 
-                    className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2"
+                    className="text-xl md:text-2xl lg:text-3xl font-extrabold tracking-tight mb-0.5 md:mb-1"
                     style={{ color: primaryColor }}
                   >
                     {metric.value}
                   </div>
-                  <div className="font-semibold text-slate-900 text-sm md:text-base mb-1">
+                  <div className="font-semibold text-slate-900 text-[11px] md:text-xs mb-0.5">
                     {metric.label}
                   </div>
                   {metric.description && (
-                    <div className="text-xs text-slate-500 max-w-xs">
+                    <div className="text-[10px] md:text-[11px] text-slate-500 max-w-xs">
                       {metric.description}
                     </div>
                   )}
@@ -151,7 +151,7 @@ export default function Home() {
       )}
 
       {/* Core Services Section */}
-      <section className="py-24 bg-white">
+      <section className="py-4 md:py-6 bg-white">
         <Container>
           <SectionHeader 
             title={settings?.services?.heroTitle || "Comprehensive Technical Solutions"} 
@@ -193,21 +193,21 @@ export default function Home() {
       </section>
 
       {/* Why Choose Us Section */}
-      <section className="py-24 bg-slate-50 border-y border-slate-200">
+      <section className="py-4 md:py-6 bg-slate-50 border-y border-slate-200">
         <Container>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-center">
             <div>
               <SectionHeader 
                 title="Built on Engineering Excellence" 
                 align="left"
                 badge={`Why ${settings?.brandName || 'Sricore Solutions'}`}
-                className="mb-8"
+                className="mb-2 md:mb-3"
               />
-              <p className="text-lg text-slate-600 mb-8 leading-relaxed">
+              <p className="text-sm text-slate-600 mb-4 leading-relaxed">
                 We bridge the gap between academic research and industrial application. Our team of experienced engineers and domain experts deliver solutions that are not only technologically advanced but also practically viable and commercially scalable.
               </p>
               
-              <ul className="space-y-4">
+              <ul className="space-y-2">
                 {[
                   'Integrated approach combining software, hardware, and AI',
                   'Rigorous research-backed development methodologies',
@@ -216,32 +216,32 @@ export default function Home() {
                   'Focus on scalable and secure architectures'
                 ].map((item, i) => (
                   <li key={i} className="flex items-start">
-                    <CheckCircle2 className="h-6 w-6 mr-3 flex-shrink-0" style={{ color: primaryColor }} />
-                    <span className="text-slate-700 font-medium">{item}</span>
+                    <CheckCircle2 className="h-4 w-4 mr-2 flex-shrink-0 mt-0.5" style={{ color: primaryColor }} />
+                    <span className="text-slate-700 text-xs md:text-sm font-medium">{item}</span>
                   </li>
                 ))}
               </ul>
             </div>
             
-            <div className="bg-white p-8 md:p-12 rounded-3xl border border-slate-200 shadow-sm">
-              <h3 className="text-2xl font-bold text-slate-900 mb-6">Our Workflow</h3>
-              <div className="space-y-8">
+            <div className="bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-xs">
+              <h3 className="text-lg font-bold text-slate-900 mb-3">Our Workflow</h3>
+              <div className="space-y-3">
                 {[
                   { step: '01', title: 'Analysis & Research', desc: 'Thorough requirement gathering and technical feasibility studies.' },
                   { step: '02', title: 'Architecture & Design', desc: 'Scalable system design encompassing software, hardware, and data flows.' },
                   { step: '03', title: 'Development & Integration', desc: 'Agile development with continuous integration and rigorous testing.' },
                   { step: '04', title: 'Deployment & Support', desc: 'Seamless transition to production with ongoing maintenance and updates.' },
                 ].map((phase, i) => (
-                  <div key={i} className="flex gap-4">
+                  <div key={i} className="flex gap-2.5">
                     <div 
-                      className="text-xl font-bold font-mono opacity-60"
+                      className="text-base font-bold font-mono opacity-60"
                       style={{ color: primaryColor }}
                     >
                       {phase.step}
                     </div>
                     <div>
-                      <h4 className="text-lg font-bold text-slate-900 mb-1">{phase.title}</h4>
-                      <p className="text-slate-600">{phase.desc}</p>
+                      <h4 className="text-xs md:text-sm font-bold text-slate-900 mb-0.5">{phase.title}</h4>
+                      <p className="text-slate-600 text-xs">{phase.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -252,42 +252,42 @@ export default function Home() {
       </section>
 
       {/* Internships & Training Highlight */}
-      <section className="py-24 bg-white">
+      <section className="py-4 md:py-6 bg-white">
         <Container>
-          <div className="bg-slate-900 rounded-3xl overflow-hidden shadow-2xl">
+          <div className="bg-slate-900 rounded-2xl overflow-hidden shadow-xl">
             <div className="grid grid-cols-1 lg:grid-cols-2">
-              <div className="p-10 md:p-16 flex flex-col justify-center">
+              <div className="p-5 md:p-8 flex flex-col justify-center">
                 <span 
-                  className="inline-block py-1 px-3 rounded-full text-xs font-semibold tracking-wide w-fit mb-6 bg-slate-800"
+                  className="inline-block py-0.5 px-2.5 rounded-full text-[11px] font-semibold tracking-wide w-fit mb-2 bg-slate-800"
                   style={{ color: primaryColor }}
                 >
                   Education & Growth
                 </span>
-                <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+                <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-white mb-2">
                   Launch Your Career with Practical Training
                 </h2>
-                <p className="text-slate-300 text-lg mb-8 leading-relaxed">
+                <p className="text-slate-300 text-xs md:text-sm mb-4 leading-relaxed">
                   {settings?.brandName || 'Sricore Solutions'} offers paid internships and specialized practical training programs. Work on live industrial projects, receive mentorship from senior engineers, and build a portfolio that stands out.
                 </p>
                 <Link 
                   to="/internships" 
-                  className="inline-flex items-center font-semibold transition-colors text-lg hover:underline"
+                  className="inline-flex items-center font-semibold transition-colors text-sm hover:underline"
                   style={{ color: primaryColor }}
                 >
-                  Explore Internship Opportunities <ArrowRight className="ml-2 h-5 w-5" />
+                  Explore Internship Opportunities <ArrowRight className="ml-1.5 h-4 w-4" />
                 </Link>
               </div>
               <div className="bg-slate-800 relative hidden lg:block">
                 <div className="absolute inset-0 opacity-20" style={{ backgroundImage: `radial-gradient(${primaryColor} 2px, transparent 2px)`, backgroundSize: '24px 24px' }}></div>
-                <div className="absolute inset-0 flex items-center justify-center p-12">
-                  <div className="w-full h-full border border-slate-700 rounded-2xl bg-slate-900/50 backdrop-blur-sm p-8 flex flex-col gap-4">
-                    <div className="h-4 w-1/3 bg-slate-700 rounded"></div>
-                    <div className="h-4 w-3/4 bg-slate-700 rounded"></div>
-                    <div className="h-4 w-2/3 bg-slate-700 rounded"></div>
-                    <div className="h-4 w-1/2 bg-slate-700 rounded"></div>
+                <div className="absolute inset-0 flex items-center justify-center p-6">
+                  <div className="w-full h-full border border-slate-700 rounded-xl bg-slate-900/50 backdrop-blur-sm p-4 flex flex-col gap-2.5">
+                    <div className="h-2.5 w-1/3 bg-slate-700 rounded"></div>
+                    <div className="h-2.5 w-3/4 bg-slate-700 rounded"></div>
+                    <div className="h-2.5 w-2/3 bg-slate-700 rounded"></div>
+                    <div className="h-2.5 w-1/2 bg-slate-700 rounded"></div>
                     <div className="mt-auto flex justify-between items-end">
-                      <div className="h-10 w-24 rounded" style={{ backgroundColor: primaryColor }}></div>
-                      <div className="h-10 w-10 bg-slate-700 rounded-full"></div>
+                      <div className="h-7 w-16 rounded" style={{ backgroundColor: primaryColor }}></div>
+                      <div className="h-7 w-7 bg-slate-700 rounded-full"></div>
                     </div>
                   </div>
                 </div>
@@ -298,9 +298,9 @@ export default function Home() {
       </section>
 
       {/* Selected Projects */}
-      <section className="py-24 bg-slate-50">
+      <section className="py-4 md:py-6 bg-slate-50">
         <Container>
-          <div className="flex flex-col md:flex-row justify-between items-end mb-12">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-3">
             <SectionHeader 
               title="Selected Works" 
               description="A glimpse into our recent industrial and academic project implementations."
@@ -310,14 +310,14 @@ export default function Home() {
             />
             <Link 
               to="/projects" 
-              className="hidden md:inline-flex items-center font-semibold transition-colors"
+              className="hidden md:inline-flex items-center text-xs font-semibold transition-colors"
               style={{ color: primaryColor }}
             >
-              View all projects <ArrowRight className="ml-2 h-4 w-4" />
+              View all projects <ArrowRight className="ml-1 h-3.5 w-3.5" />
             </Link>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <ProjectCard 
               title="Automated Quality Inspection System"
               category="AI/ML & Hardware"
@@ -338,13 +338,13 @@ export default function Home() {
             />
           </div>
           
-          <div className="mt-8 text-center md:hidden">
+          <div className="mt-4 text-center md:hidden">
             <Link 
               to="/projects" 
-              className="inline-flex items-center font-semibold transition-colors"
+              className="inline-flex items-center text-xs font-semibold transition-colors"
               style={{ color: primaryColor }}
             >
-              View all projects <ArrowRight className="ml-2 h-4 w-4" />
+              View all projects <ArrowRight className="ml-1 h-3.5 w-3.5" />
             </Link>
           </div>
         </Container>

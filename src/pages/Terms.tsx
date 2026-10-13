@@ -3,14 +3,14 @@ import { Container } from '../components/ui/Container';
 
 export default function Terms() {
   return (
-    <div className="bg-slate-50 min-h-screen py-20">
+    <div className="bg-slate-50 min-h-screen py-4 md:py-6">
       <Container>
-        <div className="max-w-4xl mx-auto bg-white p-8 md:p-12 rounded-2xl border border-slate-200 shadow-sm">
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6">Terms & Conditions</h1>
-          <p className="text-slate-500 mb-8">Last updated: {new Date().toLocaleDateString()}</p>
+        <div className="max-w-4xl mx-auto bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-xs">
+          <h1 className="text-xl md:text-2xl font-bold text-slate-900 mb-1">Terms & Conditions</h1>
+          <p className="text-slate-500 text-[11px] mb-3">Last updated: {new Date().toLocaleDateString()}</p>
           
           <div className="prose prose-slate max-w-none">
-            <p className="lead text-lg text-slate-700 mb-6">
+            <p className="lead text-base text-slate-700 mb-3">
               Please read these terms and conditions carefully before using the services provided by Sricore Solutions.
             </p>
 

@@ -45,20 +45,20 @@ export default function Internships() {
 
   return (
     <div className="bg-slate-50 min-h-screen">
-      <div className="bg-slate-900 text-white py-20 lg:py-32">
+      <div className="bg-slate-900 text-white py-5 md:py-6">
         <Container>
           <div className="max-w-3xl">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-1.5">
               Internships & Training
             </h1>
-            <p className="text-lg md:text-xl text-slate-300 leading-relaxed mb-8">
+            <p className="text-sm md:text-base text-slate-300 leading-relaxed mb-3">
               Launch your technical career with Sricore Solutions. Gain hands-on experience working on real-world industry projects alongside experienced mentors and senior engineers.
             </p>
             <a 
               href="https://forms.gle/StQmejms3z9voMMU7" 
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center px-6 py-3 text-base font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center justify-center px-5 py-2 text-xs font-semibold rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
             >
               Apply for Internship
             </a>
@@ -66,33 +66,31 @@ export default function Internships() {
         </Container>
       </div>
 
-      <Container className="py-20 lg:py-32">
+      <Container className="py-4 md:py-5">
         <SectionHeader 
           title="Training Domains" 
           description="We offer comprehensive technical training and project-based learning across multiple engineering disciplines."
         />
         
-        <AdSenseSlot />
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-3 md:mt-4">
           {domains.map((domain, index) => (
-            <div key={index} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 ${domain.color}`}>
+            <div key={index} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-2.5 ${domain.color}`}>
                 {domain.icon}
               </div>
-              <h3 className="text-lg font-bold text-slate-900">{domain.title}</h3>
+              <h3 className="text-base font-bold text-slate-900">{domain.title}</h3>
             </div>
           ))}
         </div>
       </Container>
 
-      <Container className="pb-20 lg:pb-32">
+      <Container className="pb-5 md:pb-6">
         <SectionHeader 
           title="Available Programs" 
           description="Explore our currently open internship roles and apply to join our development teams."
         />
         
-        <div className="mt-16" id="available-programs">
+        <div className="mt-3 md:mt-4" id="available-programs">
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {[1, 2, 3, 4].map(i => (

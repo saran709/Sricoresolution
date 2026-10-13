@@ -24,7 +24,7 @@ export function Navbar() {
       {/* Top Announcement Bar if enabled */}
       {announcement?.enabled && announcement?.text && (
         <div 
-          className="w-full text-xs sm:text-sm py-2 px-4 transition-colors"
+          className="w-full text-xs py-1.5 px-3 transition-colors"
           style={{ 
             backgroundColor: announcement.bgColor || primaryColor, 
             color: announcement.textColor || '#ffffff' 
@@ -49,7 +49,7 @@ export function Navbar() {
 
       <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/90 backdrop-blur-md">
         <Container>
-          <div className="flex h-16 items-center justify-between">
+          <div className="flex h-14 items-center justify-between">
             <div className="flex items-center">
               <Link to="/" className="flex items-center gap-2" onClick={closeMobileMenu}>
                 <img 

@@ -40,32 +40,32 @@ export default function HardwareSolutions() {
 
   return (
     <div className="bg-slate-50 min-h-screen">
-      <div className="bg-slate-900 text-white py-20 lg:py-32">
+      <div className="bg-slate-900 text-white py-5 md:py-6">
         <Container>
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-sm font-semibold mb-6 border border-emerald-500/30">
-              <Cpu className="w-4 h-4" /> Solutions
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-semibold mb-1.5 border border-emerald-500/30">
+              <Cpu className="w-3.5 h-3.5" /> Solutions
             </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-1.5">
               Hardware & IoT Engineering
             </h1>
-            <p className="text-lg md:text-xl text-slate-300 leading-relaxed">
+            <p className="text-sm md:text-base text-slate-300 leading-relaxed">
               We engineer intelligent physical systems. From custom PCB design to global IoT deployments, we bridge the gap between the physical and digital worlds.
             </p>
           </div>
         </Container>
       </div>
 
-      <Container className="py-20 lg:py-32">
+      <Container className="py-4 md:py-5">
         <SectionHeader 
           title="Hardware Capabilities" 
           description="Sricore Solutions delivers robust, industrial-grade hardware and firmware designed for reliability in demanding environments."
         />
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-3 md:mt-4">
           {offerings.map((offering, index) => (
-            <div key={index} className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-6">
+            <div key={index} className="bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+              <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
                 {offering.icon}
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3">{offering.title}</h3>

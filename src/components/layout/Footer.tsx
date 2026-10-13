@@ -19,9 +19,9 @@ export function Footer() {
   const primaryColor = settings?.theme?.primary || '#2563eb';
 
   return (
-    <footer className="bg-slate-900 text-slate-300 py-12 md:py-16">
+    <footer className="bg-slate-900 text-slate-300 py-6 md:py-8">
       <Container>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           {/* Company Info */}
           <div className="space-y-4">
             <Link to="/" className="flex items-center gap-2">

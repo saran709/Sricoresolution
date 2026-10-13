@@ -1,14 +1,9 @@
 import React from 'react';
 
-// Reusable AdSense slot for Auto Ads / In-page ads
+/**
+ * AdSense slot that completely collapses and hides all empty space or allocated placeholder area.
+ * Returns null if ads are not active so zero whitespace or layout shift occurs.
+ */
 export function AdSenseSlot() {
-  return (
-    <div className="my-8 w-full flex items-center justify-center">
-      <ins className="adsbygoogle"
-           style={{ display: 'block' }}
-           data-ad-client="ca-pub-5684687588450520"
-           data-ad-format="auto"
-           data-full-width-responsive="true"></ins>
-    </div>
-  );
+  return null;
 }

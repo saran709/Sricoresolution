@@ -33,3 +33,26 @@
 .theme-border-primary {
   border-color: var(--theme-primary, #2563eb) !important;
 }
+
+/* Collapse and hide all unfilled, auto-placed, or placeholder AdSense containers completely */
+ins.adsbygoogle[data-ad-status="unfilled"],
+ins.adsbygoogle:empty,
+ins.adsbygoogle[style*="display: none"],
+.google-auto-placed,
+.google-auto-placed:empty,
+.adsbygoogle-noablate,
+iframe[name*="google_ads"],
+iframe[id*="google_ads"],
+div[id*="google_ads"],
+div[class*="google-auto-placed"],
+div:empty:has(> ins.adsbygoogle) {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  visibility: hidden !important;
+  overflow: hidden !important;
+}

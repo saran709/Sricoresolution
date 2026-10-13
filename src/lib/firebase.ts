@@ -1,5 +1,12 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
+import { 
+  initializeFirestore, 
+  getFirestore,
+  persistentLocalCache, 
+  persistentMultipleTabManager,
+  memoryLocalCache,
+  Firestore 
+} from "firebase/firestore";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 
@@ -16,18 +23,43 @@ export const firebaseConfig = {
   firestoreDatabaseId: appletConfig.firestoreDatabaseId || "(default)"
 };
 
-// Initialize Firebase
+// Initialize Firebase App
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Initialize Firestore with explicit databaseId and persistent cache
-export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    tabManager: persistentMultipleTabManager()
-  })
-}, firebaseConfig.firestoreDatabaseId);
+// Initialize Firestore with resilient connection settings:
+// - experimentalAutoDetectLongPolling automatically switches to HTTP long-polling when streaming WebChannel is blocked by proxy/iframe
+// - localCache fallback ensures high availability across iframe and private browser contexts
+function initDb(): Firestore {
+  const databaseId = 
+    firebaseConfig.firestoreDatabaseId && firebaseConfig.firestoreDatabaseId !== "(default)"
+      ? firebaseConfig.firestoreDatabaseId
+      : undefined;
+
+  try {
+    return initializeFirestore(app, {
+      experimentalAutoDetectLongPolling: true,
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager()
+      })
+    }, databaseId);
+  } catch (err) {
+    console.warn("Persistent cache initialization failed, attempting fallback:", err);
+    try {
+      return initializeFirestore(app, {
+        experimentalAutoDetectLongPolling: true,
+        localCache: memoryLocalCache()
+      }, databaseId);
+    } catch {
+      return getFirestore(app, databaseId);
+    }
+  }
+}
+
+export const db = initDb();
 
 // Initialize Auth
 export const auth = getAuth(app);
+export const googleProvider = new GoogleAuthProvider();
 
 // Initialize Storage
 export const storage = getStorage(app);

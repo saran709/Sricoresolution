@@ -73,9 +73,9 @@ export default function Enquiry() {
   }
 
   return (
-    <div className="py-20 lg:py-32 bg-slate-50">
+    <div className="py-4 md:py-6 bg-slate-50">
       <Container>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
           <div>
             <SectionHeader 
               title="Get a Project Quote"
@@ -84,47 +84,47 @@ export default function Enquiry() {
               badge="Enquiry"
             />
             
-            <div className="mt-12 space-y-8 bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-              <h3 className="text-xl font-bold text-slate-900">What happens next?</h3>
-              <ul className="space-y-6">
-                <li className="flex gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold">1</div>
+            <div className="mt-3 space-y-4 bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-xs">
+              <h3 className="text-lg font-bold text-slate-900">What happens next?</h3>
+              <ul className="space-y-3.5">
+                <li className="flex gap-3">
+                  <div className="flex-shrink-0 w-7 h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">1</div>
                   <div>
-                    <h4 className="font-semibold text-slate-900">Technical Review</h4>
-                    <p className="text-slate-600 mt-1 text-sm">Our senior engineers will review your initial requirements and constraints.</p>
+                    <h4 className="text-xs font-semibold text-slate-900">Technical Review</h4>
+                    <p className="text-slate-600 mt-0.5 text-xs">Our senior engineers will review your initial requirements and constraints.</p>
                   </div>
                 </li>
-                <li className="flex gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold">2</div>
+                <li className="flex gap-3">
+                  <div className="flex-shrink-0 w-7 h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">2</div>
                   <div>
-                    <h4 className="font-semibold text-slate-900">Discovery Call</h4>
-                    <p className="text-slate-600 mt-1 text-sm">We'll schedule a 30-minute consultation to dive deeper into your vision.</p>
+                    <h4 className="text-xs font-semibold text-slate-900">Discovery Call</h4>
+                    <p className="text-slate-600 mt-0.5 text-xs">We'll schedule a 30-minute consultation to dive deeper into your vision.</p>
                   </div>
                 </li>
-                <li className="flex gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold">3</div>
+                <li className="flex gap-3">
+                  <div className="flex-shrink-0 w-7 h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">3</div>
                   <div>
-                    <h4 className="font-semibold text-slate-900">Detailed Proposal</h4>
-                    <p className="text-slate-600 mt-1 text-sm">You'll receive a comprehensive proposal including architecture design, timelines, and costs.</p>
+                    <h4 className="text-xs font-semibold text-slate-900">Detailed Proposal</h4>
+                    <p className="text-slate-600 mt-0.5 text-xs">You'll receive a comprehensive proposal including architecture design, timelines, and costs.</p>
                   </div>
                 </li>
               </ul>
             </div>
           </div>
 
-          <div className="bg-white p-8 md:p-10 rounded-3xl border border-slate-200 shadow-xl">
+          <div className="bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-xs">
             {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-xs">
                 {error}
               </div>
             )}
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input label="First Name" name="firstName" required placeholder="John" />
                 <Input label="Last Name" name="lastName" required placeholder="Doe" />
               </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input label="Email Address" name="email" type="email" required placeholder="john@company.com" />
                 <Input label="Phone Number" name="phone" type="tel" placeholder="+91 98765 43210" />
               </div>
@@ -132,10 +132,10 @@ export default function Enquiry() {
               <Input label="Company / Institution" name="company" placeholder="Your Organization or University" />
               
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   Service Interest
                 </label>
-                <select name="serviceInterest" className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+                <select name="serviceInterest" className="flex h-9 w-full rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
                   <option value="software">Commercial Software Development</option>
                   <option value="hardware">Commercial Hardware & IoT</option>
                   <option value="ai">Commercial AI / Machine Learning</option>
@@ -150,14 +150,14 @@ export default function Enquiry() {
                 name="projectDetails"
                 required 
                 placeholder="Please describe your requirements, challenges, and goals..." 
-                className="min-h-[150px]"
+                className="min-h-[100px]"
               />
 
-              <Button type="submit" isLoading={isSubmitting} fullWidth className="py-3 mt-4">
+              <Button type="submit" isLoading={isSubmitting} fullWidth className="py-2.5 mt-2 text-xs">
                 Submit Request
               </Button>
               
-              <p className="text-xs text-slate-500 text-center mt-4">
+              <p className="text-[11px] text-slate-500 text-center mt-2">
                 By submitting this form, you agree to our Privacy Policy and Terms of Service.
               </p>
             </form>
