@@ -30,7 +30,11 @@ import {
   AlertTriangle,
   FileText,
   Users as UsersIcon,
-  Check
+  Check,
+  Filter,
+  RotateCcw,
+  UserCheck,
+  UserX
 } from 'lucide-react';
 import { logActivity } from '../../lib/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
@@ -55,6 +59,8 @@ export default function Users() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string>('ALL');
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
   
   // Single User Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -506,9 +512,67 @@ GreenAgro,Enterprises,contact@greenagrotech.sample.in,+91 94440 88990,CLIENT,Cli
     setTimeout(() => setFeedback(null), 6000);
   };
 
-  const filteredUsers = users.filter(u => 
-    `${u.firstName} ${u.lastName} ${u.email} ${u.role}`.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Quick Toggle Active/Inactive Status
+  const handleToggleStatus = async (user: User) => {
+    if (!user.id) return;
+    const newStatus = !(user.isActive ?? true);
+    try {
+      await updateDoc(doc(db, 'users', user.id), {
+        isActive: newStatus,
+        updatedAt: serverTimestamp()
+      });
+
+      if (currentUser?.uid) {
+        await logActivity(
+          'USER_STATUS_TOGGLED',
+          currentUser.uid,
+          user.id,
+          'user',
+          `Set status of ${user.email} to ${newStatus ? 'Active' : 'Inactive'}`
+        );
+      }
+
+      setFeedback({
+        message: `User "${user.firstName} ${user.lastName}" marked as ${newStatus ? 'Active' : 'Inactive'}.`,
+        type: 'success'
+      });
+      setTimeout(() => setFeedback(null), 3500);
+    } catch (err: any) {
+      console.error("Status toggle error:", err);
+      setFeedback({ message: `Failed to update status: ${err?.message}`, type: 'error' });
+    }
+  };
+
+  // Metrics for quick filtering
+  const metrics = {
+    total: users.length,
+    active: users.filter(u => u.isActive ?? true).length,
+    inactive: users.filter(u => !(u.isActive ?? true)).length,
+    EMPLOYEE: users.filter(u => u.role === 'EMPLOYEE').length,
+    MENTOR: users.filter(u => u.role === 'MENTOR').length,
+    INTERN: users.filter(u => u.role === 'INTERN').length,
+    CLIENT: users.filter(u => u.role === 'CLIENT').length,
+    CANDIDATE: users.filter(u => u.role === 'CANDIDATE').length,
+    ADMINISTRATOR: users.filter(u => u.role === 'ADMINISTRATOR').length
+  };
+
+  const filteredUsers = users.filter(u => {
+    const searchTarget = `${u.firstName || ''} ${u.lastName || ''} ${u.email || ''} ${u.role || ''} ${(u as any).position || ''} ${(u as any).phone || ''}`.toLowerCase();
+    const matchesSearch = searchTarget.includes(searchTerm.toLowerCase());
+    const matchesRole = roleFilter === 'ALL' || u.role === roleFilter;
+    const isUserActive = u.isActive ?? true;
+    const matchesStatus = statusFilter === 'ALL' || (statusFilter === 'ACTIVE' ? isUserActive : !isUserActive);
+
+    return matchesSearch && matchesRole && matchesStatus;
+  });
+
+  const isAnyFilterActive = roleFilter !== 'ALL' || statusFilter !== 'ALL' || searchTerm.trim().length > 0;
+
+  const resetAllFilters = () => {
+    setRoleFilter('ALL');
+    setStatusFilter('ALL');
+    setSearchTerm('');
+  };
 
   const validCount = parsedCandidates.filter(c => c.status === 'VALID').length;
   const duplicateCount = parsedCandidates.filter(c => c.status === 'DUPLICATE').length;
@@ -565,22 +629,172 @@ GreenAgro,Enterprises,contact@greenagrotech.sample.in,+91 94440 88990,CLIENT,Cli
         </div>
       )}
 
-      {/* Main Users Table */}
+      {/* Metrics Ribbon & Quick Filter Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5">
+        <div 
+          onClick={() => { setRoleFilter('ALL'); setStatusFilter('ALL'); }}
+          className={`p-3 rounded-xl border cursor-pointer transition-all ${
+            roleFilter === 'ALL' && statusFilter === 'ALL'
+              ? 'bg-blue-50/80 border-blue-300 ring-2 ring-blue-500/20'
+              : 'bg-white border-slate-200 hover:border-slate-300'
+          }`}
+        >
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">All Users</p>
+          <p className="text-lg font-extrabold text-slate-900 mt-0.5">{metrics.total}</p>
+        </div>
+
+        <div 
+          onClick={() => setStatusFilter(statusFilter === 'ACTIVE' ? 'ALL' : 'ACTIVE')}
+          className={`p-3 rounded-xl border cursor-pointer transition-all ${
+            statusFilter === 'ACTIVE'
+              ? 'bg-emerald-50/80 border-emerald-300 ring-2 ring-emerald-500/20'
+              : 'bg-white border-slate-200 hover:border-slate-300'
+          }`}
+        >
+          <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Active</p>
+          <p className="text-lg font-extrabold text-emerald-700 mt-0.5">{metrics.active}</p>
+        </div>
+
+        <div 
+          onClick={() => setStatusFilter(statusFilter === 'INACTIVE' ? 'ALL' : 'INACTIVE')}
+          className={`p-3 rounded-xl border cursor-pointer transition-all ${
+            statusFilter === 'INACTIVE'
+              ? 'bg-red-50/80 border-red-300 ring-2 ring-red-500/20'
+              : 'bg-white border-slate-200 hover:border-slate-300'
+          }`}
+        >
+          <p className="text-[10px] font-bold text-red-600 uppercase tracking-wider">Inactive</p>
+          <p className="text-lg font-extrabold text-red-700 mt-0.5">{metrics.inactive}</p>
+        </div>
+
+        <div 
+          onClick={() => setRoleFilter(roleFilter === 'EMPLOYEE' ? 'ALL' : 'EMPLOYEE')}
+          className={`p-3 rounded-xl border cursor-pointer transition-all ${
+            roleFilter === 'EMPLOYEE'
+              ? 'bg-emerald-50/80 border-emerald-300 ring-2 ring-emerald-500/20'
+              : 'bg-white border-slate-200 hover:border-slate-300'
+          }`}
+        >
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Employees</p>
+          <p className="text-lg font-extrabold text-slate-800 mt-0.5">{metrics.EMPLOYEE}</p>
+        </div>
+
+        <div 
+          onClick={() => setRoleFilter(roleFilter === 'MENTOR' ? 'ALL' : 'MENTOR')}
+          className={`p-3 rounded-xl border cursor-pointer transition-all ${
+            roleFilter === 'MENTOR'
+              ? 'bg-blue-50/80 border-blue-300 ring-2 ring-blue-500/20'
+              : 'bg-white border-slate-200 hover:border-slate-300'
+          }`}
+        >
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Mentors</p>
+          <p className="text-lg font-extrabold text-slate-800 mt-0.5">{metrics.MENTOR}</p>
+        </div>
+
+        <div 
+          onClick={() => setRoleFilter(roleFilter === 'INTERN' ? 'ALL' : 'INTERN')}
+          className={`p-3 rounded-xl border cursor-pointer transition-all ${
+            roleFilter === 'INTERN'
+              ? 'bg-amber-50/80 border-amber-300 ring-2 ring-amber-500/20'
+              : 'bg-white border-slate-200 hover:border-slate-300'
+          }`}
+        >
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Interns</p>
+          <p className="text-lg font-extrabold text-slate-800 mt-0.5">{metrics.INTERN}</p>
+        </div>
+
+        <div 
+          onClick={() => setRoleFilter(roleFilter === 'CLIENT' ? 'ALL' : 'CLIENT')}
+          className={`p-3 rounded-xl border cursor-pointer transition-all ${
+            roleFilter === 'CLIENT'
+              ? 'bg-cyan-50/80 border-cyan-300 ring-2 ring-cyan-500/20'
+              : 'bg-white border-slate-200 hover:border-slate-300'
+          }`}
+        >
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Clients</p>
+          <p className="text-lg font-extrabold text-slate-800 mt-0.5">{metrics.CLIENT}</p>
+        </div>
+
+        <div 
+          onClick={() => setRoleFilter(roleFilter === 'CANDIDATE' ? 'ALL' : 'CANDIDATE')}
+          className={`p-3 rounded-xl border cursor-pointer transition-all ${
+            roleFilter === 'CANDIDATE'
+              ? 'bg-purple-50/80 border-purple-300 ring-2 ring-purple-500/20'
+              : 'bg-white border-slate-200 hover:border-slate-300'
+          }`}
+        >
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Candidates</p>
+          <p className="text-lg font-extrabold text-slate-800 mt-0.5">{metrics.CANDIDATE}</p>
+        </div>
+      </div>
+
+      {/* Main Users Table Card */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="relative w-full max-w-md">
+        {/* Table Toolbar with Search, Role Filter, Status Filter & Reset */}
+        <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3.5">
+          <div className="relative w-full lg:max-w-md">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
               type="text" 
-              placeholder="Search by name, email, or role..." 
+              placeholder="Search by name, email, role, phone..." 
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               className="w-full pl-9 pr-4 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             />
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-slate-500 font-medium">
-              Total Accounts: <strong className="text-slate-900">{users.length}</strong>
+
+          <div className="flex flex-wrap items-center gap-2.5 justify-start lg:justify-end">
+            {/* Role Filter Dropdown */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-slate-500 font-semibold flex items-center gap-1">
+                <Filter className="w-3.5 h-3.5 text-slate-400" />
+                Role:
+              </span>
+              <select
+                value={roleFilter}
+                onChange={e => setRoleFilter(e.target.value)}
+                className="px-2.5 py-1.5 text-xs font-semibold border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700 shadow-sm"
+              >
+                <option value="ALL">All Roles ({metrics.total})</option>
+                <option value="EMPLOYEE">Employee ({metrics.EMPLOYEE})</option>
+                <option value="MENTOR">Mentor ({metrics.MENTOR})</option>
+                <option value="INTERN">Intern ({metrics.INTERN})</option>
+                <option value="CLIENT">Client ({metrics.CLIENT})</option>
+                <option value="CANDIDATE">Candidate ({metrics.CANDIDATE})</option>
+                <option value="ADMINISTRATOR">Administrator ({metrics.ADMINISTRATOR})</option>
+              </select>
+            </div>
+
+            {/* Active / Inactive Status Filter Dropdown */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-slate-500 font-semibold">Status:</span>
+              <select
+                value={statusFilter}
+                onChange={e => setStatusFilter(e.target.value)}
+                className="px-2.5 py-1.5 text-xs font-semibold border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700 shadow-sm"
+              >
+                <option value="ALL">All Status ({metrics.total})</option>
+                <option value="ACTIVE">Active ({metrics.active})</option>
+                <option value="INACTIVE">Inactive ({metrics.inactive})</option>
+              </select>
+            </div>
+
+            {/* Reset Filters Action */}
+            {isAnyFilterActive && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={resetAllFilters}
+                className="h-8 px-2.5 text-xs text-slate-600 hover:text-slate-900 border-dashed flex items-center gap-1 bg-white"
+                title="Reset all active filters"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Reset
+              </Button>
+            )}
+
+            <span className="text-xs text-slate-500 font-medium pl-1">
+              Showing <strong>{filteredUsers.length}</strong> of {users.length}
             </span>
           </div>
         </div>
@@ -609,17 +823,27 @@ GreenAgro,Enterprises,contact@greenagrotech.sample.in,+91 94440 88990,CLIENT,Cli
                   <td colSpan={5} className="p-12 text-center text-slate-500">
                     <div className="max-w-sm mx-auto flex flex-col items-center">
                       <UsersIcon className="w-12 h-12 text-slate-300 mb-3" />
-                      <h3 className="font-bold text-slate-700 text-sm">No users found</h3>
-                      <p className="text-xs text-slate-500 mt-1 mb-4">
-                        {searchTerm ? `No users matching "${searchTerm}".` : 'Get started by creating users or importing from CSV.'}
+                      <h3 className="font-bold text-slate-700 text-sm">No users match current filters</h3>
+                      <p className="text-xs text-slate-500 mt-1 mb-4 text-center">
+                        {isAnyFilterActive 
+                          ? `No accounts found with Role: "${roleFilter}", Status: "${statusFilter}"${searchTerm ? `, Search: "${searchTerm}"` : ''}.`
+                          : 'Get started by creating users or importing from CSV.'}
                       </p>
                       <div className="flex items-center gap-2">
-                        <Button size="sm" onClick={() => setIsCsvModalOpen(true)} variant="outline" className="text-xs">
-                          <Upload className="w-3.5 h-3.5 mr-1" /> Import CSV
-                        </Button>
-                        <Button size="sm" onClick={openAddModal} className="text-xs">
-                          <UserPlus className="w-3.5 h-3.5 mr-1" /> Add Profile
-                        </Button>
+                        {isAnyFilterActive ? (
+                          <Button size="sm" onClick={resetAllFilters} variant="outline" className="text-xs">
+                            <RotateCcw className="w-3.5 h-3.5 mr-1" /> Clear All Filters
+                          </Button>
+                        ) : (
+                          <>
+                            <Button size="sm" onClick={() => setIsCsvModalOpen(true)} variant="outline" className="text-xs">
+                              <Upload className="w-3.5 h-3.5 mr-1" /> Import CSV
+                            </Button>
+                            <Button size="sm" onClick={openAddModal} className="text-xs">
+                              <UserPlus className="w-3.5 h-3.5 mr-1" /> Add Profile
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </td>
@@ -640,16 +864,26 @@ GreenAgro,Enterprises,contact@greenagrotech.sample.in,+91 94440 88990,CLIENT,Cli
                         u.role === 'MENTOR' ? 'bg-blue-100 text-blue-800' :
                         u.role === 'EMPLOYEE' ? 'bg-emerald-100 text-emerald-800' :
                         u.role === 'INTERN' ? 'bg-amber-100 text-amber-800' :
+                        u.role === 'CLIENT' ? 'bg-cyan-100 text-cyan-800' :
                         'bg-slate-100 text-slate-800'
                       }`}>
                         {u.role}
                       </span>
                     </td>
                     <td className="p-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${u.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${u.isActive ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
-                        {u.isActive ? 'Active' : 'Inactive'}
-                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleStatus(u)}
+                        title="Click to toggle Active / Inactive status"
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${
+                          (u.isActive ?? true)
+                            ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200' 
+                            : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
+                        }`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${(u.isActive ?? true) ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+                        {(u.isActive ?? true) ? 'Active' : 'Inactive'}
+                      </button>
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
