@@ -11,9 +11,9 @@ interface SectionHeaderProps {
 
 export function SectionHeader({ title, description, align = 'center', className, badge }: SectionHeaderProps) {
   return (
-    <div className={cn('mb-3 md:mb-4', align === 'center' ? 'text-center' : 'text-left', className)}>
+    <div className={cn('mb-2 md:mb-2.5', align === 'center' ? 'text-center' : 'text-left', className)}>
       {badge && (
-        <span className="inline-block py-0.5 px-2.5 rounded-full bg-blue-50 text-blue-700 text-[11px] font-bold uppercase tracking-wider mb-1.5">
+        <span className="inline-block py-0.5 px-2.5 rounded-full bg-blue-50 text-blue-700 text-[11px] font-bold uppercase tracking-wider mb-1">
           {badge}
         </span>
       )}

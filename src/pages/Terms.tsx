@@ -3,7 +3,7 @@ import { Container } from '../components/ui/Container';
 
 export default function Terms() {
   return (
-    <div className="bg-slate-50 min-h-screen py-4 md:py-6">
+    <div className="bg-slate-50 min-h-screen py-2.5 md:py-3.5">
       <Container>
         <div className="max-w-4xl mx-auto bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-xs">
           <h1 className="text-xl md:text-2xl font-bold text-slate-900 mb-1">Terms & Conditions</h1>

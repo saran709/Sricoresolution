@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
+import { AmpAd } from '../ui/AmpAd';
 
 export function MainLayout() {
   return (
@@ -10,6 +11,7 @@ export function MainLayout() {
       <main className="flex-grow flex flex-col relative w-full">
         <Outlet />
       </main>
+      <AmpAd />
       <Footer />
     </div>
   );

@@ -34,17 +34,19 @@
   border-color: var(--theme-primary, #2563eb) !important;
 }
 
-/* Collapse and hide all unfilled, auto-placed, or placeholder AdSense containers completely */
+/* Collapse and hide all unfilled, placeholder or inactive ad containers so no allocated blank gap is shown */
+amp-ad:empty,
+amp-ad.amp-unfilled,
+amp-ad[data-ad-status="unfilled"],
+amp-ad:not(:defined),
 ins.adsbygoogle[data-ad-status="unfilled"],
 ins.adsbygoogle:empty,
 ins.adsbygoogle[style*="display: none"],
-.google-auto-placed,
 .google-auto-placed:empty,
-.adsbygoogle-noablate,
-iframe[name*="google_ads"],
-iframe[id*="google_ads"],
-div[id*="google_ads"],
-div[class*="google-auto-placed"],
+.adsbygoogle-noablate:empty,
+.amp-ad-slot-wrapper:has(amp-ad:empty),
+.amp-ad-slot-wrapper:has(amp-ad.amp-unfilled),
+.amp-ad-slot-wrapper:has(amp-ad[data-ad-status="unfilled"]),
 div:empty:has(> ins.adsbygoogle) {
   display: none !important;
   height: 0 !important;
@@ -55,4 +57,10 @@ div:empty:has(> ins.adsbygoogle) {
   border: 0 !important;
   visibility: hidden !important;
   overflow: hidden !important;
+}
+
+amp-ad {
+  max-width: 100vw;
+  margin-left: auto;
+  margin-right: auto;
 }

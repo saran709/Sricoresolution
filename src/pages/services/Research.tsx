@@ -40,29 +40,29 @@ export default function ResearchServices() {
 
   return (
     <div className="bg-slate-50 min-h-screen">
-      <div className="bg-slate-900 text-white py-5 md:py-6">
+      <div className="bg-slate-900 text-white py-3 md:py-4">
         <Container>
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-orange-500/20 text-orange-300 text-[11px] font-semibold mb-1.5 border border-orange-500/30">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-orange-500/20 text-orange-300 text-[11px] font-semibold mb-1 border border-orange-500/30">
               <FlaskConical className="w-3.5 h-3.5" /> Services
             </div>
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-1.5">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-1">
               Research & Technical Services
             </h1>
-            <p className="text-sm md:text-base text-slate-300 leading-relaxed">
+            <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
               We bridge the gap between academic research and industry execution. Our experts provide rigorous technical documentation, publication support, and algorithm validation.
             </p>
           </div>
         </Container>
       </div>
 
-      <Container className="py-4 md:py-5">
+      <Container className="py-2.5 md:py-3.5">
         <SectionHeader 
           title="Research Capabilities" 
           description="Sricore Solutions supports researchers, academics, and R&D departments in formalizing, testing, and documenting their innovations."
         />
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-3 md:mt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2 md:mt-2.5">
           {offerings.map((offering, index) => (
             <div key={index} className="bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
               <div className="w-10 h-10 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center mb-3">

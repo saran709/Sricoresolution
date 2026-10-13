@@ -11,7 +11,7 @@ export default function InternshipRegistration() {
   }, []);
 
   return (
-    <div className="py-5 md:py-8 bg-slate-50 min-h-[60vh] flex items-center justify-center">
+    <div className="py-3 md:py-5 bg-slate-50 min-h-[60vh] flex items-center justify-center">
       <Container className="max-w-xl text-center">
         <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-lg">
           <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-xs">

@@ -115,18 +115,18 @@ export default function Projects() {
   return (
     <div className="bg-slate-50 min-h-screen">
       {/* Hero Header */}
-      <div className="bg-slate-900 text-white py-5 md:py-6 relative overflow-hidden">
+      <div className="bg-slate-900 text-white py-3 md:py-4 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px]"></div>
         <Container className="relative z-10">
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-400/20 text-blue-300 text-[11px] font-semibold mb-1.5">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-400/20 text-blue-300 text-[11px] font-semibold mb-1">
               <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
               Verified Engineering Systems & Case Studies
             </div>
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-1.5">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-1">
               Featured Projects & Innovations
             </h1>
-            <p className="text-sm md:text-base text-slate-300 leading-relaxed">
+            <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
               Explore production deployments, research prototypes, and applied artificial intelligence systems engineered across Sricore Solutions initiatives and research collaborations.
             </p>
           </div>
@@ -134,8 +134,8 @@ export default function Projects() {
       </div>
 
       {/* Main Content Area */}
-      <Container className="py-4 md:py-5">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-3 mb-3">
+      <Container className="py-2.5 md:py-3.5">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-3 mb-2.5">
           <div>
             <SectionHeader 
               title="Verified Technical Portfolio" 

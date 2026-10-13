@@ -68,7 +68,7 @@ export default function Contact() {
   const primaryColor = settings?.theme?.primary || '#2563eb';
 
   return (
-    <div className="py-4 md:py-6 bg-slate-50">
+    <div className="py-2.5 md:py-3.5 bg-slate-50">
       <Container>
         <SectionHeader 
           title="Contact Us"
@@ -76,7 +76,7 @@ export default function Contact() {
           badge="Get in Touch"
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-3 md:mt-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5 mt-2 md:mt-2.5">
           {/* Contact Information */}
           <div className="lg:col-span-1 space-y-4">
             <div className="bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-xs">

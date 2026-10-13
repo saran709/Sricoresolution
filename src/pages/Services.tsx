@@ -39,32 +39,32 @@ export default function Services() {
 
   return (
     <div className="bg-slate-50 min-h-screen">
-      <div className="bg-slate-900 text-white py-5 md:py-6">
+      <div className="bg-slate-900 text-white py-3 md:py-4">
         <Container>
           <div className="max-w-3xl">
             <div 
-              className="inline-block py-0.5 px-2.5 rounded-full text-[11px] font-semibold uppercase tracking-wider mb-1.5 bg-slate-800"
+              className="inline-block py-0.5 px-2.5 rounded-full text-[11px] font-semibold uppercase tracking-wider mb-1 bg-slate-800"
               style={{ color: primaryColor }}
             >
               Engineering Capabilities
             </div>
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-1.5">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-1">
               {servicesContent?.heroTitle || 'Our Services'}
             </h1>
-            <p className="text-sm md:text-base text-slate-300 leading-relaxed">
+            <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
               {servicesContent?.introDescription || `${brandName} delivers comprehensive technology services spanning software, hardware, artificial intelligence, and deep technical research. We engineer solutions that drive operational excellence.`}
             </p>
           </div>
         </Container>
       </div>
 
-      <Container className="py-4 md:py-5">
+      <Container className="py-2.5 md:py-3.5">
         <SectionHeader 
           title="Capabilities Overview" 
           description="Explore our specialized practice areas. Our cross-functional teams work collaboratively to deliver integrated end-to-end solutions."
         />
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 md:mt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 md:mt-2.5">
           {services.map((service, index) => (
             <div key={index} className="bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col h-full hover:shadow-md transition-shadow">
               <h3 className="text-xl font-bold text-slate-900 mb-2">{service.title}</h3>

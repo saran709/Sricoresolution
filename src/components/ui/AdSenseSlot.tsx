@@ -1,9 +1,12 @@
 import React from 'react';
+import { AmpAd } from './AmpAd';
 
 /**
- * AdSense slot that completely collapses and hides all empty space or allocated placeholder area.
- * Returns null if ads are not active so zero whitespace or layout shift occurs.
+ * AdSense slot that renders the Google AdSense AMP unit while automatically
+ * collapsing and hiding any allocated placeholder area when no ad is served.
  */
-export function AdSenseSlot() {
-  return null;
+export function AdSenseSlot({ className }: { className?: string }) {
+  return <AmpAd className={className} />;
 }
+
+export default AdSenseSlot;

@@ -40,29 +40,29 @@ export default function SoftwareSolutions() {
 
   return (
     <div className="bg-slate-50 min-h-screen">
-      <div className="bg-slate-900 text-white py-5 md:py-6">
+      <div className="bg-slate-900 text-white py-3 md:py-4">
         <Container>
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[11px] font-semibold mb-1.5 border border-blue-500/30">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[11px] font-semibold mb-1 border border-blue-500/30">
               <Code className="w-3.5 h-3.5" /> Solutions
             </div>
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-1.5">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-1">
               Software Engineering
             </h1>
-            <p className="text-sm md:text-base text-slate-300 leading-relaxed">
+            <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
               We design and engineer bespoke software solutions that drive operational efficiency, enhance user experiences, and scale seamlessly with your organizational needs.
             </p>
           </div>
         </Container>
       </div>
 
-      <Container className="py-4 md:py-5">
+      <Container className="py-2.5 md:py-3.5">
         <SectionHeader 
           title="Our Software Capabilities" 
           description="Sricore Solutions utilizes modern tech stacks and agile methodologies to deliver software that meets strict enterprise standards."
         />
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-3 md:mt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2 md:mt-2.5">
           {offerings.map((offering, index) => (
             <div key={index} className="bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
               <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
