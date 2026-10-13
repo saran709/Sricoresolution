@@ -4,7 +4,14 @@ import { SectionHeader } from '../components/ui/SectionHeader';
 import { CTASection } from '../components/ui/CTASection';
 import { AdSenseSlot } from '../components/ui/AdSenseSlot';
 
+import { useWebsiteSettings } from '../contexts/WebsiteSettingsContext';
+
 export default function Services() {
+  const { settings } = useWebsiteSettings();
+  const primaryColor = settings?.theme?.primary || '#2563eb';
+  const brandName = settings?.brandName || 'Sricore Solutions';
+  const servicesContent = settings?.services;
+
   const services = [
     {
       title: "Software Solutions",
@@ -37,11 +44,17 @@ export default function Services() {
       <div className="bg-slate-900 text-white py-20 lg:py-32">
         <Container>
           <div className="max-w-3xl">
+            <div 
+              className="inline-block py-1 px-3 rounded-full text-xs font-semibold uppercase tracking-wider mb-4 bg-slate-800"
+              style={{ color: primaryColor }}
+            >
+              Engineering Capabilities
+            </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-              Our Services
+              {servicesContent?.heroTitle || 'Our Services'}
             </h1>
             <p className="text-lg md:text-xl text-slate-300 leading-relaxed">
-              Sricore Solutions delivers comprehensive technology services spanning software, hardware, artificial intelligence, and deep technical research. We engineer solutions that drive operational excellence.
+              {servicesContent?.introDescription || `${brandName} delivers comprehensive technology services spanning software, hardware, artificial intelligence, and deep technical research. We engineer solutions that drive operational excellence.`}
             </p>
           </div>
         </Container>
@@ -73,7 +86,11 @@ export default function Services() {
                 </ul>
               </div>
               
-              <a href={service.link} className="inline-flex items-center text-blue-600 font-semibold hover:text-blue-700 transition-colors mt-auto">
+              <a 
+                href={service.link} 
+                className="inline-flex items-center font-semibold transition-colors mt-auto hover:underline"
+                style={{ color: primaryColor }}
+              >
                 Explore {service.title} <span className="ml-2">→</span>
               </a>
             </div>

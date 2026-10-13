@@ -1,10 +1,22 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Container } from '../ui/Container';
-import { APP_CONFIG } from '../../config';
+import { useWebsiteSettings } from '../../contexts/WebsiteSettingsContext';
+import { Mail, Phone, MapPin, Globe } from 'lucide-react';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
+  const { settings } = useWebsiteSettings();
+
+  const brandName = settings?.brandName || 'Sricore Solutions';
+  const tagline = settings?.brandTagline || 'Technology Solutions & Services';
+  const description = settings?.brandDescription || 'A premier technology partner offering comprehensive solutions in software, hardware, AI/ML, and research.';
+  const contact = settings?.contact || {
+    address: 'Namakkal - 637018, Tamil Nadu, India',
+    primaryEmail: 'contact@sricoresolutions.com',
+    primaryPhone: '+91 98402 34567'
+  };
+  const primaryColor = settings?.theme?.primary || '#2563eb';
 
   return (
     <footer className="bg-slate-900 text-slate-300 py-12 md:py-16">
@@ -13,15 +25,41 @@ export function Footer() {
           {/* Company Info */}
           <div className="space-y-4">
             <Link to="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
+              <div 
+                className="w-8 h-8 rounded flex items-center justify-center transition-colors"
+                style={{ backgroundColor: primaryColor }}
+              >
                 <div className="w-4 h-4 border-2 border-white rotate-45"></div>
               </div>
-              <span className="text-xl font-bold tracking-tight text-white">SRICORE<span className="text-blue-500">SOLUTIONS</span></span>
+              <span className="text-xl font-bold tracking-tight text-white uppercase">
+                {brandName}
+              </span>
             </Link>
-            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-3">Advanced Engineering Hub</p>
-            <p className="text-sm text-slate-400 max-w-xs">
-              {APP_CONFIG.company.tagline}. {APP_CONFIG.company.description}
+            <p className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold mb-3">
+              {tagline}
             </p>
+            <p className="text-sm text-slate-400 max-w-xs leading-relaxed">
+              {description}
+            </p>
+            {settings?.socials && (
+              <div className="flex items-center gap-3 pt-2">
+                {settings.socials.linkedin && (
+                  <a href={settings.socials.linkedin} target="_blank" rel="noreferrer" className="text-xs text-slate-400 hover:text-white transition-colors">
+                    LinkedIn
+                  </a>
+                )}
+                {settings.socials.github && (
+                  <a href={settings.socials.github} target="_blank" rel="noreferrer" className="text-xs text-slate-400 hover:text-white transition-colors">
+                    GitHub
+                  </a>
+                )}
+                {settings.socials.twitter && (
+                  <a href={settings.socials.twitter} target="_blank" rel="noreferrer" className="text-xs text-slate-400 hover:text-white transition-colors">
+                    Twitter
+                  </a>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Quick Links */}
@@ -45,32 +83,42 @@ export function Footer() {
               <li><Link to="/solutions/hardware" className="text-sm hover:text-white transition-colors">Hardware & IoT</Link></li>
               <li><Link to="/solutions/ai-ml" className="text-sm hover:text-white transition-colors">AI/ML Solutions</Link></li>
               <li><Link to="/services/research" className="text-sm hover:text-white transition-colors">Research & Documentation</Link></li>
-              <li><Link to="/internships" className="text-sm hover:text-white transition-colors">Training</Link></li>
+              <li><Link to="/internships" className="text-sm hover:text-white transition-colors">Internship Programs</Link></li>
             </ul>
           </div>
 
           {/* Contact Info */}
           <div>
             <h3 className="text-white font-semibold mb-4">Contact Us</h3>
-            <address className="not-italic space-y-2 text-sm">
-              <p>{APP_CONFIG.company.contact.address}</p>
-              <p>
-                <a href={`mailto:${APP_CONFIG.company.contact.email}`} className="hover:text-white transition-colors">
-                  {APP_CONFIG.company.contact.email}
+            <address className="not-italic space-y-2 text-sm text-slate-300">
+              <p className="flex items-start gap-2">
+                <MapPin className="w-4 h-4 text-slate-400 mt-1 shrink-0" />
+                <span>{contact.address}</span>
+              </p>
+              <p className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-slate-400 shrink-0" />
+                <a href={`mailto:${contact.primaryEmail}`} className="hover:text-white transition-colors">
+                  {contact.primaryEmail}
                 </a>
               </p>
-              <p>
-                <a href={`tel:${APP_CONFIG.company.contact.phone}`} className="hover:text-white transition-colors">
-                  {APP_CONFIG.company.contact.phone}
+              <p className="flex items-center gap-2">
+                <Phone className="w-4 h-4 text-slate-400 shrink-0" />
+                <a href={`tel:${contact.primaryPhone}`} className="hover:text-white transition-colors">
+                  {contact.primaryPhone}
                 </a>
               </p>
+              {contact.workingHours && (
+                <p className="text-xs text-slate-400 pt-1">
+                  Hours: {contact.workingHours}
+                </p>
+              )}
             </address>
           </div>
         </div>
 
         <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">
           <p>
-            &copy; {currentYear} SRICORE SOLUTIONS. ALL RIGHTS RESERVED.
+            {settings?.footerCopyright || `© ${currentYear} ${brandName.toUpperCase()}. ALL RIGHTS RESERVED.`}
           </p>
           <div className="flex space-x-4">
             <span className="hidden md:inline-block">ISO 9001:2015 CERTIFIED ORGANIZATION</span>

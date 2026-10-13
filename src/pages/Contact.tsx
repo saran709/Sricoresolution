@@ -6,6 +6,7 @@ import { Textarea } from '../components/ui/Textarea';
 import { Button } from '../components/ui/Button';
 import { APP_CONFIG } from '../config';
 import { Mail, Phone, MapPin } from 'lucide-react';
+import { useWebsiteSettings } from '../contexts/WebsiteSettingsContext';
 
 import { z } from 'zod';
 
@@ -62,6 +63,10 @@ export default function Contact() {
     }
   };
 
+  const { settings } = useWebsiteSettings();
+  const contact = settings?.contact || APP_CONFIG.company.contact;
+  const primaryColor = settings?.theme?.primary || '#2563eb';
+
   return (
     <div className="py-20 lg:py-32 bg-slate-50">
       <Container>
@@ -78,41 +83,63 @@ export default function Contact() {
               <h3 className="text-xl font-bold text-slate-900 mb-6">Contact Details</h3>
               <div className="space-y-6">
                 <div className="flex items-start">
-                  <Mail className="w-6 h-6 text-blue-600 mt-1 flex-shrink-0" />
+                  <Mail className="w-6 h-6 mt-1 flex-shrink-0" style={{ color: primaryColor }} />
                   <div className="ml-4">
                     <h4 className="text-sm font-semibold text-slate-900">Email</h4>
-                    <a href={`mailto:${APP_CONFIG.company.contact.email}`} className="text-slate-600 hover:text-blue-600 transition-colors">
-                      {APP_CONFIG.company.contact.email}
+                    <a href={`mailto:${contact.primaryEmail || APP_CONFIG.company.contact.email}`} className="text-slate-600 hover:underline transition-colors">
+                      {contact.primaryEmail || APP_CONFIG.company.contact.email}
                     </a>
+                    {contact.supportEmail && contact.supportEmail !== contact.primaryEmail && (
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Support: <a href={`mailto:${contact.supportEmail}`} className="hover:underline">{contact.supportEmail}</a>
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-start">
-                  <Phone className="w-6 h-6 text-blue-600 mt-1 flex-shrink-0" />
+                  <Phone className="w-6 h-6 mt-1 flex-shrink-0" style={{ color: primaryColor }} />
                   <div className="ml-4">
                     <h4 className="text-sm font-semibold text-slate-900">Phone</h4>
-                    <a href={`tel:${APP_CONFIG.company.contact.phone}`} className="text-slate-600 hover:text-blue-600 transition-colors">
-                      {APP_CONFIG.company.contact.phone}
+                    <a href={`tel:${contact.primaryPhone || APP_CONFIG.company.contact.phone}`} className="text-slate-600 hover:underline transition-colors">
+                      {contact.primaryPhone || APP_CONFIG.company.contact.phone}
                     </a>
+                    {contact.altPhone && (
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Alt: <a href={`tel:${contact.altPhone}`} className="hover:underline">{contact.altPhone}</a>
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-start">
-                  <MapPin className="w-6 h-6 text-blue-600 mt-1 flex-shrink-0" />
+                  <MapPin className="w-6 h-6 mt-1 flex-shrink-0" style={{ color: primaryColor }} />
                   <div className="ml-4">
-                    <h4 className="text-sm font-semibold text-slate-900">Office</h4>
+                    <h4 className="text-sm font-semibold text-slate-900">Office Location</h4>
                     <p className="text-slate-600">
-                      {APP_CONFIG.company.contact.address}
+                      {contact.address || APP_CONFIG.company.contact.address}
                     </p>
+                    {contact.workingHours && (
+                      <p className="text-xs text-slate-500 mt-1 font-medium">
+                        Hours: {contact.workingHours}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="bg-blue-600 p-8 rounded-2xl shadow-sm text-white">
+            <div 
+              className="p-8 rounded-2xl shadow-sm text-white"
+              style={{ backgroundColor: primaryColor }}
+            >
               <h3 className="text-xl font-bold mb-4">Looking for a quote?</h3>
-              <p className="text-blue-100 mb-6 text-sm leading-relaxed">
+              <p className="text-white/90 mb-6 text-sm leading-relaxed">
                 If you have a specific project in mind, please use our detailed enquiry form so our engineering team can review your requirements prior to our discussion.
               </p>
-              <a href="/enquiry" className="inline-block px-6 py-3 bg-white text-blue-600 rounded-md font-semibold hover:bg-blue-50 transition-colors w-full text-center">
+              <a 
+                href="/enquiry" 
+                className="inline-block px-6 py-3 bg-white rounded-md font-semibold hover:bg-slate-50 transition-colors w-full text-center"
+                style={{ color: primaryColor }}
+              >
                 Go to Project Enquiry
               </a>
             </div>

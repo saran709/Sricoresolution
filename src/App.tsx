@@ -8,13 +8,16 @@ import { HelmetProvider } from 'react-helmet-async';
 import { queryClient } from './lib/queryClient';
 import { AppRouter } from './router';
 import { AuthProvider } from './contexts/AuthContext';
+import { WebsiteSettingsProvider } from './contexts/WebsiteSettingsContext';
 
 export default function App() {
   return (
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <AppRouter />
+          <WebsiteSettingsProvider>
+            <AppRouter />
+          </WebsiteSettingsProvider>
         </AuthProvider>
       </QueryClientProvider>
     </HelmetProvider>

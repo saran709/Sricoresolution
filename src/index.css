@@ -1,2 +1,35 @@
 @import "tailwindcss";
 
+:root {
+  --theme-primary: #2563eb;
+  --theme-primary-hover: #1d4ed8;
+  --theme-primary-light: #eff6ff;
+  --theme-accent: #3b82f6;
+}
+
+/* Theme accent and brand utilities */
+.theme-btn-primary {
+  background-color: var(--theme-primary, #2563eb);
+  color: #ffffff;
+  transition: background-color 0.2s ease-in-out, transform 0.1s ease;
+}
+
+.theme-btn-primary:hover {
+  background-color: var(--theme-primary-hover, #1d4ed8);
+}
+
+.theme-text-primary {
+  color: var(--theme-primary, #2563eb) !important;
+}
+
+.theme-bg-primary {
+  background-color: var(--theme-primary, #2563eb) !important;
+}
+
+.theme-bg-light {
+  background-color: var(--theme-primary-light, #eff6ff) !important;
+}
+
+.theme-border-primary {
+  border-color: var(--theme-primary, #2563eb) !important;
+}

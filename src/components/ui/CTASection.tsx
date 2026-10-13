@@ -2,6 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Container } from './Container';
 
+import { useWebsiteSettings } from '../../contexts/WebsiteSettingsContext';
+
 interface CTASectionProps {
   title: string;
   description: string;
@@ -18,9 +20,11 @@ interface CTASectionProps {
 
 export function CTASection({ title, description, primaryAction, secondaryAction, theme = 'dark' }: CTASectionProps) {
   const isDark = theme === 'dark';
+  const { settings } = useWebsiteSettings();
+  const primaryColor = settings?.theme?.primary || '#2563eb';
   
   return (
-    <section className={`py-20 lg:py-24 ${isDark ? 'bg-slate-900 text-white' : 'bg-blue-50 text-slate-900'}`}>
+    <section className={`py-20 lg:py-24 ${isDark ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-900 border-t border-slate-200'}`}>
       <Container>
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-6">
@@ -33,11 +37,8 @@ export function CTASection({ title, description, primaryAction, secondaryAction,
             {primaryAction.href.startsWith('/') ? (
               <Link 
                 to={primaryAction.href}
-                className={`inline-flex items-center justify-center px-8 py-4 text-base font-medium rounded-md transition-colors w-full sm:w-auto ${
-                  isDark 
-                    ? 'bg-blue-500 text-white hover:bg-blue-600' 
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
-                }`}
+                className="inline-flex items-center justify-center px-8 py-4 text-base font-medium rounded-md text-white transition-opacity hover:opacity-90 w-full sm:w-auto shadow-sm"
+                style={{ backgroundColor: primaryColor }}
               >
                 {primaryAction.label}
               </Link>
@@ -46,11 +47,8 @@ export function CTASection({ title, description, primaryAction, secondaryAction,
                 href={primaryAction.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`inline-flex items-center justify-center px-8 py-4 text-base font-medium rounded-md transition-colors w-full sm:w-auto ${
-                  isDark 
-                    ? 'bg-blue-500 text-white hover:bg-blue-600' 
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
-                }`}
+                className="inline-flex items-center justify-center px-8 py-4 text-base font-medium rounded-md text-white transition-opacity hover:opacity-90 w-full sm:w-auto shadow-sm"
+                style={{ backgroundColor: primaryColor }}
               >
                 {primaryAction.label}
               </a>
