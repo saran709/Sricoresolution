@@ -73,9 +73,9 @@ export default function Enquiry() {
   }
 
   return (
-    <div className="py-2.5 md:py-3.5 bg-slate-50">
+    <div className="py-6 md:py-8 bg-slate-50">
       <Container>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
           <div>
             <SectionHeader 
               title="Get a Project Quote"
@@ -84,7 +84,7 @@ export default function Enquiry() {
               badge="Enquiry"
             />
             
-            <div className="mt-3 space-y-4 bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-xs">
+            <div className="mt-5 space-y-4 bg-white p-6 rounded-xl border border-slate-200 shadow-xs">
               <h3 className="text-lg font-bold text-slate-900">What happens next?</h3>
               <ul className="space-y-3.5">
                 <li className="flex gap-3">

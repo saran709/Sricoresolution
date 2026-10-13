@@ -17,10 +17,10 @@ export default function Home() {
   return (
     <div className="flex flex-col w-full">
       {/* Hero Section */}
-      <section className="py-2.5 md:py-3.5 bg-slate-50 border-b border-slate-200">
+      <section className="py-5 md:py-7 bg-slate-50 border-b border-slate-200">
         <Container>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-center bg-white rounded-xl p-4 md:p-6 border border-slate-200 shadow-xs">
-            <div className="flex flex-col gap-2.5">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-center bg-white rounded-xl p-5 md:p-7 border border-slate-200 shadow-xs">
+            <div className="flex flex-col gap-3.5">
               <div 
                 className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider w-fit"
                 style={{ 
@@ -41,7 +41,7 @@ export default function Home() {
                 {hero?.description || 'Sricore Solutions delivers high-performance software development, industrial IoT, and AI-driven research services. We bridge the gap between academic innovation and commercial engineering excellence.'}
               </p>
               
-              <div className="flex flex-col sm:flex-row gap-2.5 mt-1">
+              <div className="flex flex-col sm:flex-row gap-3 mt-2">
                 <Link 
                   to={hero?.primaryCtaLink || "/enquiry"} 
                   className="inline-flex items-center justify-center px-5 py-2.5 text-xs font-semibold rounded text-white shadow-xs w-fit transition-opacity hover:opacity-90"
@@ -71,7 +71,7 @@ export default function Home() {
               </div>
 
               {/* Stats badges under Hero */}
-              <div className="flex flex-wrap gap-3 mt-2 border-t border-slate-100 pt-3">
+              <div className="flex flex-wrap gap-3.5 mt-3 border-t border-slate-100 pt-3">
                 {(hero?.statsBadges && hero.statsBadges.length > 0 ? hero.statsBadges : ['ISO Standards', 'Industrial IoT', 'AI Certified']).map((badge, idx) => (
                   <div key={idx} className="flex items-center gap-1.5">
                     <div 
@@ -124,18 +124,18 @@ export default function Home() {
 
       {/* Dynamic Key Metrics & Milestones */}
       {metrics && metrics.length > 0 && (
-        <section className="py-2.5 md:py-3.5 bg-white border-b border-slate-200">
+        <section className="py-5 md:py-7 bg-white border-b border-slate-200">
           <Container>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
               {metrics.map((metric) => (
-                <div key={metric.id} className="p-3 md:p-4 rounded-lg bg-slate-50 border border-slate-200 text-center flex flex-col items-center justify-center hover:shadow-xs transition-shadow">
+                <div key={metric.id} className="p-4 md:p-5 rounded-lg bg-slate-50 border border-slate-200 text-center flex flex-col items-center justify-center hover:shadow-xs transition-shadow">
                   <div 
-                    className="text-xl md:text-2xl lg:text-3xl font-extrabold tracking-tight mb-0.5 md:mb-1"
+                    className="text-xl md:text-2xl lg:text-3xl font-extrabold tracking-tight mb-1"
                     style={{ color: primaryColor }}
                   >
                     {metric.value}
                   </div>
-                  <div className="font-semibold text-slate-900 text-[11px] md:text-xs mb-0.5">
+                  <div className="font-semibold text-slate-900 text-[11px] md:text-xs mb-1">
                     {metric.label}
                   </div>
                   {metric.description && (
@@ -151,7 +151,7 @@ export default function Home() {
       )}
 
       {/* Core Services Section */}
-      <section className="py-4 md:py-6 bg-white">
+      <section className="py-7 md:py-9 bg-white">
         <Container>
           <SectionHeader 
             title={settings?.services?.heroTitle || "Comprehensive Technical Solutions"} 
@@ -159,7 +159,7 @@ export default function Home() {
             badge="Our Capabilities"
           />
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6">
             <ServiceCard 
               title="Software Systems"
               description="Full-stack React & TypeScript architectures with robust Cloud integration."
@@ -193,7 +193,7 @@ export default function Home() {
       </section>
 
       {/* Why Choose Us Section */}
-      <section className="py-4 md:py-6 bg-slate-50 border-y border-slate-200">
+      <section className="py-7 md:py-9 bg-slate-50 border-y border-slate-200">
         <Container>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-center">
             <div>
@@ -201,13 +201,13 @@ export default function Home() {
                 title="Built on Engineering Excellence" 
                 align="left"
                 badge={`Why ${settings?.brandName || 'Sricore Solutions'}`}
-                className="mb-2 md:mb-3"
+                className="mb-3 md:mb-4"
               />
               <p className="text-sm text-slate-600 mb-4 leading-relaxed">
                 We bridge the gap between academic research and industrial application. Our team of experienced engineers and domain experts deliver solutions that are not only technologically advanced but also practically viable and commercially scalable.
               </p>
               
-              <ul className="space-y-2">
+              <ul className="space-y-2.5">
                 {[
                   'Integrated approach combining software, hardware, and AI',
                   'Rigorous research-backed development methodologies',
@@ -223,16 +223,16 @@ export default function Home() {
               </ul>
             </div>
             
-            <div className="bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-xs">
-              <h3 className="text-lg font-bold text-slate-900 mb-3">Our Workflow</h3>
-              <div className="space-y-3">
+            <div className="bg-white p-6 md:p-8 rounded-xl border border-slate-200 shadow-xs">
+              <h3 className="text-lg font-bold text-slate-900 mb-4">Our Workflow</h3>
+              <div className="space-y-3.5">
                 {[
                   { step: '01', title: 'Analysis & Research', desc: 'Thorough requirement gathering and technical feasibility studies.' },
                   { step: '02', title: 'Architecture & Design', desc: 'Scalable system design encompassing software, hardware, and data flows.' },
                   { step: '03', title: 'Development & Integration', desc: 'Agile development with continuous integration and rigorous testing.' },
                   { step: '04', title: 'Deployment & Support', desc: 'Seamless transition to production with ongoing maintenance and updates.' },
                 ].map((phase, i) => (
-                  <div key={i} className="flex gap-2.5">
+                  <div key={i} className="flex gap-3">
                     <div 
                       className="text-base font-bold font-mono opacity-60"
                       style={{ color: primaryColor }}
@@ -252,21 +252,21 @@ export default function Home() {
       </section>
 
       {/* Internships & Training Highlight */}
-      <section className="py-4 md:py-6 bg-white">
+      <section className="py-7 md:py-9 bg-white">
         <Container>
           <div className="bg-slate-900 rounded-2xl overflow-hidden shadow-xl">
             <div className="grid grid-cols-1 lg:grid-cols-2">
-              <div className="p-5 md:p-8 flex flex-col justify-center">
+              <div className="p-6 md:p-10 flex flex-col justify-center">
                 <span 
-                  className="inline-block py-0.5 px-2.5 rounded-full text-[11px] font-semibold tracking-wide w-fit mb-2 bg-slate-800"
+                  className="inline-block py-0.5 px-2.5 rounded-full text-[11px] font-semibold tracking-wide w-fit mb-2.5 bg-slate-800"
                   style={{ color: primaryColor }}
                 >
                   Education & Growth
                 </span>
-                <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-white mb-2">
+                <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-white mb-2.5">
                   Launch Your Career with Practical Training
                 </h2>
-                <p className="text-slate-300 text-xs md:text-sm mb-4 leading-relaxed">
+                <p className="text-slate-300 text-xs md:text-sm mb-5 leading-relaxed">
                   {settings?.brandName || 'Sricore Solutions'} offers paid internships and specialized practical training programs. Work on live industrial projects, receive mentorship from senior engineers, and build a portfolio that stands out.
                 </p>
                 <Link 
@@ -298,7 +298,7 @@ export default function Home() {
       </section>
 
       {/* Selected Projects */}
-      <section className="py-4 md:py-6 bg-slate-50">
+      <section className="py-7 md:py-9 bg-slate-50">
         <Container>
           <div className="flex flex-col md:flex-row justify-between items-end mb-3">
             <SectionHeader 

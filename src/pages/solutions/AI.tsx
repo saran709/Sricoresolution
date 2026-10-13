@@ -40,29 +40,29 @@ export default function AISolutions() {
 
   return (
     <div className="bg-slate-50 min-h-screen">
-      <div className="bg-slate-900 text-white py-3 md:py-4">
+      <div className="bg-slate-900 text-white py-6 md:py-8">
         <Container>
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[11px] font-semibold mb-1 border border-purple-500/30">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[11px] font-semibold mb-2 border border-purple-500/30">
               <Brain className="w-3.5 h-3.5" /> Solutions
             </div>
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-1">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-2">
               Artificial Intelligence & ML
             </h1>
-            <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
+            <p className="text-sm md:text-base text-slate-300 leading-relaxed">
               We leverage advanced artificial intelligence to unlock data insights, automate complex workflows, and build systems capable of intelligent decision-making.
             </p>
           </div>
         </Container>
       </div>
 
-      <Container className="py-2.5 md:py-3.5">
+      <Container className="py-6 md:py-8">
         <SectionHeader 
           title="AI & Data Capabilities" 
           description="Sricore Solutions designs highly optimized AI models and data pipelines that transform raw information into strategic business value."
         />
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2 md:mt-2.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6 mt-4 md:mt-5">
           {offerings.map((offering, index) => (
             <div key={index} className="bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
               <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center mb-3">

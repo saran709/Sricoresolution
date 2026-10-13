@@ -11,13 +11,13 @@ interface SectionHeaderProps {
 
 export function SectionHeader({ title, description, align = 'center', className, badge }: SectionHeaderProps) {
   return (
-    <div className={cn('mb-2 md:mb-2.5', align === 'center' ? 'text-center' : 'text-left', className)}>
+    <div className={cn('mb-5 md:mb-6', align === 'center' ? 'text-center' : 'text-left', className)}>
       {badge && (
-        <span className="inline-block py-0.5 px-2.5 rounded-full bg-blue-50 text-blue-700 text-[11px] font-bold uppercase tracking-wider mb-1">
+        <span className="inline-block py-0.5 px-2.5 rounded-full bg-blue-50 text-blue-700 text-[11px] font-bold uppercase tracking-wider mb-2">
           {badge}
         </span>
       )}
-      <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight mb-1">
+      <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight mb-2">
         {title}
       </h2>
       {description && (

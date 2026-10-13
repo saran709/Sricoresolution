@@ -45,20 +45,20 @@ export default function Internships() {
 
   return (
     <div className="bg-slate-50 min-h-screen">
-      <div className="bg-slate-900 text-white py-3 md:py-4">
+      <div className="bg-slate-900 text-white py-6 md:py-8">
         <Container>
           <div className="max-w-3xl">
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-1">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-2">
               Internships & Training
             </h1>
-            <p className="text-xs md:text-sm text-slate-300 leading-relaxed mb-2.5">
+            <p className="text-sm md:text-base text-slate-300 leading-relaxed mb-4">
               Launch your technical career with Sricore Solutions. Gain hands-on experience working on real-world industry projects alongside experienced mentors and senior engineers.
             </p>
             <a 
               href="https://forms.gle/StQmejms3z9voMMU7" 
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center px-4 py-1.5 text-xs font-semibold rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center justify-center px-5 py-2 text-xs font-semibold rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
             >
               Apply for Internship
             </a>
@@ -66,13 +66,13 @@ export default function Internships() {
         </Container>
       </div>
 
-      <Container className="py-2.5 md:py-3.5">
+      <Container className="py-6 md:py-8">
         <SectionHeader 
           title="Training Domains" 
           description="We offer comprehensive technical training and project-based learning across multiple engineering disciplines."
         />
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-2 md:mt-2.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6 mt-4 md:mt-5">
           {domains.map((domain, index) => (
             <div key={index} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
               <div className={`w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-2.5 ${domain.color}`}>

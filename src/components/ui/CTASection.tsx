@@ -23,16 +23,16 @@ export function CTASection({ title, description, primaryAction, secondaryAction,
   const primaryColor = settings?.theme?.primary || '#2563eb';
   
   return (
-    <section className={`py-6 md:py-8 ${isDark ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-900 border-t border-slate-200'}`}>
+    <section className={`py-10 md:py-14 ${isDark ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-900 border-t border-slate-200'}`}>
       <Container>
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-2">
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-3">
             {title}
           </h2>
-          <p className={`text-sm md:text-base mb-5 max-w-2xl mx-auto ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+          <p className={`text-sm md:text-base mb-6 max-w-2xl mx-auto ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
             {description}
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             {primaryAction.href.startsWith('/') ? (
               <Link 
                 to={primaryAction.href}
