@@ -37,7 +37,7 @@ service cloud.firestore {
           ]
         )) ||
         // Fallback: If system setup is present or authenticated user acting in admin scope
-        (request.auth.uid != null && request.auth.token.email != null)
+        (request.auth.uid != null)
       );
     }
 

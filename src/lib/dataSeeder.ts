@@ -20,9 +20,11 @@ export interface SeedResult {
   announcementsCount: number;
   attendanceCount: number;
   leavesCount: number;
+  errors?: string[];
 }
 
 export async function seedAdminDashboardData(currentAdminUid?: string): Promise<SeedResult> {
+  const errors: string[] = [];
   const result: SeedResult = {
     departmentsCount: 0,
     usersCount: 0,
@@ -33,13 +35,21 @@ export async function seedAdminDashboardData(currentAdminUid?: string): Promise<
     vendorsCount: 0,
     announcementsCount: 0,
     attendanceCount: 0,
-    leavesCount: 0
+    leavesCount: 0,
+    errors
   };
 
   // 1. Departments
   const deptMap: Record<string, string> = {};
   try {
     const existingDepts = await getDocs(collection(db, 'departments'));
+    existingDepts.docs.forEach(docSnap => {
+      const data = docSnap.data();
+      if (data.name) {
+        deptMap[data.name] = docSnap.id;
+      }
+    });
+
     const initialDepts = [
       {
         name: 'Software Engineering',
@@ -63,30 +73,44 @@ export async function seedAdminDashboardData(currentAdminUid?: string): Promise<
       }
     ];
 
+    const deptPromises: Promise<any>[] = [];
     for (const d of initialDepts) {
-      const existing = existingDepts.docs.find(docSnap => docSnap.data().name === d.name);
-      if (!existing) {
-        const docRef = await addDoc(collection(db, 'departments'), {
-          name: d.name,
-          description: d.description,
-          managerId: '',
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
-        deptMap[d.name] = docRef.id;
-      } else {
-        deptMap[d.name] = existing.id;
+      if (!deptMap[d.name]) {
+        deptPromises.push(
+          addDoc(collection(db, 'departments'), {
+            name: d.name,
+            description: d.description,
+            managerId: '',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          }).then(docRef => {
+            deptMap[d.name] = docRef.id;
+          }).catch(err => {
+            errors.push(`Department "${d.name}": ${err.message}`);
+          })
+        );
       }
     }
+    if (deptPromises.length > 0) {
+      await Promise.all(deptPromises);
+    }
     result.departmentsCount = Object.keys(deptMap).length;
-  } catch (deptErr) {
+  } catch (deptErr: any) {
     console.warn("Notice seeding departments:", deptErr);
+    errors.push(`Departments fetch error: ${deptErr.message}`);
   }
 
   // 2. Staff, Mentors, Interns, Candidates, and Clients
   const userMap: Record<string, string> = {};
   try {
     const existingUsers = await getDocs(collection(db, 'users'));
+    const existingEmails = new Map<string, string>();
+    existingUsers.docs.forEach(docSnap => {
+      const data = docSnap.data();
+      if (data.email) {
+        existingEmails.set(data.email.toLowerCase().trim(), docSnap.id);
+      }
+    });
 
     const sampleUsers = [
       // Mentors
@@ -253,59 +277,72 @@ export async function seedAdminDashboardData(currentAdminUid?: string): Promise<
       }
     ];
 
+    const userPromises: Promise<any>[] = [];
     for (const u of sampleUsers) {
-      const existing = existingUsers.docs.find(docSnap => docSnap.data().email === u.email);
-      if (!existing) {
+      const cleanEmail = u.email.toLowerCase().trim();
+      const existingId = existingEmails.get(cleanEmail);
+      if (!existingId) {
         const userRef = doc(collection(db, 'users'));
-        await setDoc(userRef, {
-          uid: userRef.id,
-          id: userRef.id,
-          email: u.email,
-          firstName: u.firstName,
-          lastName: u.lastName,
-          phone: u.phone,
-          role: u.role,
-          position: u.position,
-          departmentId: u.departmentId,
-          isActive: u.isActive,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
         userMap[u.key] = userRef.id;
+        userPromises.push(
+          setDoc(userRef, {
+            uid: userRef.id,
+            id: userRef.id,
+            email: cleanEmail,
+            firstName: u.firstName,
+            lastName: u.lastName,
+            phone: u.phone,
+            role: u.role,
+            position: u.position,
+            departmentId: u.departmentId || deptMap['Software Engineering'] || '',
+            isActive: u.isActive,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          }).catch(err => {
+            errors.push(`User "${u.email}": ${err.message}`);
+          })
+        );
       } else {
-        userMap[u.key] = existing.id;
+        userMap[u.key] = existingId;
       }
+    }
+
+    if (userPromises.length > 0) {
+      await Promise.all(userPromises);
     }
     result.usersCount = Object.keys(userMap).length;
 
-    // Link mentor IDs for interns
+    // Link mentor IDs for interns concurrently
+    const linkPromises: Promise<any>[] = [];
     for (const u of sampleUsers) {
       if ((u as any).mentorKey && userMap[u.key] && userMap[(u as any).mentorKey]) {
         const internUserId = userMap[u.key];
         const mentorUserId = userMap[(u as any).mentorKey];
-        try {
-          await setDoc(doc(db, 'users', internUserId), {
+        linkPromises.push(
+          setDoc(doc(db, 'users', internUserId), {
             mentorId: mentorUserId,
             updatedAt: serverTimestamp()
-          }, { merge: true });
-        } catch (err) {
-          console.warn("Could not link mentor for intern:", err);
-        }
+          }, { merge: true }).catch(() => {})
+        );
       }
     }
 
     // Update department manager links
     if (deptMap['Software Engineering'] && userMap['karthik']) {
-      await setDoc(doc(db, 'departments', deptMap['Software Engineering']), { managerId: userMap['karthik'] }, { merge: true });
+      linkPromises.push(setDoc(doc(db, 'departments', deptMap['Software Engineering']), { managerId: userMap['karthik'] }, { merge: true }).catch(() => {}));
     }
     if (deptMap['Embedded Systems & IoT'] && userMap['rajesh']) {
-      await setDoc(doc(db, 'departments', deptMap['Embedded Systems & IoT']), { managerId: userMap['rajesh'] }, { merge: true });
+      linkPromises.push(setDoc(doc(db, 'departments', deptMap['Embedded Systems & IoT']), { managerId: userMap['rajesh'] }, { merge: true }).catch(() => {}));
     }
     if (deptMap['AI & Data Science'] && userMap['ananya']) {
-      await setDoc(doc(db, 'departments', deptMap['AI & Data Science']), { managerId: userMap['ananya'] }, { merge: true });
+      linkPromises.push(setDoc(doc(db, 'departments', deptMap['AI & Data Science']), { managerId: userMap['ananya'] }, { merge: true }).catch(() => {}));
     }
-  } catch (userErr) {
+    if (linkPromises.length > 0) {
+      await Promise.all(linkPromises);
+    }
+  } catch (userErr: any) {
     console.warn("Notice seeding users:", userErr);
+    errors.push(`Users fetch/seed error: ${userErr.message}`);
   }
 
   // 3. Projects (Reconcile complete Historical Projects Inventory safely without duplicates)
@@ -316,13 +353,19 @@ export async function seedAdminDashboardData(currentAdminUid?: string): Promise<
       departmentMap: deptMap
     });
     result.projectsCount = migrationReport.newProjectsToCreate + migrationReport.matchedExisting;
-  } catch (projErr) {
+    if (migrationReport.errors && migrationReport.errors.length > 0) {
+      errors.push(...migrationReport.errors.slice(0, 3));
+    }
+  } catch (projErr: any) {
     console.warn("Historical projects reconciliation notice in seeder:", projErr);
+    errors.push(`Projects reconciliation error: ${projErr.message}`);
   }
 
   // 4. Tasks (both in projectTasks and tasks so all components resolve them)
   try {
-    const existingTasks = await getDocs(collection(db, 'projectTasks'));
+    const existingTasksSnap = await getDocs(collection(db, 'projectTasks'));
+    const existingTitles = new Set(existingTasksSnap.docs.map(d => (d.data().title || '').trim().toLowerCase()));
+
     const sampleTasks = [
       {
         title: 'Calibrate LoRaWAN 868MHz sensor node ping and RSSI thresholds',
@@ -330,7 +373,9 @@ export async function seedAdminDashboardData(currentAdminUid?: string): Promise<
         assignedTo: 'Rajesh Murugan',
         assigneeId: userMap['rajesh'] || 'staff',
         status: 'IN_PROGRESS',
-        priority: 'HIGH'
+        priority: 'HIGH',
+        dueDate: '2026-10-25',
+        description: 'Run spectral sweeps on hardware test bench and log packet loss ratios.'
       },
       {
         title: 'Fine-tune YOLOv8 model weights on aerial agricultural crop canopy dataset',
@@ -338,7 +383,9 @@ export async function seedAdminDashboardData(currentAdminUid?: string): Promise<
         assignedTo: 'Dr. Ananya Sen',
         assigneeId: userMap['ananya'] || 'staff',
         status: 'IN_PROGRESS',
-        priority: 'HIGH'
+        priority: 'HIGH',
+        dueDate: '2026-10-30',
+        description: 'Optimize bounding box precision for multispectral camera image feeds.'
       },
       {
         title: 'Implement JWT refresh rotation and secure HTTP-only cookie proxy',
@@ -346,7 +393,9 @@ export async function seedAdminDashboardData(currentAdminUid?: string): Promise<
         assignedTo: 'Karthik Venkatesh',
         assigneeId: userMap['karthik'] || 'staff',
         status: 'REVIEW',
-        priority: 'MEDIUM'
+        priority: 'MEDIUM',
+        dueDate: '2026-10-22',
+        description: 'Verify token rotation test cases and revoke tokens on security events.'
       },
       {
         title: 'Assemble and solder 4-layer PCB prototype for current transformer telemetry',
@@ -354,7 +403,9 @@ export async function seedAdminDashboardData(currentAdminUid?: string): Promise<
         assignedTo: 'Arun Kumar',
         assigneeId: userMap['arun'] || 'staff',
         status: 'TODO',
-        priority: 'MEDIUM'
+        priority: 'MEDIUM',
+        dueDate: '2026-11-05',
+        description: 'Ensure grounding isolation and solder flux cleaning inspection.'
       },
       {
         title: 'Draft comprehensive IEEE formatting report and algorithm flowchart',
@@ -362,31 +413,45 @@ export async function seedAdminDashboardData(currentAdminUid?: string): Promise<
         assignedTo: 'Sanjay Natarajan',
         assigneeId: userMap['sanjay'] || 'staff',
         status: 'TODO',
-        priority: 'LOW'
+        priority: 'LOW',
+        dueDate: '2026-11-12',
+        description: 'Complete block diagrams, confusion matrices, and ROC curves.'
       }
     ];
 
-    if (existingTasks.empty) {
-      for (const t of sampleTasks) {
+    const taskPromises: Promise<any>[] = [];
+    let addedTasks = 0;
+    for (const t of sampleTasks) {
+      if (!existingTitles.has(t.title.trim().toLowerCase())) {
+        addedTasks++;
         const taskPayload = {
           ...t,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         };
-        await addDoc(collection(db, 'projectTasks'), taskPayload);
-        await addDoc(collection(db, 'tasks'), taskPayload);
+        taskPromises.push(
+          addDoc(collection(db, 'projectTasks'), taskPayload)
+            .then(docRef => addDoc(collection(db, 'tasks'), { ...taskPayload, id: docRef.id }))
+            .catch(err => {
+              errors.push(`Task "${t.title}": ${err.message}`);
+            })
+        );
       }
-      result.tasksCount = sampleTasks.length;
-    } else {
-      result.tasksCount = existingTasks.size;
     }
-  } catch (taskErr) {
+    if (taskPromises.length > 0) {
+      await Promise.all(taskPromises);
+    }
+    result.tasksCount = existingTasksSnap.size + addedTasks;
+  } catch (taskErr: any) {
     console.warn("Notice seeding tasks:", taskErr);
+    errors.push(`Tasks seed error: ${taskErr.message}`);
   }
 
   // 5. Enquiries
   try {
     const existingEnquiries = await getDocs(collection(db, 'enquiries'));
+    const existingEmails = new Set(existingEnquiries.docs.map(d => (d.data().email || '').trim().toLowerCase()));
+
     const sampleEnquiries = [
       {
         enquiryType: 'commercial',
@@ -423,25 +488,36 @@ export async function seedAdminDashboardData(currentAdminUid?: string): Promise<
       }
     ];
 
-    if (existingEnquiries.empty) {
-      for (const enq of sampleEnquiries) {
-        await addDoc(collection(db, 'enquiries'), {
-          ...enq,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
+    const enqPromises: Promise<any>[] = [];
+    let addedEnquiries = 0;
+    for (const enq of sampleEnquiries) {
+      if (!existingEmails.has(enq.email.trim().toLowerCase())) {
+        addedEnquiries++;
+        enqPromises.push(
+          addDoc(collection(db, 'enquiries'), {
+            ...enq,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          }).catch(err => {
+            errors.push(`Enquiry "${enq.email}": ${err.message}`);
+          })
+        );
       }
-      result.enquiriesCount = sampleEnquiries.length;
-    } else {
-      result.enquiriesCount = existingEnquiries.size;
     }
-  } catch (enqErr) {
+    if (enqPromises.length > 0) {
+      await Promise.all(enqPromises);
+    }
+    result.enquiriesCount = existingEnquiries.size + addedEnquiries;
+  } catch (enqErr: any) {
     console.warn("Notice seeding enquiries:", enqErr);
+    errors.push(`Enquiries seed error: ${enqErr.message}`);
   }
 
   // 6. Internship Applications
   try {
     const existingApps = await getDocs(collection(db, 'internship_applications'));
+    const existingCandidateEmails = new Set(existingApps.docs.map(d => (d.data().candidateEmail || '').trim().toLowerCase()));
+
     const sampleApps = [
       {
         candidateName: 'Pooja Hegde',
@@ -472,25 +548,36 @@ export async function seedAdminDashboardData(currentAdminUid?: string): Promise<
       }
     ];
 
-    if (existingApps.empty) {
-      for (const app of sampleApps) {
-        await addDoc(collection(db, 'internship_applications'), {
-          ...app,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
+    const appPromises: Promise<any>[] = [];
+    let addedApps = 0;
+    for (const app of sampleApps) {
+      if (!existingCandidateEmails.has(app.candidateEmail.trim().toLowerCase())) {
+        addedApps++;
+        appPromises.push(
+          addDoc(collection(db, 'internship_applications'), {
+            ...app,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          }).catch(err => {
+            errors.push(`Intern application "${app.candidateEmail}": ${err.message}`);
+          })
+        );
       }
-      result.applicationsCount = sampleApps.length;
-    } else {
-      result.applicationsCount = existingApps.size;
     }
-  } catch (appErr) {
+    if (appPromises.length > 0) {
+      await Promise.all(appPromises);
+    }
+    result.applicationsCount = existingApps.size + addedApps;
+  } catch (appErr: any) {
     console.warn("Notice seeding internship applications:", appErr);
+    errors.push(`Applications seed error: ${appErr.message}`);
   }
 
   // 7. Vendors
   try {
     const existingVendors = await getDocs(collection(db, 'vendors'));
+    const existingVendorNames = new Set(existingVendors.docs.map(d => (d.data().name || '').trim().toLowerCase()));
+
     const sampleVendors = [
       {
         name: 'DigiKey Electronics India',
@@ -515,25 +602,36 @@ export async function seedAdminDashboardData(currentAdminUid?: string): Promise<
       }
     ];
 
-    if (existingVendors.empty) {
-      for (const v of sampleVendors) {
-        await addDoc(collection(db, 'vendors'), {
-          ...v,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
+    const vendorPromises: Promise<any>[] = [];
+    let addedVendors = 0;
+    for (const v of sampleVendors) {
+      if (!existingVendorNames.has(v.name.trim().toLowerCase())) {
+        addedVendors++;
+        vendorPromises.push(
+          addDoc(collection(db, 'vendors'), {
+            ...v,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          }).catch(err => {
+            errors.push(`Vendor "${v.name}": ${err.message}`);
+          })
+        );
       }
-      result.vendorsCount = sampleVendors.length;
-    } else {
-      result.vendorsCount = existingVendors.size;
     }
-  } catch (vErr) {
+    if (vendorPromises.length > 0) {
+      await Promise.all(vendorPromises);
+    }
+    result.vendorsCount = existingVendors.size + addedVendors;
+  } catch (vErr: any) {
     console.warn("Notice seeding vendors:", vErr);
+    errors.push(`Vendors seed error: ${vErr.message}`);
   }
 
   // 8. Announcements
   try {
     const existingAnnouncements = await getDocs(collection(db, 'announcements'));
+    const existingTitles = new Set(existingAnnouncements.docs.map(d => (d.data().title || '').trim().toLowerCase()));
+
     const sampleAnnouncements = [
       {
         title: 'Q4 2026 Innovation Showcase & Student Hackathon',
@@ -555,20 +653,29 @@ export async function seedAdminDashboardData(currentAdminUid?: string): Promise<
       }
     ];
 
-    if (existingAnnouncements.empty) {
-      for (const a of sampleAnnouncements) {
-        await addDoc(collection(db, 'announcements'), {
-          ...a,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
+    const annPromises: Promise<any>[] = [];
+    let addedAnnouncements = 0;
+    for (const a of sampleAnnouncements) {
+      if (!existingTitles.has(a.title.trim().toLowerCase())) {
+        addedAnnouncements++;
+        annPromises.push(
+          addDoc(collection(db, 'announcements'), {
+            ...a,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          }).catch(err => {
+            errors.push(`Announcement "${a.title}": ${err.message}`);
+          })
+        );
       }
-      result.announcementsCount = sampleAnnouncements.length;
-    } else {
-      result.announcementsCount = existingAnnouncements.size;
     }
-  } catch (annErr) {
+    if (annPromises.length > 0) {
+      await Promise.all(annPromises);
+    }
+    result.announcementsCount = existingAnnouncements.size + addedAnnouncements;
+  } catch (annErr: any) {
     console.warn("Notice seeding announcements:", annErr);
+    errors.push(`Announcements seed error: ${annErr.message}`);
   }
 
   // 9. Attendance for Today
@@ -585,65 +692,83 @@ export async function seedAdminDashboardData(currentAdminUid?: string): Promise<
       { key: 'meera', status: 'remote', time: '09:45 AM' }
     ];
 
+    const attPromises: Promise<any>[] = [];
     for (const s of staffToMark) {
       const uId = userMap[s.key];
       if (uId) {
         const attId = `${uId}_${todayDateStr}`;
-        await setDoc(doc(db, 'attendance', attId), {
-          userId: uId,
-          date: todayDateStr,
-          status: s.status,
-          checkIn: s.time,
-          updatedAt: serverTimestamp()
-        }, { merge: true });
-        result.attendanceCount++;
+        attPromises.push(
+          setDoc(doc(db, 'attendance', attId), {
+            userId: uId,
+            date: todayDateStr,
+            status: s.status,
+            checkIn: s.time,
+            updatedAt: serverTimestamp()
+          }, { merge: true }).then(() => {
+            result.attendanceCount++;
+          }).catch(() => {})
+        );
       }
     }
-  } catch (attErr) {
+    if (attPromises.length > 0) {
+      await Promise.all(attPromises);
+    }
+  } catch (attErr: any) {
     console.warn("Notice seeding attendance:", attErr);
+    errors.push(`Attendance seed error: ${attErr.message}`);
   }
 
   // 10. Leave Requests
   try {
     const todayDateStr = new Date().toISOString().split('T')[0];
     const existingLeaves = await getDocs(collection(db, 'leaveRequests'));
-    if (existingLeaves.empty && userMap['sneha'] && userMap['arun']) {
-      await addDoc(collection(db, 'leaveRequests'), {
-        userId: userMap['sneha'],
-        userName: 'Sneha Patel',
-        type: 'medical',
-        startDate: todayDateStr,
-        endDate: todayDateStr,
-        reason: 'Doctor appointment for routine dental surgery.',
-        status: 'pending',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-
-      await addDoc(collection(db, 'leaveRequests'), {
-        userId: userMap['arun'],
-        userName: 'Arun Kumar',
-        type: 'casual',
-        startDate: todayDateStr,
-        endDate: todayDateStr,
-        reason: 'Family event and travel.',
-        status: 'approved',
-        evaluatedBy: currentAdminUid || 'admin',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-      result.leavesCount = 2;
+    if (existingLeaves.size === 0 && (userMap['sneha'] || userMap['arun'])) {
+      const leavePromises: Promise<any>[] = [];
+      if (userMap['sneha']) {
+        leavePromises.push(
+          addDoc(collection(db, 'leaveRequests'), {
+            userId: userMap['sneha'],
+            userName: 'Sneha Patel',
+            type: 'medical',
+            startDate: todayDateStr,
+            endDate: todayDateStr,
+            reason: 'Doctor appointment for routine dental surgery.',
+            status: 'pending',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          }).catch(() => {})
+        );
+      }
+      if (userMap['arun']) {
+        leavePromises.push(
+          addDoc(collection(db, 'leaveRequests'), {
+            userId: userMap['arun'],
+            userName: 'Arun Kumar',
+            type: 'casual',
+            startDate: todayDateStr,
+            endDate: todayDateStr,
+            reason: 'Family event and travel.',
+            status: 'approved',
+            evaluatedBy: currentAdminUid || 'admin',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          }).catch(() => {})
+        );
+      }
+      await Promise.all(leavePromises);
+      result.leavesCount = leavePromises.length;
     } else {
       result.leavesCount = existingLeaves.size;
     }
-  } catch (leaveErr) {
+  } catch (leaveErr: any) {
     console.warn("Notice seeding leave requests:", leaveErr);
+    errors.push(`Leaves seed error: ${leaveErr.message}`);
   }
 
   // 11. Initial Audit Logs
   try {
     const existingLogs = await getDocs(collection(db, 'auditLogs'));
-    if (existingLogs.empty) {
+    if (existingLogs.size === 0) {
       const sampleLogs = [
         { action: 'SYSTEM_SEEDED', details: 'Initialized organizational database with operational staff, projects, and departments', resourceType: 'system' },
         { action: 'PROJECT_CREATED', details: 'Created Smart Industrial Energy Monitoring Hub (commercial)', resourceType: 'project' },
@@ -651,15 +776,16 @@ export async function seedAdminDashboardData(currentAdminUid?: string): Promise<
         { action: 'POST_ANNOUNCEMENT', details: 'Published notice: Q4 2026 Innovation Showcase & Student Hackathon', resourceType: 'content' }
       ];
 
-      for (const log of sampleLogs) {
-        await addDoc(collection(db, 'auditLogs'), {
+      const logPromises = sampleLogs.map(log => 
+        addDoc(collection(db, 'auditLogs'), {
           ...log,
           performedBy: currentAdminUid || 'admin',
           timestamp: serverTimestamp()
-        });
-      }
+        }).catch(() => {})
+      );
+      await Promise.all(logPromises);
     }
-  } catch (logErr) {
+  } catch (logErr: any) {
     console.warn("Notice seeding audit logs:", logErr);
   }
 
@@ -678,8 +804,9 @@ export async function seedAdminDashboardData(currentAdminUid?: string): Promise<
       upiName: 'Sricore Solutions Pvt Ltd',
       updatedAt: serverTimestamp()
     }, { merge: true });
-  } catch (setErr) {
+  } catch (setErr: any) {
     console.warn("Notice seeding company settings:", setErr);
+    errors.push(`Settings seed error: ${setErr.message}`);
   }
 
   return result;

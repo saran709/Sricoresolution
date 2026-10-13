@@ -1131,6 +1131,7 @@ export async function auditAndReconcileProjects(options: {
   const { dryRun, userUid = 'system-migration', departmentMap = {} } = options;
   const errors: string[] = [];
   const itemizedResults: ReconciliationItemResult[] = [];
+  const writePromises: Promise<any>[] = [];
 
   let existingDocs: { id: string; data: any }[] = [];
   try {
@@ -1244,14 +1245,14 @@ export async function auditAndReconcileProjects(options: {
       if (ex.featured === undefined) { updatedFields.featured = candidate.featured; changes.push('Set featured'); }
 
       if (changes.length > 0 && !dryRun) {
-        try {
-          await setDoc(doc(db, 'projects', match.id), {
+        writePromises.push(
+          setDoc(doc(db, 'projects', match.id), {
             ...updatedFields,
             updatedAt: serverTimestamp()
-          }, { merge: true });
-        } catch (e: any) {
-          errors.push(`Failed to update ${match.id}: ${e.message}`);
-        }
+          }, { merge: true }).catch((e: any) => {
+            errors.push(`Failed to update ${match.id}: ${e.message}`);
+          })
+        );
       }
 
       itemizedResults.push({
@@ -1325,12 +1326,12 @@ export async function auditAndReconcileProjects(options: {
       };
 
       if (!dryRun) {
-        try {
-          await setDoc(doc(db, 'projects', candidate.canonicalId), projectDocPayload);
-        } catch (err: any) {
-          console.error(`Failed to write project ${candidate.canonicalId}:`, err);
-          errors.push(`Error writing ${candidate.canonicalId}: ${err.message}`);
-        }
+        writePromises.push(
+          setDoc(doc(db, 'projects', candidate.canonicalId), projectDocPayload).catch((err: any) => {
+            console.error(`Failed to write project ${candidate.canonicalId}:`, err);
+            errors.push(`Error writing ${candidate.canonicalId}: ${err.message}`);
+          })
+        );
       }
 
       itemizedResults.push({
@@ -1349,6 +1350,10 @@ export async function auditAndReconcileProjects(options: {
         verificationStatus: candidate.dataVerificationStatus
       });
     }
+  }
+
+  if (writePromises.length > 0) {
+    await Promise.all(writePromises);
   }
 
   return {

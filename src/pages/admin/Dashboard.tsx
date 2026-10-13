@@ -113,9 +113,14 @@ export default function AdminDashboard() {
 
     try {
       const res = await seedAdminDashboardData(currentUser?.uid);
-      setSeedResult(
-        `Successfully populated demo operational data! Added ${res.departmentsCount} Departments, ${res.usersCount} Staff & Mentors, ${res.projectsCount} Projects, ${res.tasksCount} Tasks, ${res.enquiriesCount} Enquiries, ${res.vendorsCount} Vendors, and ${res.announcementsCount} Announcements.`
-      );
+      if (res.errors && res.errors.length > 0 && res.departmentsCount === 0 && res.usersCount === 0) {
+        setSeedError(`Failed to insert sample data: ${res.errors.join('; ')}`);
+      } else {
+        const warningSuffix = res.errors && res.errors.length > 0 ? ` (Note: ${res.errors.length} notices: ${res.errors.slice(0, 2).join(', ')})` : '';
+        setSeedResult(
+          `Successfully populated demo operational data! Synced ${res.departmentsCount} Departments, ${res.usersCount} Staff & Mentors, ${res.projectsCount} Projects, ${res.tasksCount} Tasks, ${res.enquiriesCount} Enquiries, ${res.vendorsCount} Vendors, and ${res.announcementsCount} Announcements.${warningSuffix}`
+        );
+      }
       await fetchData();
     } catch (err: any) {
       console.error("Error inserting sample data:", err);
