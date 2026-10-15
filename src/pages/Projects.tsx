@@ -8,6 +8,7 @@ import { Project } from '../types';
 import { ArrowRight, Code, Search, Sparkles, Filter, ExternalLink, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { HISTORICAL_PROJECTS_INVENTORY } from '../lib/projectMigration';
+import { SELECTED_WORKS, getProjectWebImage } from '../data/projectsData';
 
 export default function Projects() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -15,18 +16,39 @@ export default function Projects() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Fallback to verified approved portfolio records from historical inventory
+  // Fallback to verified approved portfolio records from historical inventory + selected works
   const defaultPortfolioProjects = useMemo(() => {
-    return HISTORICAL_PROJECTS_INVENTORY
+    const flagshipProjects: Project[] = SELECTED_WORKS.map(sw => ({
+      id: sw.id,
+      projectCode: sw.projectCode,
+      projectTitle: sw.title,
+      projectSlug: sw.slug,
+      name: sw.title,
+      description: sw.summary,
+      projectDescription: sw.summary,
+      projectCategory: sw.category,
+      imageUrl: sw.imageUrl || getProjectWebImage(sw.slug, sw.category),
+      projectType: 'software',
+      technologyStack: sw.technologyStack.flatMap(t => t.items).slice(0, 5),
+      portfolioVisibility: true,
+      featured: true,
+      createdAt: null,
+      updatedAt: null,
+      status: 'active'
+    }));
+
+    const historical = HISTORICAL_PROJECTS_INVENTORY
       .filter(p => p.portfolioVisibility)
       .map(p => ({
         id: p.canonicalId,
         projectCode: p.projectCode,
         projectTitle: p.projectTitle,
+        projectSlug: p.projectSlug,
         name: p.projectTitle,
         description: p.projectDescription,
         projectDescription: p.projectDescription,
         projectCategory: p.projectCategory,
+        imageUrl: getProjectWebImage(p.canonicalId || p.projectSlug, p.projectCategory),
         projectType: p.projectType,
         technologyStack: p.technologyStack,
         portfolioVisibility: true,
@@ -35,6 +57,8 @@ export default function Projects() {
         updatedAt: null,
         status: 'active' as const
       } as Project));
+
+    return [...flagshipProjects, ...historical];
   }, []);
 
   useEffect(() => {
@@ -56,10 +80,12 @@ export default function Projects() {
               id: docSnap.id,
               projectCode: data.projectCode || `SRI-${docSnap.id.slice(0, 4).toUpperCase()}`,
               projectTitle: data.projectTitle || data.name || 'Sricore Project',
+              projectSlug: data.projectSlug || docSnap.id,
               name: data.projectTitle || data.name || 'Sricore Project',
               description: data.projectDescription || data.description || '',
               projectDescription: data.projectDescription || data.description || '',
               projectCategory: data.projectCategory || 'Engineering & Software',
+              imageUrl: data.imageUrl || getProjectWebImage(data.projectSlug || docSnap.id, data.projectCategory),
               projectType: data.projectType || 'software',
               technologyStack: data.technologyStack || [],
               portfolioVisibility: true,
@@ -195,58 +221,86 @@ export default function Projects() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredProjects.map((project, index) => (
-              <div 
-                key={project.id || index} 
-                className="group flex flex-col bg-white rounded-2xl overflow-hidden border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300"
-              >
-                <div className="p-6 flex flex-col flex-grow">
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600">
-                      {project.projectCategory || 'Technical System'}
-                    </span>
-                    {project.featured && (
-                      <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold flex items-center gap-1">
-                        <Sparkles className="w-3 h-3 text-amber-600" /> Featured
+            {filteredProjects.map((project, index) => {
+              const projectTarget = `/projects/${project.projectSlug || project.id}`;
+              const imageSrc = project.imageUrl || getProjectWebImage(project.projectSlug || project.id, project.projectCategory);
+              return (
+                <div 
+                  key={project.id || index} 
+                  className="group flex flex-col bg-white rounded-2xl overflow-hidden border border-slate-200 hover:border-amber-400 hover:shadow-xl transition-all duration-300"
+                >
+                  {/* Web Image Banner */}
+                  <Link to={projectTarget} className="relative h-48 bg-slate-900 overflow-hidden block">
+                    <img 
+                      src={imageSrc} 
+                      alt={project.projectTitle || project.name}
+                      loading="lazy"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/25 to-slate-950/40" />
+
+                    <div className="absolute top-3.5 left-3.5 right-3.5 flex items-center justify-between z-10">
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-900/80 backdrop-blur-md text-amber-300 border border-amber-400/30 shadow-xs">
+                        {project.projectCategory || 'Technical System'}
                       </span>
-                    )}
-                  </div>
-
-                  <h3 className="text-lg font-bold text-slate-900 mb-2 leading-snug group-hover:text-blue-600 transition-colors">
-                    {project.projectTitle || project.name}
-                  </h3>
-
-                  <p className="text-slate-600 text-sm mb-6 flex-grow line-clamp-3 leading-relaxed">
-                    {project.projectDescription || project.description}
-                  </p>
-
-                  {/* Tech stack badges */}
-                  {project.technologyStack && project.technologyStack.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mb-6">
-                      {project.technologyStack.slice(0, 3).map((tech, idx) => (
-                        <span key={idx} className="text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium">
-                          {tech}
-                        </span>
-                      ))}
-                      {project.technologyStack.length > 3 && (
-                        <span className="text-[10px] text-slate-400 self-center">
-                          +{project.technologyStack.length - 3}
+                      {project.featured && (
+                        <span className="px-2.5 py-1 rounded-full bg-amber-500/90 text-white text-[10px] font-bold flex items-center gap-1 shadow-xs backdrop-blur-md">
+                          <Sparkles className="w-3 h-3 text-white" /> Featured
                         </span>
                       )}
                     </div>
-                  )}
 
-                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-900 mt-auto">
-                    <Link to="/enquiry" className="inline-flex items-center text-blue-600 hover:text-blue-700 group-hover:translate-x-0.5 transition-transform">
-                      Inquire Architecture <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                    {project.projectCode && (
+                      <div className="absolute bottom-3 right-3.5 z-10">
+                        <span className="text-[10px] font-mono text-slate-200 bg-slate-900/80 backdrop-blur-md px-2 py-0.5 rounded border border-slate-700 shadow-xs">
+                          {project.projectCode}
+                        </span>
+                      </div>
+                    )}
+                  </Link>
+
+                  <div className="p-6 flex flex-col flex-grow">
+                    <Link to={projectTarget} className="block group-hover:text-amber-600 transition-colors">
+                      <h3 className="text-lg font-bold text-slate-900 mb-2 leading-snug">
+                        {project.projectTitle || project.name}
+                      </h3>
                     </Link>
-                    <span className="font-mono text-[10px] text-slate-400">
-                      {project.projectCode}
-                    </span>
+
+                    <p className="text-slate-600 text-sm mb-6 flex-grow line-clamp-3 leading-relaxed">
+                      {project.projectDescription || project.description}
+                    </p>
+
+                    {/* Tech stack badges */}
+                    {project.technologyStack && project.technologyStack.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mb-6">
+                        {project.technologyStack.slice(0, 3).map((tech, idx) => (
+                          <span key={idx} className="text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium">
+                            {tech}
+                          </span>
+                        ))}
+                        {project.technologyStack.length > 3 && (
+                          <span className="text-[10px] text-slate-400 self-center">
+                            +{project.technologyStack.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-900 mt-auto">
+                      <Link 
+                        to={projectTarget} 
+                        className="inline-flex items-center text-amber-600 hover:text-amber-700 font-bold group-hover:translate-x-0.5 transition-transform"
+                      >
+                        View Case Study <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                      </Link>
+                      <span className="font-mono text-[10px] text-slate-400">
+                        {project.projectCode}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </Container>

@@ -19,6 +19,7 @@ const HardwareSolutions = React.lazy(() => import('./pages/solutions/Hardware'))
 const AISolutions = React.lazy(() => import('./pages/solutions/AI'));
 const Internships = React.lazy(() => import('./pages/Internships'));
 const Projects = React.lazy(() => import('./pages/Projects'));
+const ProjectDetail = React.lazy(() => import('./pages/ProjectDetail'));
 const Careers = React.lazy(() => import('./pages/Careers'));
 const Privacy = React.lazy(() => import('./pages/Privacy'));
 const Terms = React.lazy(() => import('./pages/Terms'));
@@ -122,6 +123,7 @@ export function AppRouter() {
             <Route path="internships" element={<Internships />} />
             <Route path="internships/apply" element={<InternshipRegistration />} />
             <Route path="projects" element={<Projects />} />
+            <Route path="projects/:slug" element={<ProjectDetail />} />
             <Route path="careers" element={<Careers />} />
             <Route path="career" element={<Careers />} />
             <Route path="contact" element={<Contact />} />

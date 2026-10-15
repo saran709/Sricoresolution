@@ -317,24 +317,36 @@ export default function Home() {
             </Link>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <ProjectCard 
               title="Automated Quality Inspection System"
               category="AI/ML & Hardware"
               description="A computer vision-based inspection line using high-speed cameras and custom edge AI hardware for real-time defect detection."
+              imageUrl="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=800&q=80"
               href="/projects/quality-inspection"
+              code="SRI-AI-VIS-01"
+              tags={['YOLOv8', 'TensorRT', 'Jetson AGX', 'Basler 4K']}
+              metrics="99.8% Acc • 11ms"
             />
             <ProjectCard 
               title="Smart Factory IoT Dashboard"
               category="Software & IoT"
               description="Centralized monitoring platform aggregating data from thousands of industrial sensors with predictive maintenance alerts."
+              imageUrl="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80"
               href="/projects/iot-dashboard"
+              code="SRI-IOT-IND-02"
+              tags={['React', 'WebSockets', 'TimescaleDB', 'LoRaWAN']}
+              metrics="50k pts/s • Real-time"
             />
             <ProjectCard 
               title="Healthcare Data Management API"
               category="Software Solutions"
               description="Secure, compliant microservices architecture for managing patient records and integrating with legacy hospital systems."
+              imageUrl="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=800&q=80"
               href="/projects/health-api"
+              code="SRI-MED-API-03"
+              tags={['FHIR R4', 'HL7 v2', 'TypeScript', 'OAuth2']}
+              metrics="HIPAA / DISHA • <32ms"
             />
           </div>
           

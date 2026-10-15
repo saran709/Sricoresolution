@@ -178,6 +178,7 @@ export interface Project {
   repositoryUrl?: string;
   demoUrl?: string;
   documentationPath?: string;
+  imageUrl?: string;
   portfolioVisibility?: boolean;
   featured?: boolean;
   sourceReferences?: string[];
