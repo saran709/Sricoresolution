@@ -143,17 +143,31 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header with Quick Action */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Administrator Control Center</h1>
-          <p className="text-sm text-slate-500">Real-time organizational telemetry, workforce operations, and active delivery pipelines</p>
+      {/* Top Header with Company Logo & Quick Action */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+        <div className="flex items-center gap-3.5">
+          <div className="bg-slate-50 p-2 rounded-xl border border-slate-200 shadow-xs shrink-0">
+            <img 
+              src="/logo.png" 
+              alt="CSRi Sricore Solutions Logo" 
+              className="h-10 w-auto object-contain" 
+            />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Administrator Control Center</h1>
+              <span className="hidden sm:inline-flex text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 bg-amber-100 text-amber-800 rounded-md">
+                Live
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Real-time organizational telemetry, workforce operations, and active delivery pipelines</p>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
           <Button 
             onClick={handleSeedData} 
             isLoading={isSeeding} 
-            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md text-xs sm:text-sm font-semibold"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white shadow-md text-xs sm:text-sm font-semibold"
           >
             <Database className="w-4 h-4" />
             Insert Sample Operations Data

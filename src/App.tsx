@@ -9,6 +9,7 @@ import { queryClient } from './lib/queryClient';
 import { AppRouter } from './router';
 import { AuthProvider } from './contexts/AuthContext';
 import { WebsiteSettingsProvider } from './contexts/WebsiteSettingsContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 export default function App() {
   return (
@@ -16,7 +17,9 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <WebsiteSettingsProvider>
-            <AppRouter />
+            <ThemeProvider>
+              <AppRouter />
+            </ThemeProvider>
           </WebsiteSettingsProvider>
         </AuthProvider>
       </QueryClientProvider>

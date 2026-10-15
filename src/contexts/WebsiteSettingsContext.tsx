@@ -109,10 +109,10 @@ export const DEFAULT_WEBSITE_SETTINGS: WebsiteSettings = {
   brandDescription: APP_CONFIG.company.description || 'A premier technology partner offering comprehensive solutions in software, hardware, AI/ML, and research.',
   logoUrl: '/logo.png',
   theme: {
-    primary: '#2563eb',       // Blue 600
-    primaryHover: '#1d4ed8',  // Blue 700
-    primaryLight: '#eff6ff',  // Blue 50
-    accent: '#3b82f6',        // Blue 500
+    primary: '#d97706',       // CSRi Logo Golden Amber
+    primaryHover: '#b45309',  // Deep Amber hover
+    primaryLight: '#fffbeb',  // Amber 50 tint
+    accent: '#f59e0b',        // Vibrant Logo Gold
     headerBg: 'glass',
     heroBg: 'subtle',
     footerBg: 'dark',
@@ -124,7 +124,7 @@ export const DEFAULT_WEBSITE_SETTINGS: WebsiteSettings = {
     text: '🚀 Applications are open for Summer 2026 Engineering & Research Internships!',
     linkText: 'Apply Today',
     linkUrl: '/internships',
-    bgColor: '#1e40af',
+    bgColor: '#b45309',
     textColor: '#ffffff'
   },
   hero: {
@@ -202,16 +202,7 @@ export function WebsiteSettingsProvider({ children }: { children: React.ReactNod
   const [settings, setSettings] = useState<WebsiteSettings>(DEFAULT_WEBSITE_SETTINGS);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Apply CSS custom properties whenever settings.theme changes
-  useEffect(() => {
-    const root = document.documentElement;
-    const theme = settings.theme || DEFAULT_WEBSITE_SETTINGS.theme;
-
-    root.style.setProperty('--theme-primary', theme.primary || '#2563eb');
-    root.style.setProperty('--theme-primary-hover', theme.primaryHover || '#1d4ed8');
-    root.style.setProperty('--theme-primary-light', theme.primaryLight || '#eff6ff');
-    root.style.setProperty('--theme-accent', theme.accent || '#3b82f6');
-  }, [settings.theme]);
+  // CSS custom properties are dynamically managed and calibrated in ThemeProvider
 
   // Subscribe to real-time updates from Firestore
   useEffect(() => {
@@ -221,11 +212,27 @@ export function WebsiteSettingsProvider({ children }: { children: React.ReactNod
     const unsubscribe = onSnapshot(docRef, async (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.data() as Partial<WebsiteSettings>;
+        const rawTheme = (data.theme || {}) as Partial<ThemeColors>;
+        const isOldBlue = !rawTheme.primary || 
+          rawTheme.primary === '#2563eb' || 
+          rawTheme.primary === '#1d4ed8' || 
+          rawTheme.primary === '#3b82f6';
+        
+        const finalTheme = isOldBlue 
+          ? { ...DEFAULT_WEBSITE_SETTINGS.theme } 
+          : { ...DEFAULT_WEBSITE_SETTINGS.theme, ...rawTheme };
+
         setSettings((prev) => ({
           ...prev,
           ...data,
-          theme: { ...DEFAULT_WEBSITE_SETTINGS.theme, ...data.theme },
-          announcement: { ...DEFAULT_WEBSITE_SETTINGS.announcement, ...data.announcement },
+          theme: finalTheme,
+          announcement: { 
+            ...DEFAULT_WEBSITE_SETTINGS.announcement, 
+            ...data.announcement,
+            bgColor: isOldBlue && (data.announcement?.bgColor === '#1e40af' || data.announcement?.bgColor === '#2563eb')
+              ? DEFAULT_WEBSITE_SETTINGS.announcement.bgColor 
+              : (data.announcement?.bgColor || DEFAULT_WEBSITE_SETTINGS.announcement.bgColor)
+          },
           hero: { ...DEFAULT_WEBSITE_SETTINGS.hero, ...data.hero },
           metrics: Array.isArray(data.metrics) && data.metrics.length > 0 ? data.metrics : DEFAULT_WEBSITE_SETTINGS.metrics,
           about: { ...DEFAULT_WEBSITE_SETTINGS.about, ...data.about },

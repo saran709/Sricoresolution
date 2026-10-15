@@ -6,7 +6,7 @@ import { useWebsiteSettings } from '../contexts/WebsiteSettingsContext';
 
 export default function Services() {
   const { settings } = useWebsiteSettings();
-  const primaryColor = settings?.theme?.primary || '#2563eb';
+  const primaryColor = settings?.theme?.primary || '#d97706';
   const brandName = settings?.brandName || 'Sricore Solutions';
   const servicesContent = settings?.services;
 
@@ -39,7 +39,7 @@ export default function Services() {
 
   return (
     <div className="bg-slate-50 min-h-screen">
-      <div className="bg-slate-900 text-white py-6 md:py-8">
+      <div className="bg-slate-900 text-white py-10 md:py-16">
         <Container>
           <div className="max-w-3xl">
             <div 
@@ -58,7 +58,7 @@ export default function Services() {
         </Container>
       </div>
 
-      <Container className="py-6 md:py-8">
+      <Container className="py-10 md:py-16">
         <SectionHeader 
           title="Capabilities Overview" 
           description="Explore our specialized practice areas. Our cross-functional teams work collaboratively to deliver integrated end-to-end solutions."

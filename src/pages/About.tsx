@@ -7,12 +7,12 @@ export default function About() {
   const { settings } = useWebsiteSettings();
   const about = settings?.about;
   const brandName = settings?.brandName || 'Sricore Solutions';
-  const primaryColor = settings?.theme?.primary || '#2563eb';
+  const primaryColor = settings?.theme?.primary || '#d97706';
 
   return (
     <div className="flex flex-col w-full">
       {/* Hero Section */}
-      <section className="py-6 md:py-8 bg-slate-900 text-white">
+      <section className="py-10 md:py-16 bg-slate-900 text-white">
         <Container>
           <div className="max-w-3xl">
             <div 
@@ -32,34 +32,34 @@ export default function About() {
       </section>
 
       {/* Story, Mission & Vision */}
-      <section className="py-6 md:py-8 bg-white">
+      <section className="py-10 md:py-16 bg-white">
         <Container>
           {about?.story && (
-            <div className="max-w-4xl mx-auto mb-6 p-5 md:p-6 rounded-xl bg-slate-50 border border-slate-200">
-              <h2 className="text-base md:text-lg font-bold text-slate-900 mb-1.5">Our Background & Genesis</h2>
+            <div className="max-w-4xl mx-auto mb-8 p-6 md:p-8 rounded-xl bg-slate-50 border border-slate-200">
+              <h2 className="text-base md:text-lg font-bold text-slate-900 mb-2">Our Background & Genesis</h2>
               <p className="text-slate-600 text-xs md:text-sm leading-relaxed">
                 {about.story}
               </p>
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
-            <div className="p-5 md:p-6 rounded-xl border border-slate-200 bg-white shadow-xs">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+            <div className="p-6 md:p-8 rounded-xl border border-slate-200 bg-white shadow-xs">
               <div 
-                className="w-8 h-1 rounded mb-2.5"
+                className="w-8 h-1 rounded mb-3"
                 style={{ backgroundColor: primaryColor }}
               ></div>
-              <h2 className="text-lg font-bold text-slate-900 mb-1.5">Our Mission</h2>
+              <h2 className="text-lg font-bold text-slate-900 mb-2">Our Mission</h2>
               <p className="text-xs md:text-sm text-slate-600 leading-relaxed">
                 {about?.mission || 'To empower organizations by delivering robust, scalable, and cutting-edge technology solutions that drive efficiency and growth. We strive to bridge the gap between academic research and industrial application.'}
               </p>
             </div>
-            <div className="p-5 md:p-6 rounded-xl border border-slate-200 bg-white shadow-xs">
+            <div className="p-6 md:p-8 rounded-xl border border-slate-200 bg-white shadow-xs">
               <div 
-                className="w-8 h-1 rounded mb-2.5"
+                className="w-8 h-1 rounded mb-3"
                 style={{ backgroundColor: primaryColor }}
               ></div>
-              <h2 className="text-lg font-bold text-slate-900 mb-1.5">Our Vision</h2>
+              <h2 className="text-lg font-bold text-slate-900 mb-2">Our Vision</h2>
               <p className="text-xs md:text-sm text-slate-600 leading-relaxed">
                 {about?.vision || 'To be the premier technology partner recognized globally for excellence in software engineering, embedded systems, artificial intelligence, and applied research.'}
               </p>
@@ -69,7 +69,7 @@ export default function About() {
       </section>
 
       {/* Dynamic Core Values */}
-      <section className="py-6 md:py-8 bg-slate-50 border-t border-slate-200">
+      <section className="py-10 md:py-16 bg-slate-50 border-t border-slate-200">
         <Container>
           <SectionHeader 
             title="Core Values" 

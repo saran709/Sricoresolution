@@ -40,13 +40,13 @@ export default function SoftwareSolutions() {
 
   return (
     <div className="bg-slate-50 min-h-screen">
-      <div className="bg-slate-900 text-white py-6 md:py-8">
+      <div className="bg-slate-900 text-white py-10 md:py-16">
         <Container>
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[11px] font-semibold mb-2 border border-blue-500/30">
-              <Code className="w-3.5 h-3.5" /> Solutions
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-[11px] font-semibold mb-3 border border-amber-500/30">
+              <Code className="w-3.5 h-3.5 text-amber-400" /> Solutions
             </div>
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-2">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-2.5">
               Software Engineering
             </h1>
             <p className="text-sm md:text-base text-slate-300 leading-relaxed">
@@ -56,16 +56,16 @@ export default function SoftwareSolutions() {
         </Container>
       </div>
 
-      <Container className="py-6 md:py-8">
+      <Container className="py-10 md:py-16">
         <SectionHeader 
           title="Our Software Capabilities" 
           description="Sricore Solutions utilizes modern tech stacks and agile methodologies to deliver software that meets strict enterprise standards."
         />
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6 mt-4 md:mt-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mt-6">
           {offerings.map((offering, index) => (
-            <div key={index} className="bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
+            <div key={index} className="bg-white p-6 md:p-8 rounded-xl border border-slate-200 shadow-xs hover:shadow-md transition-shadow">
+              <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center mb-4">
                 {offering.icon}
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3">{offering.title}</h3>
@@ -111,7 +111,8 @@ export default function SoftwareSolutions() {
       <CTASection 
         title="Ready to build your next application?"
         description="Connect with our software engineering team to discuss architecture, timelines, and technical feasibility."
-        primaryAction={{ label: "Request a Technical Consultation", href: "/enquiry" }}
+        primaryAction={{ label: "Inquire About Software Services", href: "/contact?service=software" }}
+        secondaryAction={{ label: "Request Structured Quote", href: "/enquiry" }}
       />
     </div>
   );

@@ -11,15 +11,15 @@ import { useWebsiteSettings } from '../contexts/WebsiteSettingsContext';
 export default function Home() {
   const { settings } = useWebsiteSettings();
   const hero = settings?.hero;
-  const primaryColor = settings?.theme?.primary || '#2563eb';
+  const primaryColor = settings?.theme?.primary || '#d97706';
   const metrics = settings?.metrics || [];
 
   return (
     <div className="flex flex-col w-full">
       {/* Hero Section */}
-      <section className="py-5 md:py-7 bg-slate-50 border-b border-slate-200">
+      <section className="py-8 md:py-12 bg-slate-50 border-b border-slate-200">
         <Container>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-center bg-white rounded-xl p-5 md:p-7 border border-slate-200 shadow-xs">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-center bg-white rounded-2xl p-6 md:p-8 border border-slate-200 shadow-xs">
             <div className="flex flex-col gap-3.5">
               <div 
                 className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider w-fit"
@@ -61,11 +61,11 @@ export default function Home() {
                   </a>
                 ) : (
                   <Link 
-                    to={hero?.secondaryCtaLink || "/internships"} 
+                    to={hero?.secondaryCtaLink || "/career"} 
                     className="inline-flex items-center justify-center px-5 py-2.5 text-xs font-semibold rounded border transition-colors w-fit hover:bg-slate-50"
                     style={{ color: primaryColor, borderColor: primaryColor }}
                   >
-                    {hero?.secondaryCtaText || 'Apply for Internship'}
+                    {hero?.secondaryCtaText || 'Explore Careers'}
                   </Link>
                 )}
               </div>
@@ -151,7 +151,7 @@ export default function Home() {
       )}
 
       {/* Core Services Section */}
-      <section className="py-7 md:py-9 bg-white">
+      <section className="py-10 md:py-14 bg-white">
         <Container>
           <SectionHeader 
             title={settings?.services?.heroTitle || "Comprehensive Technical Solutions"} 
@@ -193,7 +193,7 @@ export default function Home() {
       </section>
 
       {/* Why Choose Us Section */}
-      <section className="py-7 md:py-9 bg-slate-50 border-y border-slate-200">
+      <section className="py-10 md:py-14 bg-slate-50 border-y border-slate-200">
         <Container>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-center">
             <div>
@@ -252,7 +252,7 @@ export default function Home() {
       </section>
 
       {/* Internships & Training Highlight */}
-      <section className="py-7 md:py-9 bg-white">
+      <section className="py-10 md:py-14 bg-white">
         <Container>
           <div className="bg-slate-900 rounded-2xl overflow-hidden shadow-xl">
             <div className="grid grid-cols-1 lg:grid-cols-2">
@@ -270,11 +270,11 @@ export default function Home() {
                   {settings?.brandName || 'Sricore Solutions'} offers paid internships and specialized practical training programs. Work on live industrial projects, receive mentorship from senior engineers, and build a portfolio that stands out.
                 </p>
                 <Link 
-                  to="/internships" 
+                  to="/careers?type=internships" 
                   className="inline-flex items-center font-semibold transition-colors text-sm hover:underline"
                   style={{ color: primaryColor }}
                 >
-                  Explore Internship Opportunities <ArrowRight className="ml-1.5 h-4 w-4" />
+                  Explore Jobs & Internship Programs <ArrowRight className="ml-1.5 h-4 w-4" />
                 </Link>
               </div>
               <div className="bg-slate-800 relative hidden lg:block">
@@ -298,9 +298,9 @@ export default function Home() {
       </section>
 
       {/* Selected Projects */}
-      <section className="py-7 md:py-9 bg-slate-50">
+      <section className="py-10 md:py-14 bg-slate-50">
         <Container>
-          <div className="flex flex-col md:flex-row justify-between items-end mb-3">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-6">
             <SectionHeader 
               title="Selected Works" 
               description="A glimpse into our recent industrial and academic project implementations."

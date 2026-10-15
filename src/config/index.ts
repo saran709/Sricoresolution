@@ -25,9 +25,8 @@ export const APP_CONFIG = {
           { name: 'Hardware & IoT', href: '/solutions/hardware' },
           { name: 'AI/ML Solutions', href: '/solutions/ai-ml' },
       ]},
-      { name: 'Internships', href: '/internships' },
       { name: 'Projects', href: '/projects' },
-      { name: 'Careers', href: '/careers' },
+      { name: 'Career', href: '/career' },
       { name: 'Contact', href: '/contact' },
     ],
     legal: [

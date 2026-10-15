@@ -6,6 +6,7 @@ import { Container } from '../ui/Container';
 import { cn } from '../../utils/cn';
 import { useAuth } from '../../contexts/AuthContext';
 import { useWebsiteSettings } from '../../contexts/WebsiteSettingsContext';
+import { ThemeToggle } from '../ui/ThemeToggle';
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -16,7 +17,7 @@ export function Navbar() {
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
-  const primaryColor = settings?.theme?.primary || '#2563eb';
+  const primaryColor = settings?.theme?.primary || '#d97706';
   const announcement = settings?.announcement;
 
   return (
@@ -35,7 +36,7 @@ export function Navbar() {
               <span>{announcement.text}</span>
               {announcement.linkText && (
                 <Link
-                  to={announcement.linkUrl || '/internships'}
+                  to={announcement.linkUrl || '/career'}
                   className="underline underline-offset-4 font-bold inline-flex items-center gap-1 hover:opacity-90 transition-opacity ml-1"
                 >
                   {announcement.linkText}
@@ -47,7 +48,7 @@ export function Navbar() {
         </div>
       )}
 
-      <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/90 backdrop-blur-md">
+      <header className="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md transition-colors">
         <Container>
           <div className="flex h-14 items-center justify-between">
             <div className="flex items-center">
@@ -61,7 +62,7 @@ export function Navbar() {
                     (e.target as HTMLElement).style.display = 'none';
                   }}
                 />
-                <span className="text-xl font-bold tracking-tight text-slate-900">
+                <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
                   {settings?.brandName ? (
                     <>
                       {settings.brandName.split(' ')[0]}
@@ -82,19 +83,19 @@ export function Navbar() {
                 if (item.children) {
                   return (
                     <div key={item.name} className="relative group">
-                      <button className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 rounded-md hover:bg-slate-50 transition-colors">
+                      <button className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-md hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                         {item.name}
                         <ChevronDown className="h-4 w-4" />
                       </button>
-                      <div className="absolute left-0 mt-1 w-48 bg-white border border-slate-200 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                      <div className="absolute left-0 mt-1 w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                         <div className="py-1">
                           {item.children.map((child) => (
                             <Link
                               key={child.name}
                               to={child.href}
                               className={cn(
-                                "block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 transition-colors",
-                                location.pathname === child.href && "font-semibold bg-slate-50"
+                                "block px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors",
+                                location.pathname === child.href && "font-semibold bg-slate-50 dark:bg-slate-800"
                               )}
                               style={{
                                 color: location.pathname === child.href ? primaryColor : undefined
@@ -109,7 +110,9 @@ export function Navbar() {
                   );
                 }
 
-                const isActive = location.pathname === item.href;
+                const isCareerRoute = (item.href === '/career' || item.href === '/careers') && 
+                  (location.pathname === '/career' || location.pathname === '/careers' || location.pathname === '/internships');
+                const isActive = location.pathname === item.href || isCareerRoute;
                 return (
                   <Link
                     key={item.name}
@@ -118,7 +121,7 @@ export function Navbar() {
                       "px-3 py-2 text-sm font-medium rounded-md transition-colors",
                       isActive 
                         ? "font-semibold border-b-2 rounded-none" 
-                        : "text-slate-600 hover:bg-slate-50"
+                        : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800"
                     )}
                     style={{
                       color: isActive ? primaryColor : undefined,
@@ -131,7 +134,9 @@ export function Navbar() {
               })}
             </nav>
 
-            <div className="hidden md:flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-3">
+              <ThemeToggle />
+
               {currentUser ? (
                 <div className="flex items-center gap-2">
                   {userProfile?.role === 'ADMINISTRATOR' && (
@@ -144,7 +149,7 @@ export function Navbar() {
                   )}
                   <Link 
                     to="/dashboard" 
-                    className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
                   >
                     <UserIcon className="w-4 h-4" />
                     {userProfile?.firstName || 'Dashboard'}
@@ -154,7 +159,7 @@ export function Navbar() {
                 <div className="flex items-center gap-2">
                   <Link 
                     to="/login" 
-                    className="inline-flex items-center justify-center px-3.5 py-1.5 text-sm font-semibold rounded text-slate-700 hover:text-slate-900 transition-colors"
+                    className="inline-flex items-center justify-center px-3.5 py-1.5 text-sm font-semibold rounded text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white transition-colors"
                   >
                     Sign In
                   </Link>
@@ -169,11 +174,12 @@ export function Navbar() {
               )}
             </div>
 
-            {/* Mobile menu button */}
-            <div className="flex md:hidden">
+            {/* Mobile actions & menu button */}
+            <div className="flex md:hidden items-center gap-1.5">
+              <ThemeToggle />
               <button
                 onClick={toggleMobileMenu}
-                className="inline-flex items-center justify-center p-2 rounded-md text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none"
+                className="inline-flex items-center justify-center p-2 rounded-md text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none"
               >
                 {isMobileMenuOpen ? (
                   <X className="h-6 w-6" aria-hidden="true" />
@@ -187,20 +193,26 @@ export function Navbar() {
 
         {/* Mobile menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden border-t border-slate-200 bg-white">
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 max-h-[80vh] overflow-y-auto">
+          <div className="md:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl">
+            <div className="px-3 pt-3 pb-4 space-y-1 sm:px-4 max-h-[80vh] overflow-y-auto">
+              {/* Appearance Row */}
+              <div className="flex items-center justify-between px-3 py-2 mb-2 rounded-lg bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700">
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Appearance</span>
+                <ThemeToggle variant="pill" showLabel={false} />
+              </div>
+
               {APP_CONFIG.navigation.main.map((item) => (
                 <React.Fragment key={item.name}>
                   {item.children ? (
                     <div className="space-y-1">
-                      <div className="px-3 py-2 text-base font-medium text-slate-900">{item.name}</div>
+                      <div className="px-3 py-2 text-base font-medium text-slate-900 dark:text-slate-100">{item.name}</div>
                       <div className="pl-6 space-y-1">
                         {item.children.map((child) => (
                           <Link
                             key={child.name}
                             to={child.href}
                             onClick={closeMobileMenu}
-                            className="block px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                            className="block px-3 py-2 rounded-md text-base font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800"
                           >
                             {child.name}
                           </Link>
@@ -209,11 +221,17 @@ export function Navbar() {
                     </div>
                   ) : (
                     <Link
+                      key={item.name}
                       to={item.href}
                       onClick={closeMobileMenu}
-                      className="block px-3 py-2 rounded-md text-base font-medium text-slate-900 hover:bg-slate-50"
+                      className="block px-3 py-2 rounded-md text-base font-medium text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800"
                       style={{
-                        color: location.pathname === item.href ? primaryColor : undefined
+                        color: (location.pathname === item.href || ((item.href === '/career' || item.href === '/careers') && (location.pathname === '/career' || location.pathname === '/careers' || location.pathname === '/internships'))) 
+                          ? primaryColor 
+                          : undefined,
+                        fontWeight: (location.pathname === item.href || ((item.href === '/career' || item.href === '/careers') && (location.pathname === '/career' || location.pathname === '/careers' || location.pathname === '/internships')))
+                          ? 600
+                          : undefined
                       }}
                     >
                       {item.name}
@@ -226,7 +244,7 @@ export function Navbar() {
                   <Link
                     to="/dashboard"
                     onClick={closeMobileMenu}
-                    className="block w-full text-center px-4 py-3 bg-slate-100 rounded-md shadow-sm text-base font-medium text-slate-900"
+                    className="block w-full text-center px-4 py-3 bg-slate-100 dark:bg-slate-800 rounded-md shadow-sm text-base font-medium text-slate-900 dark:text-slate-100"
                   >
                     Dashboard
                   </Link>
@@ -235,7 +253,7 @@ export function Navbar() {
                     <Link
                       to="/login"
                       onClick={closeMobileMenu}
-                      className="block w-full text-center px-4 py-2.5 border border-slate-300 rounded-md shadow-sm text-base font-semibold text-slate-800 hover:bg-slate-50"
+                      className="block w-full text-center px-4 py-2.5 border border-slate-300 dark:border-slate-700 rounded-md shadow-sm text-base font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
                     >
                       Sign In
                     </Link>

@@ -73,7 +73,7 @@ export default function Enquiry() {
   }
 
   return (
-    <div className="py-6 md:py-8 bg-slate-50">
+    <div className="py-10 md:py-16 bg-slate-50">
       <Container>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
           <div>

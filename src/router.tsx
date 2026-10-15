@@ -123,6 +123,7 @@ export function AppRouter() {
             <Route path="internships/apply" element={<InternshipRegistration />} />
             <Route path="projects" element={<Projects />} />
             <Route path="careers" element={<Careers />} />
+            <Route path="career" element={<Careers />} />
             <Route path="contact" element={<Contact />} />
             <Route path="enquiry" element={<Enquiry />} />
             <Route path="privacy" element={<Privacy />} />

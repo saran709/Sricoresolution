@@ -1,37 +1,224 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --theme-primary: #2563eb;
-  --theme-primary-hover: #1d4ed8;
-  --theme-primary-light: #eff6ff;
-  --theme-accent: #3b82f6;
+  /* Dynamic Brand Colors (default Light values) */
+  --theme-primary: #d97706;
+  --theme-primary-hover: #b45309;
+  --theme-primary-light: #fffbeb;
+  --theme-accent: #f59e0b;
+  --theme-ring: rgba(217, 119, 6, 0.25);
+
+  /* Surface & Canvas System */
+  --bg-page: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-surface-elevated: #ffffff;
+  --bg-surface-subtle: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-input: #ffffff;
+
+  /* Typography System */
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --text-inverse: #ffffff;
+
+  /* Border System */
+  --border-subtle: #f1f5f9;
+  --border-default: #e2e8f0;
+  --border-strong: #cbd5e1;
 }
 
-/* Theme accent and brand utilities */
+.dark {
+  /* In dark mode, brand amber is calibrated for high contrast against dark surfaces */
+  --theme-primary: #f59e0b;
+  --theme-primary-hover: #fbbf24;
+  --theme-primary-light: rgba(245, 158, 11, 0.18);
+  --theme-accent: #fbbf24;
+  --theme-ring: rgba(245, 158, 11, 0.45);
+
+  /* Surface & Canvas System */
+  --bg-page: #090d16;
+  --bg-surface: #0f172a;
+  --bg-surface-elevated: #1e293b;
+  --bg-surface-subtle: #111c30;
+  --bg-card: #0f172a;
+  --bg-input: #172237;
+
+  /* Typography System */
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --text-inverse: #0f172a;
+
+  /* Border System */
+  --border-subtle: #1e293b;
+  --border-default: #223049;
+  --border-strong: #334155;
+}
+
+body {
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
+  min-height: 100vh;
+}
+
+/* Theme accent and brand utilities calibrated to CSRi logo */
 .theme-btn-primary {
-  background-color: var(--theme-primary, #2563eb);
+  background-color: var(--theme-primary, #d97706);
   color: #ffffff;
   transition: background-color 0.2s ease-in-out, transform 0.1s ease;
 }
 
 .theme-btn-primary:hover {
-  background-color: var(--theme-primary-hover, #1d4ed8);
+  background-color: var(--theme-primary-hover, #b45309);
 }
 
 .theme-text-primary {
-  color: var(--theme-primary, #2563eb) !important;
+  color: var(--theme-primary, #d97706) !important;
 }
 
 .theme-bg-primary {
-  background-color: var(--theme-primary, #2563eb) !important;
+  background-color: var(--theme-primary, #d97706) !important;
 }
 
 .theme-bg-light {
-  background-color: var(--theme-primary-light, #eff6ff) !important;
+  background-color: var(--theme-primary-light, #fffbeb) !important;
 }
 
 .theme-border-primary {
-  border-color: var(--theme-primary, #2563eb) !important;
+  border-color: var(--theme-primary, #d97706) !important;
+}
+
+/* Dark Mode Global Dynamic Overrides for Smooth Theme Adaptation */
+.dark header {
+  background-color: rgba(15, 23, 42, 0.92);
+  border-color: var(--border-default);
+}
+
+.dark .bg-white {
+  background-color: var(--bg-surface);
+}
+
+.dark .bg-slate-50 {
+  background-color: var(--bg-surface-subtle);
+}
+
+.dark .bg-slate-100 {
+  background-color: var(--bg-surface-elevated);
+}
+
+.dark .border-slate-200 {
+  border-color: var(--border-default);
+}
+
+.dark .border-slate-100 {
+  border-color: var(--border-subtle);
+}
+
+.dark .border-slate-300 {
+  border-color: var(--border-strong);
+}
+
+.dark .text-slate-900 {
+  color: var(--text-primary);
+}
+
+.dark .text-slate-800 {
+  color: #f1f5f9;
+}
+
+.dark .text-slate-700 {
+  color: var(--text-secondary);
+}
+
+.dark .text-slate-600 {
+  color: var(--text-muted);
+}
+
+.dark .text-slate-500 {
+  color: #94a3b8;
+}
+
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark select,
+.dark textarea {
+  background-color: var(--bg-input);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.dark .hover\:bg-slate-50:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark .hover\:bg-slate-100:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark .hover\:text-slate-900:hover {
+  color: #f8fafc;
+}
+
+.dark .shadow-xs,
+.dark .shadow-sm,
+.dark .shadow,
+.dark .shadow-md,
+.dark .shadow-lg {
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45);
+}
+
+/* Badge, pill, and brand tint adaptations in dark mode */
+.dark .bg-amber-50 {
+  background-color: var(--theme-primary-light);
+}
+
+.dark .text-amber-800,
+.dark .text-amber-900,
+.dark .text-amber-700 {
+  color: #fde68a;
+}
+
+.dark .text-amber-600 {
+  color: #fbbf24;
+}
+
+.dark .border-amber-200,
+.dark .border-amber-300 {
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.dark .bg-blue-50 {
+  background-color: rgba(59, 130, 246, 0.15);
+}
+
+.dark .text-blue-700,
+.dark .text-blue-800 {
+  color: #93c5fd;
+}
+
+.dark .border-blue-200 {
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.dark .bg-emerald-50 {
+  background-color: rgba(16, 185, 129, 0.15);
+}
+
+.dark .text-emerald-700,
+.dark .text-emerald-800 {
+  color: #6ee7b7;
+}
+
+.dark .border-emerald-200 {
+  border-color: rgba(16, 185, 129, 0.3);
 }
 
 /* Collapse and hide all unfilled, placeholder or inactive ad containers so no allocated blank gap is shown */

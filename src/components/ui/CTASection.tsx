@@ -20,7 +20,7 @@ interface CTASectionProps {
 export function CTASection({ title, description, primaryAction, secondaryAction, theme = 'dark' }: CTASectionProps) {
   const isDark = theme === 'dark';
   const { settings } = useWebsiteSettings();
-  const primaryColor = settings?.theme?.primary || '#2563eb';
+  const primaryColor = settings?.theme?.primary || '#d97706';
   
   return (
     <section className={`py-10 md:py-14 ${isDark ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-900 border-t border-slate-200'}`}>

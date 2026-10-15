@@ -40,6 +40,14 @@ import { ConfirmModal } from '../../components/ui/ConfirmModal';
 // Preset color palettes
 const COLOR_PRESETS = [
   {
+    name: 'CSRi Official Gold (Logo Match)',
+    primary: '#d97706',
+    primaryHover: '#b45309',
+    primaryLight: '#fffbeb',
+    accent: '#f59e0b',
+    description: 'Official brand palette calibrated to the CSRi logo emblem & typography'
+  },
+  {
     name: 'Sricore Royal Blue',
     primary: '#2563eb',
     primaryHover: '#1d4ed8',
@@ -272,7 +280,7 @@ export default function AdminContent() {
     );
   }
 
-  const primaryColor = formData.theme.primary || '#2563eb';
+  const primaryColor = formData.theme.primary || '#d97706';
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16">

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Container } from '../ui/Container';
 import { useWebsiteSettings } from '../../contexts/WebsiteSettingsContext';
 import { Mail, Phone, MapPin, Globe } from 'lucide-react';
+import { ThemeToggle } from '../ui/ThemeToggle';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -16,29 +17,32 @@ export function Footer() {
     primaryEmail: 'contact@sricoresolutions.com',
     primaryPhone: '+91 98402 34567'
   };
-  const primaryColor = settings?.theme?.primary || '#2563eb';
+  const primaryColor = settings?.theme?.primary || '#d97706';
 
   return (
-    <footer className="bg-slate-900 text-slate-300 py-10 md:py-12">
+    <footer className="bg-slate-900 text-slate-300 py-12 md:py-16">
       <Container>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
           {/* Company Info */}
           <div className="space-y-4">
-            <Link to="/" className="flex items-center gap-2">
-              <div 
-                className="w-8 h-8 rounded flex items-center justify-center transition-colors"
-                style={{ backgroundColor: primaryColor }}
-              >
-                <div className="w-4 h-4 border-2 border-white rotate-45"></div>
+            <Link to="/" className="flex items-center gap-3 group">
+              <div className="bg-white p-1.5 rounded-lg inline-flex items-center justify-center shadow-md border border-slate-800">
+                <img 
+                  src={settings?.logoUrl || "/logo.png"} 
+                  alt={brandName} 
+                  className="h-10 w-auto object-contain transition-transform group-hover:scale-105" 
+                />
               </div>
-              <span className="text-xl font-bold tracking-tight text-white uppercase">
-                {brandName}
-              </span>
+              <div className="flex flex-col">
+                <span className="text-xl font-bold tracking-tight text-white uppercase leading-tight">
+                  {brandName}
+                </span>
+                <span className="text-[10px] font-semibold tracking-wider text-amber-400 uppercase mt-1">
+                  {tagline}
+                </span>
+              </div>
             </Link>
-            <p className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold mb-3">
-              {tagline}
-            </p>
-            <p className="text-sm text-slate-400 max-w-xs leading-relaxed">
+            <p className="text-sm text-slate-400 max-w-xs leading-relaxed pt-1">
               {description}
             </p>
             {settings?.socials && (
@@ -68,9 +72,9 @@ export function Footer() {
             <ul className="space-y-2">
               <li><Link to="/about" className="text-sm hover:text-white transition-colors">About Us</Link></li>
               <li><Link to="/services" className="text-sm hover:text-white transition-colors">Services</Link></li>
-              <li><Link to="/internships" className="text-sm hover:text-white transition-colors">Internships</Link></li>
+              <li><Link to="/career" className="text-sm hover:text-white transition-colors">Career</Link></li>
+              <li><Link to="/career?type=internships" className="text-sm hover:text-white transition-colors">Internships (Google Form)</Link></li>
               <li><Link to="/projects" className="text-sm hover:text-white transition-colors">Projects</Link></li>
-              <li><Link to="/careers" className="text-sm hover:text-white transition-colors">Careers</Link></li>
               <li><Link to="/contact" className="text-sm hover:text-white transition-colors">Contact</Link></li>
             </ul>
           </div>
@@ -83,7 +87,7 @@ export function Footer() {
               <li><Link to="/solutions/hardware" className="text-sm hover:text-white transition-colors">Hardware & IoT</Link></li>
               <li><Link to="/solutions/ai-ml" className="text-sm hover:text-white transition-colors">AI/ML Solutions</Link></li>
               <li><Link to="/services/research" className="text-sm hover:text-white transition-colors">Research & Documentation</Link></li>
-              <li><Link to="/internships" className="text-sm hover:text-white transition-colors">Internship Programs</Link></li>
+              <li><Link to="/career?type=internships" className="text-sm hover:text-white transition-colors">Internship Programs</Link></li>
             </ul>
           </div>
 
@@ -120,8 +124,9 @@ export function Footer() {
           <p>
             {settings?.footerCopyright || `© ${currentYear} ${brandName.toUpperCase()}. ALL RIGHTS RESERVED.`}
           </p>
-          <div className="flex space-x-4">
+          <div className="flex items-center space-x-4">
             <span className="hidden md:inline-block">ISO 9001:2015 CERTIFIED ORGANIZATION</span>
+            <ThemeToggle variant="pill" />
           </div>
         </div>
       </Container>

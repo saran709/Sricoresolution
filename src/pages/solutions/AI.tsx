@@ -40,13 +40,13 @@ export default function AISolutions() {
 
   return (
     <div className="bg-slate-50 min-h-screen">
-      <div className="bg-slate-900 text-white py-6 md:py-8">
+      <div className="bg-slate-900 text-white py-10 md:py-16">
         <Container>
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[11px] font-semibold mb-2 border border-purple-500/30">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 text-[11px] font-semibold mb-3 border border-purple-500/30">
               <Brain className="w-3.5 h-3.5" /> Solutions
             </div>
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-2">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-2.5">
               Artificial Intelligence & ML
             </h1>
             <p className="text-sm md:text-base text-slate-300 leading-relaxed">
@@ -56,15 +56,15 @@ export default function AISolutions() {
         </Container>
       </div>
 
-      <Container className="py-6 md:py-8">
+      <Container className="py-10 md:py-16">
         <SectionHeader 
           title="AI & Data Capabilities" 
           description="Sricore Solutions designs highly optimized AI models and data pipelines that transform raw information into strategic business value."
         />
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6 mt-4 md:mt-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mt-6">
           {offerings.map((offering, index) => (
-            <div key={index} className="bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+            <div key={index} className="bg-white p-6 md:p-8 rounded-xl border border-slate-200 shadow-xs hover:shadow-md transition-shadow">
               <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center mb-3">
                 {offering.icon}
               </div>
@@ -78,7 +78,8 @@ export default function AISolutions() {
       <CTASection 
         title="Ready to integrate AI into your operations?"
         description="Our AI architects can evaluate your data readiness and propose high-ROI machine learning implementations."
-        primaryAction={{ label: "Request AI Consultation", href: "/enquiry" }}
+        primaryAction={{ label: "Inquire About AI Solutions", href: "/contact?service=ai" }}
+        secondaryAction={{ label: "Request Structured Quote", href: "/enquiry" }}
       />
     </div>
   );

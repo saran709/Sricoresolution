@@ -115,15 +115,15 @@ export default function Projects() {
   return (
     <div className="bg-slate-50 min-h-screen">
       {/* Hero Header */}
-      <div className="bg-slate-900 text-white py-6 md:py-8 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px]"></div>
+      <div className="bg-slate-900 text-white py-10 md:py-16 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#f59e0b_1px,transparent_1px)] [background-size:16px_16px]"></div>
         <Container className="relative z-10">
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-400/20 text-blue-300 text-[11px] font-semibold mb-2">
-              <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-400/30 text-amber-300 text-[11px] font-semibold mb-3">
+              <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
               Verified Engineering Systems & Case Studies
             </div>
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-2">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-2.5">
               Featured Projects & Innovations
             </h1>
             <p className="text-sm md:text-base text-slate-300 leading-relaxed">
@@ -134,7 +134,7 @@ export default function Projects() {
       </div>
 
       {/* Main Content Area */}
-      <Container className="py-6 md:py-8">
+      <Container className="py-10 md:py-16">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-4">
           <div>
             <SectionHeader 

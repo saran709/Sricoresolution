@@ -40,13 +40,13 @@ export default function HardwareSolutions() {
 
   return (
     <div className="bg-slate-50 min-h-screen">
-      <div className="bg-slate-900 text-white py-6 md:py-8">
+      <div className="bg-slate-900 text-white py-10 md:py-16">
         <Container>
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-semibold mb-2 border border-emerald-500/30">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-semibold mb-3 border border-emerald-500/30">
               <Cpu className="w-3.5 h-3.5" /> Solutions
             </div>
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-2">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-2.5">
               Hardware & IoT Engineering
             </h1>
             <p className="text-sm md:text-base text-slate-300 leading-relaxed">
@@ -56,15 +56,15 @@ export default function HardwareSolutions() {
         </Container>
       </div>
 
-      <Container className="py-6 md:py-8">
+      <Container className="py-10 md:py-16">
         <SectionHeader 
           title="Hardware Capabilities" 
           description="Sricore Solutions delivers robust, industrial-grade hardware and firmware designed for reliability in demanding environments."
         />
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6 mt-4 md:mt-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mt-6">
           {offerings.map((offering, index) => (
-            <div key={index} className="bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+            <div key={index} className="bg-white p-6 md:p-8 rounded-xl border border-slate-200 shadow-xs hover:shadow-md transition-shadow">
               <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
                 {offering.icon}
               </div>
@@ -116,7 +116,8 @@ export default function HardwareSolutions() {
       <CTASection 
         title="Looking to develop a connected product?"
         description="Discuss your hardware specifications, connectivity requirements, and production goals with our engineers."
-        primaryAction={{ label: "Request Hardware Consultation", href: "/enquiry" }}
+        primaryAction={{ label: "Inquire About Hardware & IoT", href: "/contact?service=hardware" }}
+        secondaryAction={{ label: "Request Hardware Consultation", href: "/enquiry" }}
       />
     </div>
   );
