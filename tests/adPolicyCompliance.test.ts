@@ -98,6 +98,14 @@ const robots = fs.readFileSync(path.join(process.cwd(), 'public/robots.txt'), 'u
 assert(robots.includes('Disallow: /admin'), 'robots.txt must disallow /admin');
 assert(robots.includes('Disallow: /dashboard'), 'robots.txt must disallow /dashboard');
 
+console.log('\n=== [6] TESTING ADS.TXT EXISTENCE & FORMAT ===');
+const adsTxtExists = fs.existsSync(path.join(process.cwd(), 'public/ads.txt'));
+assert(adsTxtExists, 'public/ads.txt must exist');
+if (adsTxtExists) {
+  const adsTxt = fs.readFileSync(path.join(process.cwd(), 'public/ads.txt'), 'utf8');
+  assert(adsTxt.includes('google.com, pub-5684687588450520, DIRECT, f08c47fec0942fa0'), 'ads.txt must contain the correct publisher declaration');
+}
+
 console.log(`\n========================================`);
 console.log(`TOTAL CHECKS: ${passed + failed} | PASSED: ${passed} | FAILED: ${failed}`);
 console.log(`========================================`);
