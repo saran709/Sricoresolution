@@ -160,8 +160,8 @@ export const HISTORICAL_PROJECTS_INVENTORY: HistoricalCandidateProject[] = [
     repositoryUrl: 'https://github.com/paavai-crew/hackerrank-campus-platform',
     demoUrl: '',
     documentationPath: 'docs/projects/hackerrank-campus-crew-report.pdf',
-    portfolioVisibility: true,
-    featured: true,
+    portfolioVisibility: false,
+    featured: false,
     sourceReferences: [
       'Paavai Engineering College Campus Chapter Archives 2023-2024',
       'HackerRank Student Chapter Leaderboard Records'
@@ -629,8 +629,8 @@ export const HISTORICAL_PROJECTS_INVENTORY: HistoricalCandidateProject[] = [
     repositoryUrl: 'https://github.com/paavai-crew/paavai-bloodconnect',
     demoUrl: '',
     documentationPath: 'docs/projects/paavai-bloodconnect-guide.pdf',
-    portfolioVisibility: true,
-    featured: true,
+    portfolioVisibility: false,
+    featured: false,
     sourceReferences: [
       'Paavai Youth Red Cross (YRC) Community Project Records',
       'BloodConnect Deployment and Impact Report'

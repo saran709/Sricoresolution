@@ -53,6 +53,13 @@ for (const work of SELECTED_WORKS) {
 // Check Historical inventory
 assert(HISTORICAL_PROJECTS_INVENTORY.length >= 5, 'Historical inventory must have multiple candidate projects');
 
+// Verify that Paavai HackerRank and Paavai BloodConnect are excluded from public showcase
+const hackerrankProject = HISTORICAL_PROJECTS_INVENTORY.find(p => p.canonicalId === 'sri-hackerrank-campus-crew');
+assert(hackerrankProject ? !hackerrankProject.portfolioVisibility : true, 'Paavai HackerRank must NOT have portfolioVisibility set to true');
+
+const bloodConnectProject = HISTORICAL_PROJECTS_INVENTORY.find(p => p.canonicalId === 'sri-paavai-bloodconnect');
+assert(bloodConnectProject ? !bloodConnectProject.portfolioVisibility : true, 'Paavai BloodConnect must NOT have portfolioVisibility set to true');
+
 // Check Internships data
 assert(OFFICIAL_GFORM_INTERNSHIPS.length >= 8, 'Official internships catalog must have >= 8 tracks', `Found ${OFFICIAL_GFORM_INTERNSHIPS.length}`);
 for (const track of OFFICIAL_GFORM_INTERNSHIPS) {

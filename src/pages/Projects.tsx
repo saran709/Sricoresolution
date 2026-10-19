@@ -10,6 +10,27 @@ import { Link } from 'react-router-dom';
 import { HISTORICAL_PROJECTS_INVENTORY } from '../lib/projectMigration';
 import { SELECTED_WORKS, getProjectWebImage } from '../data/projectsData';
 
+// Specific projects explicitly excluded from public showcase
+const EXCLUDED_PROJECT_IDENTIFIERS = [
+  'hackerrank-campus-crew-paavai',
+  'paavai-bloodconnect',
+  'sri-hackerrank-campus-crew',
+  'sri-paavai-bloodconnect'
+];
+
+function isExcludedProject(p: { id?: string; projectSlug?: string; projectTitle?: string; name?: string }): boolean {
+  const slug = (p.projectSlug || '').toLowerCase();
+  const id = (p.id || '').toLowerCase();
+  const title = (p.projectTitle || p.name || '').toLowerCase();
+  if (EXCLUDED_PROJECT_IDENTIFIERS.includes(slug) || EXCLUDED_PROJECT_IDENTIFIERS.includes(id)) {
+    return true;
+  }
+  if (title.includes('paavai') && (title.includes('hackerrank') || title.includes('bloodconnect') || title.includes('blood connect'))) {
+    return true;
+  }
+  return false;
+}
+
 export default function Projects() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,7 +39,9 @@ export default function Projects() {
 
   // Fallback to verified approved portfolio records from historical inventory + selected works
   const defaultPortfolioProjects = useMemo(() => {
-    const flagshipProjects: Project[] = SELECTED_WORKS.map(sw => ({
+    const flagshipProjects: Project[] = SELECTED_WORKS
+      .filter(sw => !isExcludedProject({ id: sw.id, projectSlug: sw.slug, projectTitle: sw.title }))
+      .map(sw => ({
       id: sw.id,
       projectCode: sw.projectCode,
       projectTitle: sw.title,
@@ -38,7 +61,7 @@ export default function Projects() {
     }));
 
     const historical = HISTORICAL_PROJECTS_INVENTORY
-      .filter(p => p.portfolioVisibility)
+      .filter(p => p.portfolioVisibility && !isExcludedProject({ id: p.canonicalId, projectSlug: p.projectSlug, projectTitle: p.projectTitle }))
       .map(p => ({
         id: p.canonicalId,
         projectCode: p.projectCode,
@@ -75,8 +98,7 @@ export default function Projects() {
           const list: Project[] = [];
           snapshot.forEach((docSnap) => {
             const data = docSnap.data();
-            // Strictly exclude sensitive fields: budget, employee IDs, client confidential notes
-            list.push({
+            const projectItem = {
               id: docSnap.id,
               projectCode: data.projectCode || `SRI-${docSnap.id.slice(0, 4).toUpperCase()}`,
               projectTitle: data.projectTitle || data.name || 'Sricore Project',
@@ -93,7 +115,11 @@ export default function Projects() {
               createdAt: data.createdAt,
               updatedAt: data.updatedAt,
               status: 'active'
-            } as Project);
+            } as Project;
+
+            if (!isExcludedProject(projectItem)) {
+              list.push(projectItem);
+            }
           });
           setProjects(list);
         } else {
@@ -119,13 +145,14 @@ export default function Projects() {
   const categories = useMemo(() => {
     const set = new Set<string>();
     projects.forEach(p => {
-      if (p.projectCategory) set.add(p.projectCategory);
+      if (!isExcludedProject(p) && p.projectCategory) set.add(p.projectCategory);
     });
     return ['all', ...Array.from(set)];
   }, [projects]);
 
   const filteredProjects = useMemo(() => {
     return projects.filter(p => {
+      if (isExcludedProject(p)) return false;
       const title = (p.projectTitle || p.name || '').toLowerCase();
       const desc = (p.projectDescription || p.description || '').toLowerCase();
       const tech = (p.technologyStack || []).join(' ').toLowerCase();
