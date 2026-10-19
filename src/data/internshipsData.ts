@@ -221,5 +221,55 @@ export const OFFICIAL_GFORM_INTERNSHIPS: FormInternshipDomain[] = [
     ],
     eligibility: 'Students from MBA, BBA, B.Com, Engineering, or anyone passionate about business growth and tech commercialization.',
     perks: ['Verified 1-Month Certificate', 'Executive Pitch Deck Case Study', 'Fast Offer Letter']
+  },
+  {
+    id: 'embedded-systems-iot',
+    name: 'Embedded Systems & IoT Engineering',
+    category: 'Software & Engineering',
+    tagline: 'Microcontroller programming (ESP32/STM32), sensor telemetry, FreeRTOS, and MQTT cloud gateways.',
+    duration: '1 Month',
+    projectsCount: '2+ Projects',
+    mode: 'Online (Self-Paced & Mentor Support)',
+    description: 'Bridge hardware and software. Learn embedded C/C++ firmware engineering, GPIO/I2C/SPI sensor drivers, FreeRTOS multitasking, and connecting edge devices to cloud IoT dashboards via MQTT and WiFi.',
+    technologies: ['Embedded C/C++', 'ESP32 / Arduino', 'FreeRTOS', 'MQTT', 'I2C/SPI', 'IoT Dashboards'],
+    keyTopics: [
+      'Microcontroller architecture, registers, timers, and hardware interrupts',
+      'Interfacing digital/analog sensors (temperature, vibration, optical)',
+      'FreeRTOS task scheduling, queues, and mutex synchronization',
+      'Wireless telemetry protocols (MQTT over TLS, HTTP POST, WebSockets)',
+      'Building web-based live telemetry dashboards for sensor monitoring'
+    ],
+    projectExamples: [
+      'Smart Industrial Telemetry Node with Multi-Sensor Sampling and MQTT Ingestion',
+      'Connected Home Automation Controller with Fail-Safe Watchdog and Web Dashboard'
+    ],
+    eligibility: 'ECE, EEE, CSE, IT or Mechatronics students with basic C programming knowledge.',
+    perks: ['Hardware Portfolio Demonstration', 'ISO 9001:2015 Certificate', 'Mentor Code Audits'],
+    popular: true
+  },
+  {
+    id: 'ai-machine-learning',
+    name: 'Artificial Intelligence & Machine Learning',
+    category: 'Software & Engineering',
+    tagline: 'Python, PyTorch, computer vision, supervised learning, and real-time model deployment.',
+    duration: '1 Month',
+    projectsCount: '2+ Projects',
+    mode: 'Online (Self-Paced & Mentor Support)',
+    description: 'Master practical machine learning engineering. Train supervised and unsupervised models using scikit-learn and PyTorch, process image datasets with OpenCV, and deploy models as REST APIs using FastAPI and Docker.',
+    technologies: ['Python', 'PyTorch', 'scikit-learn', 'OpenCV', 'FastAPI', 'Pandas/NumPy'],
+    keyTopics: [
+      'Exploratory data analysis, feature engineering, and data normalization',
+      'Supervised regression and classification algorithms with cross-validation',
+      'Convolutional neural networks (CNNs) for computer vision and image classification',
+      'Model evaluation metrics (ROC-AUC, Precision, Recall, F1-Score)',
+      'Packaging and deploying models as production REST APIs with FastAPI'
+    ],
+    projectExamples: [
+      'Automated Visual Defect Classifier with Custom-Trained Convolutional Neural Network',
+      'Predictive Equipment Maintenance Regression Engine with REST API Inference'
+    ],
+    eligibility: 'Students with Python knowledge and foundational linear algebra/calculus concepts.',
+    perks: ['GitHub Portfolio ML Project', '1-Month Verified Certificate', 'Letter of Recommendation'],
+    popular: true
   }
 ];
