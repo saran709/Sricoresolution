@@ -1,8 +1,24 @@
+# Robots.txt for Sricore Solutions
+# Disallow indexing of private dashboards, administrative tools, and internal APIs
+
+User-agent: Mediapartners-Google
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /api/
+
+User-agent: Googlebot
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /setup
+Disallow: /api/
+
 User-agent: *
+Allow: /
 Disallow: /admin
 Disallow: /dashboard
 Disallow: /setup
 Disallow: /api/
-Allow: /
 
 Sitemap: https://www.sricoresolutions.com/sitemap.xml

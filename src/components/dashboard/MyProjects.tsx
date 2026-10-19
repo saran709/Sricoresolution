@@ -6,7 +6,6 @@ import { Clock, Download, Search } from 'lucide-react';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { AdSlot } from '../ui/AdSlot';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -60,8 +59,6 @@ export function MyProjects() {
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
         </div>
       </div>
-      
-      <AdSlot isLoading={isLoading} />
       
       {filteredProjects.length === 0 ? (
         <p className="text-slate-500">No projects match your search.</p>

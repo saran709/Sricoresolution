@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Container } from '../components/ui/Container';
 import { CTASection } from '../components/ui/CTASection';
+import { AdUnit } from '../components/ui/AdUnit';
 import { useWebsiteSettings } from '../contexts/WebsiteSettingsContext';
 import { 
   SELECTED_WORKS, 
@@ -1180,6 +1181,11 @@ export default function ProjectDetail() {
             </div>
           </div>
         )}
+      </Container>
+
+      {/* Policy-Compliant In-Content Ad Placement on Substantive Case Study */}
+      <Container>
+        <AdUnit className="my-6" />
       </Container>
 
       {/* 5. RELATED PROJECTS EXPLORATION */}

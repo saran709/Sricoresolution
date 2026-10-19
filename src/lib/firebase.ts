@@ -19,7 +19,7 @@ export const firebaseConfig = {
   storageBucket: appletConfig.storageBucket || import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: appletConfig.messagingSenderId || import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: appletConfig.appId || import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: appletConfig.measurementId || import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+  measurementId: appletConfig.measurementId,
   firestoreDatabaseId: appletConfig.firestoreDatabaseId || "(default)"
 };
 

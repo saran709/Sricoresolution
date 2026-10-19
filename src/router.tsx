@@ -5,6 +5,8 @@ import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { PagePlaceholder } from './components/ui/PagePlaceholder';
 import { AdminLayout } from './components/layout/AdminLayout';
 import { ScrollToTop } from './components/layout/ScrollToTop';
+import { CookieBanner } from './components/ui/CookieBanner';
+import { useAdPolicyGuard } from './hooks/useAdPolicyGuard';
 
 // Main Pages
 import Home from './pages/Home';
@@ -23,6 +25,7 @@ const ProjectDetail = React.lazy(() => import('./pages/ProjectDetail'));
 const Careers = React.lazy(() => import('./pages/Careers'));
 const Privacy = React.lazy(() => import('./pages/Privacy'));
 const Terms = React.lazy(() => import('./pages/Terms'));
+const EditorialPolicy = React.lazy(() => import('./pages/EditorialPolicy'));
 
 // Auth Pages
 const Login = React.lazy(() => import('./pages/auth/Login'));
@@ -66,10 +69,16 @@ const PageLoader = () => (
   </div>
 );
 
+function AdPolicyWatcher() {
+  useAdPolicyGuard();
+  return null;
+}
+
 export function AppRouter() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <AdPolicyWatcher />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Admin Routes */}
@@ -130,6 +139,7 @@ export function AppRouter() {
             <Route path="enquiry" element={<Enquiry />} />
             <Route path="privacy" element={<Privacy />} />
             <Route path="terms" element={<Terms />} />
+            <Route path="editorial-policy" element={<EditorialPolicy />} />
             
             {/* Auth Routes */}
             <Route path="login" element={<Login />} />
@@ -149,6 +159,7 @@ export function AppRouter() {
           </Route>
         </Routes>
       </Suspense>
+      <CookieBanner />
     </BrowserRouter>
   );
 }
