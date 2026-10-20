@@ -159,7 +159,6 @@ export default function AdminDocuments() {
               <option value="technical">Technical</option>
               <option value="certificate">Certificate</option>
               <option value="resume">Resume</option>
-              <option value="invoice">Invoice</option>
               <option value="other">Other</option>
             </select>
           </div>

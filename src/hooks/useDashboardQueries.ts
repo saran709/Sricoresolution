@@ -5,8 +5,6 @@ import {
   Project,
   ProjectTask,
   Enquiry,
-  SupportTicket,
-  Invoice,
   Document as AppDocument,
   InternshipApplication,
   Notification as AppNotification,
@@ -61,8 +59,6 @@ export function useClientDashboard(clientId?: string) {
         return {
           enquiries: [],
           projects: [],
-          tickets: [],
-          invoices: [],
           documents: [],
         };
       }
@@ -71,15 +67,13 @@ export function useClientDashboard(clientId?: string) {
 
       const enqPromise = getDocs(query(collection(db, 'enquiries'), where('clientId', '==', clientId)));
       const projPromise = getDocs(query(collection(db, 'projects'), where('clientId', '==', clientId)));
-      const tickPromise = getDocs(query(collection(db, 'support_tickets'), where('clientId', '==', clientId)));
-      const invPromise = getDocs(query(collection(db, 'invoices'), where('clientId', '==', clientId)));
+      const paymentPromise = getDocs(query(collection(db, 'payments'), where('clientId', '==', clientId)));
       const docPromise = getDocs(query(collection(db, 'documents'), where('ownerId', '==', clientId)));
 
-      const [enqRes, projRes, tickRes, invRes, docRes] = await Promise.allSettled([
+      const [enqRes, projRes, paymentRes, docRes] = await Promise.allSettled([
         Promise.race([enqPromise, timeout]),
         Promise.race([projPromise, timeout]),
-        Promise.race([tickPromise, timeout]),
-        Promise.race([invPromise, timeout]),
+        Promise.race([paymentPromise, timeout]),
         Promise.race([docPromise, timeout]),
       ]);
 
@@ -91,19 +85,15 @@ export function useClientDashboard(clientId?: string) {
         ? projRes.value.docs.map((d) => ({ id: d.id, ...d.data() } as Project))
         : [];
 
-      const tickets: SupportTicket[] = tickRes.status === 'fulfilled' && tickRes.value
-        ? tickRes.value.docs.map((d) => ({ id: d.id, ...d.data() } as SupportTicket))
-        : [];
-
-      const invoices: Invoice[] = invRes.status === 'fulfilled' && invRes.value
-        ? invRes.value.docs.map((d) => ({ id: d.id, ...d.data() } as Invoice))
+      const payments = paymentRes.status === 'fulfilled' && paymentRes.value
+        ? paymentRes.value.docs.map((d) => ({ id: d.id, ...d.data() }))
         : [];
 
       const documents: AppDocument[] = docRes.status === 'fulfilled' && docRes.value
         ? docRes.value.docs.map((d) => ({ id: d.id, ...d.data() } as AppDocument))
         : [];
 
-      return { enquiries, projects, tickets, invoices, documents };
+      return { enquiries, projects, payments, documents };
     },
   });
 }

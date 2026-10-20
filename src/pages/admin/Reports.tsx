@@ -19,7 +19,6 @@ export default function Reports() {
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalProjects: 0,
-    totalInvoices: 0,
     totalRevenue: 0,
     totalEnquiries: 0,
     totalInterns: 0,
@@ -33,10 +32,9 @@ export default function Reports() {
   const fetchMetrics = async () => {
     setLoading(true);
     try {
-      const [userSnap, projSnap, invSnap, paySnap, enqSnap, taskSnap] = await Promise.all([
+      const [userSnap, projSnap, paySnap, enqSnap, taskSnap] = await Promise.all([
         getDocs(collection(db, 'users')),
         getDocs(collection(db, 'projects')),
-        getDocs(collection(db, 'invoices')),
         getDocs(collection(db, 'payments')),
         getDocs(collection(db, 'enquiries')),
         getDocs(collection(db, 'projectTasks'))
@@ -55,7 +53,6 @@ export default function Reports() {
       setStats({
         totalUsers: userSnap.size,
         totalProjects: projSnap.size,
-        totalInvoices: invSnap.size,
         totalRevenue: revenue,
         totalEnquiries: enqSnap.size,
         totalInterns: internsCount,
@@ -73,7 +70,6 @@ export default function Reports() {
       "Metric,Value\n" +
       `Total Users,${stats.totalUsers}\n` +
       `Total Projects,${stats.totalProjects}\n` +
-      `Total Invoices,${stats.totalInvoices}\n` +
       `Total Verified Revenue (INR),${stats.totalRevenue}\n` +
       `Total Enquiries,${stats.totalEnquiries}\n` +
       `Active Interns,${stats.totalInterns}\n` +
@@ -171,8 +167,6 @@ export default function Reports() {
             <p className="text-xs text-slate-500 mt-1">Across all role categories</p>
           </div>
           <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-            <p className="text-xs text-slate-500 uppercase font-semibold">Invoices Generated</p>
-            <p className="text-3xl font-extrabold text-slate-900 mt-1">{stats.totalInvoices}</p>
             <p className="text-xs text-slate-500 mt-1">Issued for milestones & retainers</p>
           </div>
           <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">

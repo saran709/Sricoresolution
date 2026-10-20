@@ -12,7 +12,7 @@ import {
   orderBy 
 } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-import { User, Client, Project, Invoice, Enquiry } from '../../types';
+import { User, Client, Project, Enquiry } from '../../types';
 import { 
   Building2, 
   Mail, 
@@ -33,8 +33,7 @@ import {
   MapPin, 
   Hash,
   Users,
-  Filter,
-  DollarSign
+  Filter
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -69,7 +68,6 @@ export default function AdminClients() {
   // Details Modal State
   const [selectedClientForView, setSelectedClientForView] = useState<ExtendedClient | null>(null);
   const [clientProjects, setClientProjects] = useState<Project[]>([]);
-  const [clientInvoices, setClientInvoices] = useState<Invoice[]>([]);
   const [loadingLinkedData, setLoadingLinkedData] = useState(false);
 
   // Form State
@@ -194,19 +192,16 @@ export default function AdminClients() {
     setIsFormModalOpen(true);
   };
 
-  // Open Details Modal and Load Linked Projects & Invoices
+  // Open Details Modal and Load Linked Projects
   const openViewDetails = async (client: ExtendedClient) => {
     setSelectedClientForView(client);
     setLoadingLinkedData(true);
     setClientProjects([]);
-    setClientInvoices([]);
 
     try {
       // Fetch projects matching clientId or clientNameSnapshot
       const projPromise = getDocs(collection(db, 'projects'));
-      const invPromise = getDocs(collection(db, 'invoices'));
-
-      const [projSnap, invSnap] = await Promise.all([projPromise, invPromise]);
+      const projSnap = await projPromise;
 
       const matchedProjects: Project[] = [];
       projSnap.forEach(d => {
@@ -221,14 +216,6 @@ export default function AdminClients() {
       });
       setClientProjects(matchedProjects);
 
-      const matchedInvoices: Invoice[] = [];
-      invSnap.forEach(d => {
-        const data = d.data();
-        if (data.clientId === client.id || data.clientEmail === client.email) {
-          matchedInvoices.push({ id: d.id, ...data } as Invoice);
-        }
-      });
-      setClientInvoices(matchedInvoices);
     } catch (err) {
       console.warn("Could not load linked data for client:", err);
     } finally {
@@ -1050,38 +1037,6 @@ export default function AdminClients() {
                 )}
               </div>
 
-              {/* Associated Invoices */}
-              <div>
-                <h3 className="font-bold text-sm text-slate-900 mb-2.5 flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-emerald-600" />
-                  Client Invoices & Billing Records ({clientInvoices.length})
-                </h3>
-                {loadingLinkedData ? (
-                  <div className="p-4 bg-slate-50 rounded-xl text-center text-xs text-slate-500 animate-pulse">
-                    Querying billing history...
-                  </div>
-                ) : clientInvoices.length > 0 ? (
-                  <ul className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden">
-                    {clientInvoices.map(inv => (
-                      <li key={inv.id} className="p-3 bg-white hover:bg-slate-50 flex items-center justify-between text-xs">
-                        <div>
-                          <p className="font-semibold text-slate-900">Invoice #{inv.id?.slice(0, 8)}</p>
-                          <p className="text-slate-400 text-[11px] mt-0.5">Amount: ₹{inv.totalAmount?.toLocaleString() || 0}</p>
-                        </div>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                          inv.status === 'paid' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
-                        }`}>
-                          {inv.status}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="p-4 bg-slate-50 rounded-xl text-center text-xs text-slate-500">
-                    No invoices recorded for this client.
-                  </div>
-                )}
-              </div>
             </div>
 
             {/* Footer */}

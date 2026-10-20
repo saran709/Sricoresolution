@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/Button';
-import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { db, storage } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { Payment, CompanySettings } from '../../types';
 import { QrCode, X, CheckCircle2, Copy, Check, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
@@ -35,6 +36,7 @@ export function CheckoutButton({
   // Form submission state
   const [transactionRef, setTransactionRef] = useState('');
   const [notes, setNotes] = useState('');
+  const [proofFile, setProofFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submittedPaymentId, setSubmittedPaymentId] = useState<string | null>(null);
   const [copiedUpi, setCopiedUpi] = useState(false);
@@ -91,11 +93,27 @@ export function CheckoutButton({
       setError("Please enter your UPI Reference / UTR Number");
       return;
     }
+    if (!proofFile) {
+      setError("Please upload a payment screenshot or receipt.");
+      return;
+    }
+    if (!['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].includes(proofFile.type)) {
+      setError("Upload a JPG, PNG, WebP, or PDF payment proof.");
+      return;
+    }
+    if (proofFile.size > 10 * 1024 * 1024) {
+      setError("Payment proof must be 10 MB or smaller.");
+      return;
+    }
 
     setSubmitting(true);
     setError(null);
 
     try {
+      const proofRef = ref(storage, `payment-proofs/${userProfile.uid}/${Date.now()}-${proofFile.name}`);
+      const uploadResult = await uploadBytes(proofRef, proofFile);
+      const proofUrl = await getDownloadURL(uploadResult.ref);
+
       const paymentRecord: Omit<Payment, 'id'> = {
         clientId: userProfile.uid,
         amount,
@@ -109,24 +127,14 @@ export function CheckoutButton({
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         paymentType,
-        notes: notes.trim() || undefined
+        notes: notes.trim() || undefined,
+        proofUrl,
+        proofFileName: proofFile.name
       };
 
       if (referenceType === 'project') paymentRecord.projectId = referenceId;
-      if (referenceType === 'service' || purpose.toLowerCase().includes('invoice')) paymentRecord.invoiceId = referenceId;
 
       const docRef = await addDoc(collection(db, 'payments'), paymentRecord);
-
-      // If tied to an invoice, link this reference
-      if (paymentRecord.invoiceId) {
-        try {
-          await updateDoc(doc(db, 'invoices', paymentRecord.invoiceId), {
-            paymentId: docRef.id
-          });
-        } catch (e) {
-          console.warn("Could not link payment to invoice:", e);
-        }
-      }
 
       setSubmittedPaymentId(docRef.id);
       if (onSuccess) onSuccess();
@@ -143,6 +151,7 @@ export function CheckoutButton({
     setSubmittedPaymentId(null);
     setTransactionRef('');
     setNotes('');
+    setProofFile(null);
     setError(null);
   };
 
@@ -188,7 +197,7 @@ export function CheckoutButton({
                 <h4 className="text-xl font-bold text-slate-900">Payment Submitted for Verification!</h4>
                 <p className="text-sm text-slate-600 max-w-sm mx-auto">
                   Thank you! We received your UTR reference <span className="font-mono font-semibold text-slate-800">{transactionRef}</span>. 
-                  Our team will verify the payment and update your invoice status shortly.
+                  Our team will verify the payment proof and update the payment status shortly.
                 </p>
                 <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-left text-xs text-slate-600 space-y-1">
                   <p><span className="font-semibold">Amount:</span> ₹{amount.toLocaleString('en-IN')}</p>
@@ -238,6 +247,20 @@ export function CheckoutButton({
                     <p className="text-[11px] font-semibold text-blue-800 uppercase tracking-wider">UPI ID / VPA</p>
                     <p className="text-sm font-mono font-bold text-slate-800 select-all">{upiId}</p>
                     <p className="text-xs text-slate-500">{payeeName}</p>
+                  </div>
+
+                  <div className="text-left">
+                    <label className="text-xs font-semibold text-slate-700 block mb-1">
+                      Payment Screenshot / Receipt <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="file"
+                      required
+                      accept="image/jpeg,image/png,image/webp,application/pdf"
+                      onChange={(e) => setProofFile(e.target.files?.[0] || null)}
+                      className="w-full text-sm border border-slate-300 rounded-lg file:mr-3 file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm"
+                    />
+                    <p className="text-[11px] text-slate-500 mt-1">JPG, PNG, WebP, or PDF up to 10 MB.</p>
                   </div>
                   <Button 
                     type="button" 

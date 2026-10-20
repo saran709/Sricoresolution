@@ -154,11 +154,6 @@ service cloud.firestore {
       allow read, update, delete: if isAuthenticated();
     }
 
-    match /support_tickets/{ticketId} {
-      allow create: if isAuthenticated();
-      allow read, update, delete: if isAuthenticated();
-    }
-
     match /internship_applications/{applicationId} {
       allow create: if true; // Public applications
       allow read, update, delete: if isAuthenticated();
@@ -216,8 +211,5 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
 
-    match /invoices/{invoiceId} {
-      allow read, write: if isAuthenticated();
-    }
   }
 }

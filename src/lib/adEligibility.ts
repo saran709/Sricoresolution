@@ -5,7 +5,7 @@
  * 1. "Google-served ads on screens without publisher content" - NEVER allow ads on:
  *    - Login, register, password reset, authentication screens
  *    - Admin management consoles and private dashboards
- *    - Personal profiles, account settings, invoices, payments
+ *    - Personal profiles, account settings, payments
  *    - Pure form submission or transactional pages (Contact, Enquiry, Apply)
  *    - Legal trust documents (Privacy Policy, Terms, Editorial Policy)
  *    - 404 / Page Not Found, under construction, or empty search states

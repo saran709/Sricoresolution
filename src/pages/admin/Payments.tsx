@@ -77,27 +77,17 @@ export default function AdminPayments() {
       await updateDoc(doc(db, 'payments', payment.id!), {
         status: 'SUCCESS',
         verificationStatus: 'verified',
+        approvedAt: serverTimestamp(),
+        approvedBy: userProfile?.uid || null,
         updatedAt: serverTimestamp()
       });
 
-      // If tied to an invoice, mark invoice as paid
-      if (payment.invoiceId) {
-        try {
-          await updateDoc(doc(db, 'invoices', payment.invoiceId), {
-            status: 'paid',
-            paymentId: payment.id
-          });
-        } catch (e) {
-          console.warn("Could not update linked invoice:", e);
-        }
-      }
-
       if (userProfile?.uid) {
-        await logActivity('PAYMENT_VERIFIED', userProfile.uid, payment.id!, 'payment', `Verified UPI payment of ₹${payment.amount} (Ref: ${payment.transactionId || payment.paymentId})`);
+        await logActivity('PAYMENT_VERIFIED', userProfile.uid, payment.id!, 'payment', `Verified payment of ₹${payment.amount} (Ref: ${payment.transactionId || payment.paymentId})`);
       }
 
       fetchPayments();
-      alert("Payment verified and marked as SUCCESS!");
+      alert("Payment approved and marked as SUCCESS!");
     } catch (error) {
       console.error("Error verifying payment", error);
       alert("Failed to verify payment");
@@ -119,7 +109,7 @@ export default function AdminPayments() {
       }
 
       fetchPayments();
-      alert("Payment marked as FAILED.");
+      alert("Payment proof rejected.");
     } catch (error) {
       console.error("Error rejecting payment", error);
       alert("Failed to reject payment");
@@ -272,6 +262,11 @@ export default function AdminPayments() {
                       {payment.notes && (
                         <div className="text-xs text-slate-500 italic mt-0.5">Note: {payment.notes}</div>
                       )}
+                      {payment.proofUrl && (
+                        <a href={payment.proofUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline mt-1 inline-block">
+                          View uploaded payment proof{payment.proofFileName ? ` (${payment.proofFileName})` : ''}
+                        </a>
+                      )}
                     </td>
                     <td className="px-6 py-4 font-semibold text-slate-900">
                       ₹{payment.amount?.toLocaleString()}
@@ -297,7 +292,7 @@ export default function AdminPayments() {
                             className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2.5 py-1"
                             onClick={() => handleVerifyPayment(payment)}
                           >
-                            Verify & Approve
+                            Approve Proof
                           </Button>
                           <Button 
                             variant="outline" 

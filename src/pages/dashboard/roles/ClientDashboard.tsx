@@ -1,18 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
-import { collection, query, where, getDocs, doc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
-import { Enquiry, Project, SupportTicket, Invoice, Payment, Document as AppDocument } from '../../../types';
-import { MessageSquare, Briefcase, FileText, CheckCircle, Clock, LifeBuoy, CreditCard, FolderOpen, Download } from 'lucide-react';
+import { Enquiry, Project, Payment, Document as AppDocument } from '../../../types';
+import { MessageSquare, Briefcase, FileText, CheckCircle, Clock, CreditCard, FolderOpen, Download } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
-import { Input } from '../../../components/ui/Input';
-import { Textarea } from '../../../components/ui/Textarea';
-import { logActivity } from '../../../lib/activityLogger';
-
 import { CheckoutButton } from '../../../components/payments/CheckoutButton';
-
 import { useClientDashboard } from '../../../hooks/useDashboardQueries';
-import { queryClient } from '../../../lib/queryClient';
 
 export default function ClientDashboard() {
   const { userProfile } = useAuth();
@@ -20,51 +14,9 @@ export default function ClientDashboard() {
 
   const enquiries = data?.enquiries || [];
   const projects = data?.projects || [];
-  const tickets = data?.tickets || [];
-  const invoices = data?.invoices || [];
+  const payments = (data?.payments || []) as Payment[];
   const documents = data?.documents || [];
-  const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'enquiries' | 'support' | 'invoices' | 'documents'>('overview');
-  
-  const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
-  const [showNewTicketForm, setShowNewTicketForm] = useState(false);
-
-  const handleCreateTicket = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!userProfile?.uid) return;
-    
-    setIsSubmittingTicket(true);
-    const formData = new FormData(e.currentTarget);
-    const data: Omit<SupportTicket, 'id'> = {
-      clientId: userProfile.uid,
-      projectId: formData.get('projectId') as string || '',
-      subject: formData.get('subject') as string,
-      description: formData.get('description') as string,
-      status: 'open',
-      priority: formData.get('priority') as any || 'medium',
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    };
-    
-    try {
-      const docRef = await addDoc(collection(db, 'support_tickets'), data);
-      
-      await logActivity(
-        'SUPPORT_TICKET_CREATED',
-        userProfile.uid,
-        docRef.id,
-        'ticket',
-        `Client created support ticket: ${data.subject}`
-      );
-      
-      queryClient.invalidateQueries({ queryKey: ['client-dashboard', userProfile.uid] });
-      setShowNewTicketForm(false);
-    } catch (err) {
-      console.error("Error creating ticket:", err);
-      alert("Failed to create ticket.");
-    } finally {
-      setIsSubmittingTicket(false);
-    }
-  };
+  const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'enquiries' | 'payments' | 'documents'>('overview');
 
   if (loading) return <div className="animate-pulse h-32 bg-slate-100 rounded-xl"></div>;
 
@@ -74,9 +26,8 @@ export default function ClientDashboard() {
         <button onClick={() => setActiveTab('overview')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'overview' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>Overview</button>
         <button onClick={() => setActiveTab('projects')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'projects' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>My Projects</button>
         <button onClick={() => setActiveTab('enquiries')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'enquiries' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>Enquiries</button>
-        <button onClick={() => setActiveTab('invoices')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'invoices' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>Invoices</button>
+        <button onClick={() => setActiveTab('payments')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'payments' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>Payments</button>
         <button onClick={() => setActiveTab('documents')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'documents' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>Documents</button>
-        <button onClick={() => setActiveTab('support')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'support' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>Support</button>
       </div>
 
       {activeTab === 'overview' && (
@@ -102,23 +53,23 @@ export default function ClientDashboard() {
               </div>
             </div>
             
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 cursor-pointer hover:border-indigo-300 transition-colors" onClick={() => setActiveTab('invoices')}>
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 cursor-pointer hover:border-indigo-300 transition-colors" onClick={() => setActiveTab('payments')}>
               <div className="p-4 rounded-lg bg-indigo-50 text-indigo-600">
                 <CreditCard className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-500">Unpaid Invoices</p>
-                <p className="text-2xl font-bold text-slate-900">{invoices.filter(i => i.status !== 'paid').length}</p>
+                <p className="text-sm font-medium text-slate-500">Pending Payments</p>
+                <p className="text-2xl font-bold text-slate-900">{payments.filter(p => p.status === 'PENDING' || p.status === 'INITIATED').length}</p>
               </div>
             </div>
             
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 cursor-pointer hover:border-amber-300 transition-colors" onClick={() => setActiveTab('support')}>
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 cursor-pointer hover:border-amber-300 transition-colors" onClick={() => setActiveTab('payments')}>
               <div className="p-4 rounded-lg bg-amber-50 text-amber-600">
-                <LifeBuoy className="w-6 h-6" />
+                <CreditCard className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-500">Open Tickets</p>
-                <p className="text-2xl font-bold text-slate-900">{tickets.filter(t => t.status !== 'closed' && t.status !== 'resolved').length}</p>
+                <p className="text-sm font-medium text-slate-500">Approved Payments</p>
+                <p className="text-2xl font-bold text-slate-900">{payments.filter(p => p.status === 'SUCCESS').length}</p>
               </div>
             </div>
           </div>
@@ -181,6 +132,18 @@ export default function ClientDashboard() {
                         <p className="text-sm text-slate-900 font-mono mt-1">{project.id}</p>
                       </div>
                     </div>
+                    {project.budget && (
+                      <div className="mt-4 flex justify-end">
+                        <CheckoutButton
+                          amount={project.budget}
+                          label="Submit Payment Proof"
+                          purpose={`Payment for ${project.name}`}
+                          referenceId={project.id}
+                          referenceType="project"
+                          paymentType="advance"
+                        />
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -241,42 +204,35 @@ export default function ClientDashboard() {
         </div>
       )}
 
-      {activeTab === 'invoices' && (
+      {activeTab === 'payments' && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 bg-slate-50">
-            <h2 className="font-semibold text-slate-800">Invoices & Payments</h2>
+            <h2 className="font-semibold text-slate-800">Payments & Proofs</h2>
           </div>
-          <div className="p-0">
-            {invoices.length > 0 ? (
+          <div className="p-6 space-y-4">
+            {payments.length > 0 ? (
               <ul className="divide-y divide-slate-100">
-                {invoices.map(invoice => (
-                  <li key={invoice.id} className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                {payments.map(payment => (
+                  <li key={payment.id} className="py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                      <h3 className="font-semibold text-slate-900 text-lg">Invoice #{invoice.id?.substring(0, 8)}</h3>
-                      <p className="text-sm text-slate-500 mt-1">Due: {invoice.dueDate?.toDate ? new Date(invoice.dueDate.toDate()).toLocaleDateString() : 'N/A'}</p>
+                      <h3 className="font-semibold text-slate-900 text-lg">₹{payment.amount?.toLocaleString('en-IN') || '0'}</h3>
+                      <p className="text-sm text-slate-500 mt-1">UTR: {payment.transactionId || payment.paymentId || 'Not provided'}</p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Submitted: {payment.createdAt?.toDate ? new Date(payment.createdAt.toDate()).toLocaleString() : 'N/A'}
+                      </p>
                     </div>
                     <div className="flex items-center gap-6">
-                      <p className="text-xl font-bold text-slate-900">₹{(invoice.total || invoice.amount)?.toLocaleString('en-IN') || '0'}</p>
                       <span className={`text-xs px-3 py-1.5 rounded-full font-medium uppercase tracking-wider
-                        ${invoice.status === 'paid' ? 'bg-emerald-100 text-emerald-700' :
-                          invoice.status === 'overdue' ? 'bg-red-100 text-red-700' :
+                        ${payment.status === 'SUCCESS' ? 'bg-emerald-100 text-emerald-700' :
+                          payment.status === 'FAILED' ? 'bg-red-100 text-red-700' :
                           'bg-amber-100 text-amber-700'}`}
                       >
-                        {invoice.status}
+                        {payment.status === 'SUCCESS' ? 'Approved' : payment.status}
                       </span>
-                      {invoice.status !== 'paid' && (
-                        <CheckoutButton
-                          amount={invoice.total || invoice.amount}
-                          label="Scan & Pay"
-                          purpose={`Payment for Invoice ${invoice.invoiceNumber || invoice.id}`}
-                          referenceId={invoice.id!}
-                          referenceType="service"
-                          onSuccess={() => {
-                            if (userProfile?.uid) {
-                              queryClient.invalidateQueries({ queryKey: ['client-dashboard', userProfile.uid] });
-                            }
-                          }}
-                        />
+                      {payment.status === 'SUCCESS' && payment.proofUrl && (
+                        <a href={payment.proofUrl} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline">
+                          View approved proof
+                        </a>
                       )}
                     </div>
                   </li>
@@ -285,8 +241,8 @@ export default function ClientDashboard() {
             ) : (
               <div className="p-12 text-center text-slate-500">
                 <CreditCard className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-slate-900 mb-2">No invoices</h3>
-                <p>You have no active invoices or payment requests.</p>
+                <h3 className="text-lg font-medium text-slate-900 mb-2">No payments yet</h3>
+                <p>Payment requests and approved payment proofs will appear here.</p>
               </div>
             )}
           </div>
@@ -330,104 +286,6 @@ export default function ClientDashboard() {
         </div>
       )}
 
-      {activeTab === 'support' && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-            <h2 className="font-semibold text-slate-800">Support Tickets</h2>
-            <Button size="sm" onClick={() => setShowNewTicketForm(!showNewTicketForm)}>
-              {showNewTicketForm ? 'Cancel' : 'New Ticket'}
-            </Button>
-          </div>
-          
-          {showNewTicketForm && (
-            <div className="p-6 border-b border-slate-200 bg-slate-50/50">
-              <form onSubmit={handleCreateTicket} className="space-y-4 max-w-2xl">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Related Project (Optional)
-                  </label>
-                  <select name="projectId" className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
-                    <option value="">-- None --</option>
-                    {projects.map(p => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                <Input label="Subject" name="subject" required placeholder="Brief description of the issue" />
-                
-                <Textarea 
-                  label="Detailed Description" 
-                  name="description" 
-                  required 
-                  placeholder="Please provide as much detail as possible..."
-                />
-                
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Priority
-                  </label>
-                  <select name="priority" className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                    <option value="critical">Critical</option>
-                  </select>
-                </div>
-                
-                <Button type="submit" isLoading={isSubmittingTicket}>Submit Ticket</Button>
-              </form>
-            </div>
-          )}
-          
-          <div className="p-0">
-            {tickets.length > 0 ? (
-              <ul className="divide-y divide-slate-100">
-                {tickets.map(ticket => (
-                  <li key={ticket.id} className="p-6 hover:bg-slate-50 transition-colors">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h3 className="font-medium text-slate-900 text-lg">{ticket.subject}</h3>
-                        <p className="text-xs font-mono text-slate-500 mt-1">ID: {ticket.id}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs px-2 py-1 rounded-full font-bold uppercase tracking-wider
-                          ${ticket.priority === 'critical' ? 'bg-red-100 text-red-700' :
-                            ticket.priority === 'high' ? 'bg-orange-100 text-orange-700' :
-                            ticket.priority === 'medium' ? 'bg-blue-100 text-blue-700' :
-                            'bg-slate-100 text-slate-700'}`}
-                        >
-                          {ticket.priority}
-                        </span>
-                        <span className={`text-xs px-3 py-1.5 rounded-full font-medium
-                          ${ticket.status === 'open' ? 'bg-amber-100 text-amber-700' :
-                            ticket.status === 'resolved' || ticket.status === 'closed' ? 'bg-emerald-100 text-emerald-700' :
-                            'bg-blue-100 text-blue-700'}`}
-                        >
-                          {ticket.status.replace('_', ' ').toUpperCase()}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="bg-white p-4 rounded-lg border border-slate-100 mt-2">
-                      <p className="text-sm text-slate-700 whitespace-pre-wrap">{ticket.description}</p>
-                    </div>
-                    <div className="flex gap-6 mt-4 text-sm text-slate-500">
-                      <p>Created: {ticket.createdAt?.toDate ? new Date(ticket.createdAt.toDate()).toLocaleDateString() : ''}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="p-12 text-center">
-                <LifeBuoy className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-slate-900 mb-2">No support tickets</h3>
-                <p className="text-slate-500 mb-4">You have no active support tickets.</p>
-                <Button variant="outline" onClick={() => setShowNewTicketForm(true)}>Open a Ticket</Button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

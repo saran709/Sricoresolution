@@ -47,10 +47,8 @@ const AdminClients = React.lazy(() => import('./pages/admin/Clients'));
 const AdminAudit = React.lazy(() => import('./pages/admin/Audit'));
 const AdminContent = React.lazy(() => import('./pages/admin/Content'));
 const AdminUsers = React.lazy(() => import('./pages/admin/Users'));
-const AdminSupport = React.lazy(() => import('./pages/admin/Support'));
 const AdminDocuments = React.lazy(() => import('./pages/admin/Documents'));
 const AdminPayments = React.lazy(() => import('./pages/admin/Payments'));
-const AdminInvoices = React.lazy(() => import('./pages/admin/Invoices'));
 const AdminDepartments = React.lazy(() => import('./pages/admin/Departments'));
 const AdminMentors = React.lazy(() => import('./pages/admin/Mentors'));
 const AdminCandidates = React.lazy(() => import('./pages/admin/Candidates'));
@@ -99,9 +97,7 @@ export function AppRouter() {
             <Route path="enquiries" element={<AdminEnquiries />} />
             <Route path="clients" element={<AdminClients />} />
             <Route path="projects" element={<AdminProjects />} />
-            <Route path="support" element={<AdminSupport />} />
             <Route path="payments" element={<AdminPayments />} />
-            <Route path="invoices" element={<AdminInvoices />} />
             
             <Route path="internships" element={<AdminInternships />} />
             <Route path="candidates" element={<AdminCandidates />} />

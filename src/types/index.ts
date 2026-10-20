@@ -275,19 +275,6 @@ export interface Enquiry {
   createdAt: any;
 }
 
-export interface SupportTicket {
-  id?: string;
-  clientId: string;
-  projectId?: string;
-  subject: string;
-  description: string;
-  status: 'open' | 'assigned' | 'investigating' | 'resolved' | 'client_confirmation' | 'closed';
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  assignedTo?: string; // Employee ID
-  createdAt: any;
-  updatedAt: any;
-}
-
 export interface Payment {
   id?: string;
   orderId?: string; // Legacy/reference
@@ -295,7 +282,6 @@ export interface Payment {
   transactionId?: string; // UPI UTR or Ref number entered by payer
   clientId: string;
   projectId?: string;
-  invoiceId?: string;
   amount: number;
   currency?: string;
   date: any;
@@ -305,28 +291,14 @@ export interface Payment {
   paymentType: 'advance' | 'milestone' | 'final' | 'internship_fee' | 'other';
   receiptUrl?: string;
   proofUrl?: string;
+  proofFileName?: string;
+  approvedAt?: any;
+  approvedBy?: string;
   notes?: string;
   createdAt?: any;
   updatedAt?: any;
 }
 
-export interface Invoice {
-  id?: string;
-  invoiceNumber?: string;
-  clientId: string;
-  projectId?: string;
-  amount: number;
-  subtotal?: number;
-  taxAmount?: number;
-  taxRate?: number;
-  total?: number;
-  issueDate?: any;
-  dueDate: any;
-  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
-  items: Array<{ description: string; quantity?: number; amount: number }>;
-  paymentId?: string;
-  createdAt?: any;
-}
 
 export interface CompanySettings {
   id?: string;
@@ -351,7 +323,7 @@ export interface Document {
   accessLevel: 'private' | 'company' | 'public' | 'client';
   allowedRoles?: UserRole[];
   projectId?: string;
-  documentType: 'resume' | 'project_file' | 'requirement' | 'quotation' | 'invoice' | 'report' | 'certificate' | 'research' | 'technical' | 'other';
+  documentType: 'resume' | 'project_file' | 'requirement' | 'quotation' | 'report' | 'certificate' | 'research' | 'technical' | 'other';
   createdAt: any;
 }
 

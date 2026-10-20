@@ -221,98 +221,72 @@ export default function Mentors() {
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="overflow-x-auto bg-white border border-slate-200">
         {loading ? (
           <div className="col-span-full py-12 text-center text-slate-500">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2" />
             <div className="text-xs font-medium">Streaming mentors from Firestore...</div>
           </div>
         ) : filteredMentors.length === 0 ? (
-          <div className="col-span-full py-12 bg-white rounded-xl border border-dashed border-slate-300 text-center text-slate-500 p-8">
+          <div className="py-12 border border-dashed border-slate-300 text-center text-slate-500 p-8">
             <GraduationCap className="w-12 h-12 text-slate-300 mx-auto mb-3" />
             <p className="font-semibold text-slate-700">No mentors designated yet</p>
             <p className="text-sm text-slate-500 mt-1">Designate an existing employee as a mentor to guide interns and lead student projects.</p>
             <Button size="sm" className="mt-4" onClick={() => setIsPromoteModalOpen(true)}>Designate First Mentor</Button>
           </div>
         ) : (
-          filteredMentors.map(m => {
-            const mentees = getMenteesForMentor(m.id);
-            return (
-              <div key={m.id} className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
-                <div>
-                  <div className="flex items-start justify-between">
-                    <div className="w-12 h-12 rounded-xl bg-purple-100 text-purple-700 font-bold flex items-center justify-center text-lg shadow-sm">
-                      {m.firstName?.[0] || 'M'}{m.lastName?.[0] || ''}
-                    </div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider bg-purple-50 text-purple-700 px-2.5 py-1 rounded-full border border-purple-200">
-                      Mentor
-                    </span>
-                  </div>
-                  
-                  <h3 className="font-bold text-lg text-slate-900 mt-3">{m.firstName} {m.lastName}</h3>
-                  <p className="text-xs text-slate-500 font-mono mt-0.5">{m.email}</p>
-                  
-                  <div className="mt-4 pt-4 border-t border-slate-100 space-y-2.5 text-xs text-slate-600">
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1.5 text-slate-500">
-                        <Users className="w-3.5 h-3.5 text-slate-400" /> Assigned Mentees:
-                      </span>
-                      <strong className="text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full font-semibold">
-                        {mentees.length}
-                      </strong>
-                    </div>
-
-                    {mentees.length > 0 && (
-                      <div className="pt-1 space-y-1">
-                        <p className="text-[11px] font-semibold text-slate-500">Mentees guided:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {mentees.map(mentee => (
-                            <span 
-                              key={mentee.id}
-                              className="inline-flex items-center gap-1 text-[11px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md"
-                            >
-                              {mentee.firstName} {mentee.lastName}
-                              <button 
-                                onClick={() => mentee.id && handleRemoveMentee(mentee.id)} 
-                                className="text-slate-400 hover:text-red-500 ml-0.5"
-                                title="Unassign"
-                              >
-                                ×
-                              </button>
-                            </span>
-                          ))}
-                        </div>
+          <table className="w-full min-w-[850px] text-left text-sm">
+            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+              <tr>
+                <th className="px-5 py-3 font-semibold">Mentor</th>
+                <th className="px-5 py-3 font-semibold">Email</th>
+                <th className="px-5 py-3 font-semibold">Mentees</th>
+                <th className="px-5 py-3 font-semibold">Assigned people</th>
+                <th className="px-5 py-3 text-right font-semibold">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filteredMentors.map(m => {
+                const mentees = getMenteesForMentor(m.id);
+                return (
+                  <tr key={m.id} className="hover:bg-slate-50">
+                    <td className="px-5 py-4 font-semibold text-slate-900">
+                      {m.firstName} {m.lastName}
+                    </td>
+                    <td className="px-5 py-4 text-xs text-slate-500">{m.email}</td>
+                    <td className="px-5 py-4 text-slate-700">{mentees.length}</td>
+                    <td className="px-5 py-4">
+                      <div className="flex max-w-sm flex-wrap gap-1">
+                        {mentees.length === 0 ? (
+                          <span className="text-xs text-slate-400">None assigned</span>
+                        ) : mentees.map(mentee => (
+                          <span key={mentee.id} className="inline-flex items-center gap-1 bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
+                            {mentee.firstName} {mentee.lastName}
+                            <button onClick={() => mentee.id && handleRemoveMentee(mentee.id)} className="text-slate-400 hover:text-red-500" title="Unassign">×</button>
+                          </span>
+                        ))}
                       </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    className="text-xs text-blue-600 border-blue-200 hover:bg-blue-50 flex items-center gap-1"
-                    onClick={() => {
-                      setModalError('');
-                      setSelectedMenteeId('');
-                      setMenteesModalMentor(m);
-                    }}
-                  >
-                    <UserCheck className="w-3.5 h-3.5" />
-                    Assign Mentees
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="text-xs text-slate-500 hover:text-red-600 border-slate-200"
-                    onClick={() => setDemoteConfirmTarget(m)}
-                  >
-                    Revert Role
-                  </Button>
-                </div>
-              </div>
-            );
-          })
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="flex justify-end gap-2">
+                        <Button size="sm" variant="outline" className="text-xs text-blue-600 border-blue-200 hover:bg-blue-50" onClick={() => {
+                          setModalError('');
+                          setSelectedMenteeId('');
+                          setMenteesModalMentor(m);
+                        }}>
+                          <UserCheck className="w-3.5 h-3.5" />
+                          Assign
+                        </Button>
+                        <Button variant="outline" size="sm" className="text-xs text-slate-500 hover:text-red-600 border-slate-200" onClick={() => setDemoteConfirmTarget(m)}>
+                          Revert
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         )}
       </div>
 

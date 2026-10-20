@@ -174,70 +174,65 @@ export default function Departments() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="overflow-x-auto bg-white border border-slate-200">
         {loading ? (
           <div className="col-span-full py-12 text-center text-slate-500">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2" />
             <div className="text-xs font-medium">Streaming departments from Firestore...</div>
           </div>
         ) : departments.length === 0 ? (
-          <div className="col-span-full py-12 bg-white rounded-xl border border-dashed border-slate-300 text-center text-slate-500 p-8">
+          <div className="py-12 border border-dashed border-slate-300 text-center text-slate-500 p-8">
             <Building2 className="w-12 h-12 text-slate-300 mx-auto mb-3" />
             <p className="font-semibold text-slate-700">No departments added yet</p>
             <p className="text-sm text-slate-500 mt-1">Get started by creating your company's first departmental unit.</p>
             <Button size="sm" className="mt-4" onClick={openAddModal}>Create Department</Button>
           </div>
         ) : (
-          departments.map(dept => {
-            const manager = employees.find(e => e.id === dept.managerId);
-            const memberCount = getMemberCount(dept.id, dept.name);
-            return (
-              <div key={dept.id} className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-                      <Building2 className="w-5 h-5" />
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button 
-                        onClick={() => openEditModal(dept)} 
-                        className="p-1.5 text-slate-400 hover:text-blue-600 rounded-md hover:bg-slate-50 transition-colors"
-                        title="Edit Department"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => setDeleteConfirmTarget(dept)} 
-                        className="p-1.5 text-slate-400 hover:text-red-600 rounded-md hover:bg-slate-50 transition-colors"
-                        title="Delete Department"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                  <h3 className="font-bold text-lg text-slate-900">{dept.name}</h3>
-                  {(dept as any).description && (
-                    <p className="text-xs text-slate-500 mt-1 line-clamp-2">{(dept as any).description}</p>
-                  )}
-                  
-                  <div className="mt-4 pt-4 border-t border-slate-100 space-y-2 text-xs text-slate-600">
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-500 flex items-center gap-1.5">
-                        <Users className="w-3.5 h-3.5 text-slate-400" /> Staff Assigned:
-                      </span>
-                      <strong className="text-slate-800 bg-slate-100 px-2 py-0.5 rounded-full">{memberCount}</strong>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-500">Manager:</span>
-                      <strong className="text-slate-800">
-                        {manager ? `${manager.firstName} ${manager.lastName}` : 'Not designated'}
-                      </strong>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })
+          <table className="w-full min-w-[700px] text-left text-sm">
+            <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+              <tr>
+                <th className="px-5 py-3 font-semibold">Department</th>
+                <th className="px-5 py-3 font-semibold">Description</th>
+                <th className="px-5 py-3 font-semibold">Manager</th>
+                <th className="px-5 py-3 font-semibold">Staff</th>
+                <th className="px-5 py-3 text-right font-semibold">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {departments.map(dept => {
+                const manager = employees.find(e => e.id === dept.managerId);
+                return (
+                  <tr key={dept.id} className="hover:bg-slate-50">
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-3 font-semibold text-slate-900">
+                        <Building2 className="h-4 w-4 text-blue-600" />
+                        {dept.name}
+                      </div>
+                    </td>
+                    <td className="max-w-xs px-5 py-4 text-xs text-slate-500">
+                      {(dept as any).description || '—'}
+                    </td>
+                    <td className="px-5 py-4 text-slate-700">
+                      {manager ? `${manager.firstName} ${manager.lastName}` : 'Not designated'}
+                    </td>
+                    <td className="px-5 py-4 text-slate-700">
+                      {getMemberCount(dept.id, dept.name)}
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="flex justify-end gap-1">
+                        <button onClick={() => openEditModal(dept)} className="p-1.5 text-slate-400 hover:text-blue-600" title="Edit Department">
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => setDeleteConfirmTarget(dept)} className="p-1.5 text-slate-400 hover:text-red-600" title="Delete Department">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         )}
       </div>
 
