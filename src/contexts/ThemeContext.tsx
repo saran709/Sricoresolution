@@ -111,83 +111,87 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const baseHover = brandTheme?.primaryHover || '#b45309';
     const baseAccent = brandTheme?.accent || '#f59e0b';
     const rgb = hexToRgb(basePrimary) || { r: 217, g: 119, b: 6 };
-
-    // Apply class and attribute
-    if (isDark) {
-      root.classList.add('dark');
-      root.setAttribute('data-theme', 'dark');
-      root.style.colorScheme = 'dark';
-    } else {
-      root.classList.remove('dark');
-      root.setAttribute('data-theme', 'light');
-      root.style.colorScheme = 'light';
-    }
-
-    // Dynamic brand colors calibrated for contrast and consistency
-    if (isDark) {
-      // In dark mode: ensure vibrant high-contrast amber/brand primary
-      const darkPrimary = basePrimary === '#d97706' ? '#f59e0b' : lightenHex(basePrimary, 12);
-      const darkHover = basePrimary === '#d97706' ? '#fbbf24' : lightenHex(basePrimary, 20);
-      const darkLightTint = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.18)`;
-      const darkAccent = baseAccent === '#f59e0b' ? '#fbbf24' : lightenHex(baseAccent, 10);
-
-      root.style.setProperty('--theme-primary', darkPrimary);
-      root.style.setProperty('--theme-primary-hover', darkHover);
-      root.style.setProperty('--theme-primary-light', darkLightTint);
-      root.style.setProperty('--theme-accent', darkAccent);
-      root.style.setProperty('--theme-ring', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.45)`);
-
-      // Surface & Layout variables (Rich Dark Palette)
-      root.style.setProperty('--bg-page', '#090d16');
-      root.style.setProperty('--bg-surface', '#0f172a');
-      root.style.setProperty('--bg-surface-elevated', '#1e293b');
-      root.style.setProperty('--bg-surface-subtle', '#111c30');
-      root.style.setProperty('--bg-card', '#0f172a');
-      root.style.setProperty('--bg-input', '#1a2438');
-
-      // Typography variables
-      root.style.setProperty('--text-primary', '#f8fafc');
-      root.style.setProperty('--text-secondary', '#cbd5e1');
-      root.style.setProperty('--text-muted', '#94a3b8');
-      root.style.setProperty('--text-inverse', '#0f172a');
-
-      // Border variables
-      root.style.setProperty('--border-subtle', '#1e293b');
-      root.style.setProperty('--border-default', '#223049');
-      root.style.setProperty('--border-strong', '#334155');
-    } else {
-      // In light mode: clean branding
-      root.style.setProperty('--theme-primary', basePrimary);
-      root.style.setProperty('--theme-primary-hover', baseHover);
-      root.style.setProperty('--theme-primary-light', brandTheme?.primaryLight || '#fffbeb');
-      root.style.setProperty('--theme-accent', baseAccent);
-      root.style.setProperty('--theme-ring', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.25)`);
-
-      // Surface & Layout variables (Clean Light Palette)
-      root.style.setProperty('--bg-page', '#f8fafc');
-      root.style.setProperty('--bg-surface', '#ffffff');
-      root.style.setProperty('--bg-surface-elevated', '#ffffff');
-      root.style.setProperty('--bg-surface-subtle', '#f1f5f9');
-      root.style.setProperty('--bg-card', '#ffffff');
-      root.style.setProperty('--bg-input', '#ffffff');
-
-      // Typography variables
-      root.style.setProperty('--text-primary', '#0f172a');
-      root.style.setProperty('--text-secondary', '#334155');
-      root.style.setProperty('--text-muted', '#64748b');
-      root.style.setProperty('--text-inverse', '#ffffff');
-
-      // Border variables
-      root.style.setProperty('--border-subtle', '#f1f5f9');
-      root.style.setProperty('--border-default', '#e2e8f0');
-      root.style.setProperty('--border-strong', '#cbd5e1');
-    }
-
-    // Sync theme-color meta tag for browser mobile header
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-    if (metaThemeColor) {
-      metaThemeColor.setAttribute('content', isDark ? '#090d16' : '#d97706');
-    }
+
+    const frameId = requestAnimationFrame(() => {
+      // Apply class and attribute
+      if (isDark) {
+        root.classList.add('dark');
+        root.setAttribute('data-theme', 'dark');
+        root.style.colorScheme = 'dark';
+      } else {
+        root.classList.remove('dark');
+        root.setAttribute('data-theme', 'light');
+        root.style.colorScheme = 'light';
+      }
+
+      // Dynamic brand colors calibrated for contrast and consistency
+      if (isDark) {
+        // In dark mode: ensure vibrant high-contrast amber/brand primary
+        const darkPrimary = basePrimary === '#d97706' ? '#f59e0b' : lightenHex(basePrimary, 12);
+        const darkHover = basePrimary === '#d97706' ? '#fbbf24' : lightenHex(basePrimary, 20);
+        const darkLightTint = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.18)`;
+        const darkAccent = baseAccent === '#f59e0b' ? '#fbbf24' : lightenHex(baseAccent, 10);
+
+        root.style.setProperty('--theme-primary', darkPrimary);
+        root.style.setProperty('--theme-primary-hover', darkHover);
+        root.style.setProperty('--theme-primary-light', darkLightTint);
+        root.style.setProperty('--theme-accent', darkAccent);
+        root.style.setProperty('--theme-ring', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.45)`);
+
+        // Surface & Layout variables (Rich Dark Palette)
+        root.style.setProperty('--bg-page', '#090d16');
+        root.style.setProperty('--bg-surface', '#0f172a');
+        root.style.setProperty('--bg-surface-elevated', '#1e293b');
+        root.style.setProperty('--bg-surface-subtle', '#111c30');
+        root.style.setProperty('--bg-card', '#0f172a');
+        root.style.setProperty('--bg-input', '#1a2438');
+
+        // Typography variables
+        root.style.setProperty('--text-primary', '#f8fafc');
+        root.style.setProperty('--text-secondary', '#cbd5e1');
+        root.style.setProperty('--text-muted', '#94a3b8');
+        root.style.setProperty('--text-inverse', '#0f172a');
+
+        // Border variables
+        root.style.setProperty('--border-subtle', '#1e293b');
+        root.style.setProperty('--border-default', '#223049');
+        root.style.setProperty('--border-strong', '#334155');
+      } else {
+        // In light mode: clean branding
+        root.style.setProperty('--theme-primary', basePrimary);
+        root.style.setProperty('--theme-primary-hover', baseHover);
+        root.style.setProperty('--theme-primary-light', brandTheme?.primaryLight || '#fffbeb');
+        root.style.setProperty('--theme-accent', baseAccent);
+        root.style.setProperty('--theme-ring', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.25)`);
+
+        // Surface & Layout variables (Clean Light Palette)
+        root.style.setProperty('--bg-page', '#f8fafc');
+        root.style.setProperty('--bg-surface', '#ffffff');
+        root.style.setProperty('--bg-surface-elevated', '#ffffff');
+        root.style.setProperty('--bg-surface-subtle', '#f1f5f9');
+        root.style.setProperty('--bg-card', '#ffffff');
+        root.style.setProperty('--bg-input', '#ffffff');
+
+        // Typography variables
+        root.style.setProperty('--text-primary', '#0f172a');
+        root.style.setProperty('--text-secondary', '#334155');
+        root.style.setProperty('--text-muted', '#64748b');
+        root.style.setProperty('--text-inverse', '#ffffff');
+
+        // Border variables
+        root.style.setProperty('--border-subtle', '#f1f5f9');
+        root.style.setProperty('--border-default', '#e2e8f0');
+        root.style.setProperty('--border-strong', '#cbd5e1');
+      }
+
+      // Sync theme-color meta tag for browser mobile header
+      if (metaThemeColor) {
+        metaThemeColor.setAttribute('content', isDark ? '#090d16' : '#d97706');
+      }
+    });
+
+    return () => cancelAnimationFrame(frameId);
   }, [isDark, settings?.theme]);
 
   const value = useMemo(

@@ -15,6 +15,10 @@ export function ScrollToTop() {
     }
 
     const scrollToTop = () => {
+      const scrollableElements = document.querySelectorAll(
+        'main, [data-scroll-container], .overflow-y-auto, .overflow-auto'
+      );
+
       // If there's a specific hash anchor (e.g. #faq), try to scroll to it
       if (hash) {
         const id = hash.replace('#', '');
@@ -31,9 +35,6 @@ export function ScrollToTop() {
       document.body.scrollTop = 0;
 
       // 2. Reset any nested scroll containers (e.g. Admin layout main, modal scroll areas)
-      const scrollableElements = document.querySelectorAll(
-        'main, [data-scroll-container], .overflow-y-auto, .overflow-auto'
-      );
       scrollableElements.forEach((el) => {
         el.scrollTop = 0;
       });
