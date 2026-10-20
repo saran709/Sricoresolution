@@ -24,20 +24,13 @@ service cloud.firestore {
     
     function isAdmin() {
       return isAuthenticated() && (
-        (request.auth.token.email != null && (
-          request.auth.token.email.lower() == 'saranramesh709@gmail.com' ||
-          request.auth.token.email.lower().matches('.*admin.*') ||
-          request.auth.token.email.lower().matches('.*saran.*') ||
-          request.auth.token.email.lower().matches('.*@sricore.*')
-        )) ||
-        (request.auth.token.admin == true) ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+        (request.auth.token.email != null &&
+          request.auth.token.email.lower() == 'saranramesh709@gmail.com') ||
+        request.auth.token.admin == true ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in [
             'ADMINISTRATOR', 'ADMIN', 'administrator', 'admin'
-          ]
-        )) ||
-        // Fallback: If system setup is present or authenticated user acting in admin scope
-        (request.auth.uid != null)
+          ])
       );
     }
 
@@ -68,29 +61,38 @@ service cloud.firestore {
     // =========================================================================
     match /system/{docId} {
       allow read: if true;
-      allow write: if isAuthenticated();
+      // Keep first-run setup, but only the configured administrator can claim it once.
+      allow create: if isAuthenticated()
+        && docId == 'setup'
+        && request.auth.token.email != null
+        && request.auth.token.email.lower() == 'saranramesh709@gmail.com'
+        && !exists(/databases/$(database)/documents/system/setup);
+      allow update, delete: if isAdmin();
     }
 
     // =========================================================================
     // Users Collection
     // =========================================================================
     match /users/{userId} {
-      // Authenticated users can read the user directory (necessary for admin/mentor/employee dashboards)
+      // Keep authenticated user-directory reads for the existing admin/profile lookup flow.
       allow read: if isAuthenticated();
-      
-      // Admins can create any user record; users can self-register
-      allow create: if isAuthenticated() && (
-        isAdmin() || 
-        request.auth.uid == userId
+
+      // Admins can manage records. Self-registration must not permit a role escalation.
+      allow create: if isAdmin() || (
+        isAuthenticated()
+        && request.auth.uid == userId
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.role in ['CANDIDATE', 'CLIENT']
       );
 
-      // Admins can update any user; users can update their own profile
-      allow update: if isAuthenticated() && (
-        isAdmin() || 
-        request.auth.uid == userId
+      // Users may update profile fields but cannot change their assigned role.
+      allow update: if isAdmin() || (
+        isAuthenticated()
+        && request.auth.uid == userId
+        && request.resource.data.role == resource.data.role
       );
 
-      // Only admins can delete user profiles
+      // Only admins can delete user profiles.
       allow delete: if isAdmin();
     }
 

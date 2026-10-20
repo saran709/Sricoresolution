@@ -38,10 +38,17 @@ export default function Setup() {
     e.preventDefault();
     if (isInitialized) return;
     setError('');
+
+    // The bootstrap screen must not let an arbitrary first registrant become an administrator.
+    if (email.trim().toLowerCase() !== 'saranramesh709@gmail.com') {
+      setError('Initial administrator setup is restricted to the configured administrator account.');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
       const user = userCredential.user;
 
       const batch = writeBatch(db);
