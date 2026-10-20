@@ -9,7 +9,7 @@ import { CookieBanner } from './components/ui/CookieBanner';
 import { useAdPolicyGuard } from './hooks/useAdPolicyGuard';
 
 // Main Pages
-import Home from './pages/Home';
+const Home = React.lazy(() => import('./pages/Home'));
 const About = React.lazy(() => import('./pages/About'));
 const Enquiry = React.lazy(() => import('./pages/Enquiry'));
 const Contact = React.lazy(() => import('./pages/Contact'));
