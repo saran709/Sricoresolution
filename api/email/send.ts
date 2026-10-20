@@ -1,3 +1,3 @@
-import { sendEmailHandler } from "../../../src/server/apiHandlers";
+import { sendEmailHandler } from "../../src/server/apiHandlers";
 
 export default sendEmailHandler;
