@@ -101,6 +101,25 @@
         </div>
       </div>
     </div>
+    <script>
+      (function () {
+        function showStartupError(message) {
+          var screen = document.getElementById('boot-screen');
+          if (!screen) return;
+          var detail = document.createElement('p');
+          detail.textContent = 'The application could not start. Please reload the page.';
+          screen.replaceChildren(detail);
+          console.error('Application startup error:', message);
+        }
+
+        window.addEventListener('error', function (event) {
+          if (event.error || event.message) showStartupError(event.error || event.message);
+        });
+        window.addEventListener('unhandledrejection', function (event) {
+          showStartupError(event.reason || 'Unhandled promise rejection');
+        });
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
