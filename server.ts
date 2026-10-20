@@ -15,10 +15,10 @@ dotenv.config();
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
 
   app.use(cors());
-  app.use(express.json());
+  app.use(express.json({ limit: "1mb" }));
 
   // Email Configuration (Nodemailer)
   const transporter = nodemailer.createTransport({
@@ -53,8 +53,11 @@ async function startServer() {
 
       const { amount, currency = "INR", receipt, notes } = req.body;
       
-      if (!amount) {
-        return res.status(400).json({ error: "Amount is required" });
+      if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0 || amount > 10000000) {
+        return res.status(400).json({ error: "Amount must be a positive number within the supported limit" });
+      }
+      if (typeof currency !== "string" || !/^[A-Z]{3}$/.test(currency)) {
+        return res.status(400).json({ error: "Currency must be a valid three-letter currency code" });
       }
 
       const options = {
@@ -94,7 +97,9 @@ async function startServer() {
       hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
       const generated_signature = hmac.digest("hex");
 
-      if (generated_signature !== razorpay_signature) {
+      const receivedSignature = Buffer.from(String(razorpay_signature), "utf8");
+      const expectedSignature = Buffer.from(generated_signature, "utf8");
+      if (receivedSignature.length !== expectedSignature.length || !crypto.timingSafeEqual(receivedSignature, expectedSignature)) {
         return res.status(400).json({ error: "Invalid payment signature" });
       }
 
