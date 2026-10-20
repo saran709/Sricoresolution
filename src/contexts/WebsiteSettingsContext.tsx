@@ -104,7 +104,7 @@ export interface WebsiteSettings {
 }
 
 export const DEFAULT_WEBSITE_SETTINGS: WebsiteSettings = {
-  brandName: APP_CONFIG.company.name || 'Sricore Solutions',
+  brandName: APP_CONFIG.company.name || 'Sri core solutions',
   brandTagline: APP_CONFIG.company.tagline || 'Technology Solutions & Services',
   brandDescription: APP_CONFIG.company.description || 'A premier technology partner offering comprehensive solutions in software, hardware, AI/ML, and research.',
   logoUrl: '/logo.png',

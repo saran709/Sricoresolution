@@ -1,6 +1,6 @@
 export const APP_CONFIG = {
   company: {
-    name: 'Sricore Solutions',
+    name: 'Sri core solutions',
     tagline: 'Technology Solutions & Applied Research',
     description: 'A premier technology partner offering comprehensive solutions in software architecture, embedded IoT systems, artificial intelligence, and applied research services.',
     contact: {

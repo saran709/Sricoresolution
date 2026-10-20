@@ -149,7 +149,7 @@ export default function AdminDashboard() {
           <div className="bg-slate-50 p-2 rounded-xl border border-slate-200 shadow-xs shrink-0">
             <img 
               src="/logo.png" 
-              alt="CSRi Sricore Solutions Logo" 
+              alt="Sri core solutions Logo" 
               className="h-10 w-auto object-contain" 
             />
           </div>
@@ -212,7 +212,7 @@ export default function AdminDashboard() {
             <div>
               <h3 className="font-bold text-lg text-slate-900">Populate Initial Admin Dashboard Data</h3>
               <p className="text-sm text-slate-600 mt-1 max-w-2xl leading-relaxed">
-                Your database is ready. With one click, you can insert realistic operational records for Sricore Solutions: 5 engineering departments, staff engineers, designated mentors, active interns, ongoing commercial and research projects, tasks, customer enquiries, and attendance logs.
+                Your database is ready. With one click, you can insert realistic operational records for Sri core solutions: 5 engineering departments, staff engineers, designated mentors, active interns, ongoing commercial and research projects, tasks, customer enquiries, and attendance logs.
               </p>
             </div>
           </div>
@@ -358,7 +358,6 @@ export default function AdminDashboard() {
               <AlertCircle className="w-5 h-5 text-amber-500" />
               Tasks Requiring Technical Attention
             </h2>
-            <Link to="/admin/tasks" className="text-xs font-bold text-blue-600 hover:text-blue-700">View All Tasks</Link>
           </div>
           <div className="p-0">
             {tasks.length > 0 ? (

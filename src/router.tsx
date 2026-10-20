@@ -44,7 +44,6 @@ const AdminEnquiries = React.lazy(() => import('./pages/admin/Enquiries'));
 const AdminProjects = React.lazy(() => import('./pages/admin/Projects'));
 const AdminInternships = React.lazy(() => import('./pages/admin/Internships'));
 const AdminClients = React.lazy(() => import('./pages/admin/Clients'));
-const AdminTasks = React.lazy(() => import('./pages/admin/Tasks'));
 const AdminAudit = React.lazy(() => import('./pages/admin/Audit'));
 const AdminContent = React.lazy(() => import('./pages/admin/Content'));
 const AdminUsers = React.lazy(() => import('./pages/admin/Users'));
@@ -100,7 +99,6 @@ export function AppRouter() {
             <Route path="enquiries" element={<AdminEnquiries />} />
             <Route path="clients" element={<AdminClients />} />
             <Route path="projects" element={<AdminProjects />} />
-            <Route path="tasks" element={<AdminTasks />} />
             <Route path="support" element={<AdminSupport />} />
             <Route path="payments" element={<AdminPayments />} />
             <Route path="invoices" element={<AdminInvoices />} />

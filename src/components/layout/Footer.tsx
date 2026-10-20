@@ -9,7 +9,7 @@ export function Footer() {
   const currentYear = new Date().getFullYear();
   const { settings } = useWebsiteSettings();
 
-  const brandName = settings?.brandName || 'Sricore Solutions';
+  const brandName = settings?.brandName || 'Sri core solutions';
   const tagline = settings?.brandTagline || 'Technology Solutions & Applied Research';
   const description = settings?.brandDescription || 'A premier engineering partner offering comprehensive solutions in software architecture, embedded IoT systems, artificial intelligence, and applied research services.';
   const contact = settings?.contact || {

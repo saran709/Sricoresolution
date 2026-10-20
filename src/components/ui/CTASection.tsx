@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Container } from './Container';
 import { useWebsiteSettings } from '../../contexts/WebsiteSettingsContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface CTASectionProps {
   title: string;
@@ -17,13 +18,14 @@ interface CTASectionProps {
   theme?: 'dark' | 'light';
 }
 
-export function CTASection({ title, description, primaryAction, secondaryAction, theme = 'dark' }: CTASectionProps) {
-  const isDark = theme === 'dark';
+export function CTASection({ title, description, primaryAction, secondaryAction, theme }: CTASectionProps) {
+  const { isDark: contextIsDark } = useTheme();
+  const isDark = theme !== undefined ? theme === 'dark' : contextIsDark;
   const { settings } = useWebsiteSettings();
   const primaryColor = settings?.theme?.primary || '#d97706';
   
   return (
-    <section className={`content-visibility-auto py-10 md:py-14 ${isDark ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-900 border-t border-slate-200'}`}>
+    <section className={`content-visibility-auto py-10 md:py-14 transition-colors ${isDark ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-900 border-t border-b border-slate-200'}`}>
       <Container>
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-3">

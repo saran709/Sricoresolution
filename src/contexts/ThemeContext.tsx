@@ -17,16 +17,16 @@ const STORAGE_KEY = 'sricore_theme_mode';
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 function getInitialThemeMode(): ThemeMode {
-  if (typeof window === 'undefined') return 'system';
+  if (typeof window === 'undefined') return 'light';
   try {
     const saved = localStorage.getItem(STORAGE_KEY) as ThemeMode | null;
-    if (saved === 'light' || saved === 'dark' || saved === 'system') {
+    if (saved === 'dark' || saved === 'light') {
       return saved;
     }
   } catch {
     // ignore localStorage errors
   }
-  return 'system';
+  return 'light';
 }
 
 function getSystemPreference(): ResolvedTheme {
@@ -165,11 +165,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         root.style.setProperty('--theme-accent', baseAccent);
         root.style.setProperty('--theme-ring', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.25)`);
 
-        // Surface & Layout variables (Clean Light Palette)
-        root.style.setProperty('--bg-page', '#f8fafc');
+        // Surface & Layout variables (Pure White Standard Theme)
+        root.style.setProperty('--bg-page', '#ffffff');
         root.style.setProperty('--bg-surface', '#ffffff');
         root.style.setProperty('--bg-surface-elevated', '#ffffff');
-        root.style.setProperty('--bg-surface-subtle', '#f1f5f9');
+        root.style.setProperty('--bg-surface-subtle', '#f8fafc');
         root.style.setProperty('--bg-card', '#ffffff');
         root.style.setProperty('--bg-input', '#ffffff');
 

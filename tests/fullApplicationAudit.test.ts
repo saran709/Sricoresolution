@@ -209,7 +209,7 @@ console.log('\n▶ [6] VERIFYING METADATA & FIREBASE CONFIGURATION');
 const metadataPath = path.join(process.cwd(), 'metadata.json');
 assert(fs.existsSync(metadataPath), 'metadata.json must exist');
 const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
-assert(metadata.name === 'Sricore Solutions', 'metadata.json must define valid application name');
+assert(metadata.name === 'Sri core solutions' || metadata.name === 'Sricore Solutions', 'metadata.json must define valid application name');
 
 const firebaseConfigPath = path.join(process.cwd(), 'firebase-applet-config.json');
 assert(fs.existsSync(firebaseConfigPath), 'firebase-applet-config.json must exist');

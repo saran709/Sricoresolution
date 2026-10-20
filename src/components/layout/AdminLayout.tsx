@@ -65,7 +65,6 @@ export function AdminLayout() {
         { name: 'Enquiries', path: '/admin/enquiries', icon: MessageSquare },
         { name: 'Clients', path: '/admin/clients', icon: Users },
         { name: 'Projects', path: '/admin/projects', icon: Briefcase },
-        { name: 'Tasks', path: '/admin/tasks', icon: FileText },
         { name: 'Support Tickets', path: '/admin/support', icon: MessageSquare },
         { name: 'Payments', path: '/admin/payments', icon: Briefcase },
         { name: 'Invoices', path: '/admin/invoices', icon: FileText },

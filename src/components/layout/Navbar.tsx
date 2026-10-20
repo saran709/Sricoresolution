@@ -55,7 +55,7 @@ export function Navbar() {
               <Link to="/" className="flex items-center gap-2" onClick={closeMobileMenu}>
                 <img 
                   src={settings?.logoUrl || "/logo.png"} 
-                  alt={settings?.brandName || "Sricore Solutions Logo"} 
+                  alt={settings?.brandName || "Sri core solutions Logo"} 
                   className="h-10 w-auto object-contain" 
                   onError={(e) => {
                     // Fallback if logo fails
@@ -66,12 +66,12 @@ export function Navbar() {
                   {settings?.brandName ? (
                     <>
                       {settings.brandName.split(' ')[0]}
-                      <span style={{ color: primaryColor }} className="ml-0.5">
-                        {settings.brandName.split(' ').slice(1).join(' ') || 'SOLUTIONS'}
+                      <span style={{ color: primaryColor }} className="ml-1">
+                        {settings.brandName.split(' ').slice(1).join(' ') || 'core solutions'}
                       </span>
                     </>
                   ) : (
-                    <>SRICORE<span style={{ color: primaryColor }}>SOLUTIONS</span></>
+                    <>Sri <span style={{ color: primaryColor }}>core solutions</span></>
                   )}
                 </span>
               </Link>
