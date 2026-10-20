@@ -72,7 +72,7 @@ export default function Register() {
       const user = userCredential.user;
 
       const isAdminEmail = trimmedEmail.toLowerCase() === 'saranramesh709@gmail.com';
-      const assignedRole = isAdminEmail ? 'ADMINISTRATOR' : (role === 'CLIENT' ? 'CLIENT' : 'CANDIDATE');
+      const assignedRole = isAdminEmail ? 'ADMINISTRATOR' : role;
 
       // Create authoritative user profile in Firestore
       await setDoc(doc(db, 'users', user.uid), {
@@ -137,7 +137,7 @@ export default function Register() {
                 const names = (user.displayName || '').split(' ');
                 const userEmail = (user.email || '').toLowerCase().trim();
                 const isAdminEmail = userEmail === 'saranramesh709@gmail.com';
-                const assignedRole = isAdminEmail ? 'ADMINISTRATOR' : (role === 'CLIENT' ? 'CLIENT' : 'CANDIDATE');
+                const assignedRole = isAdminEmail ? 'ADMINISTRATOR' : role;
 
                 await setDoc(doc(db, 'users', user.uid), {
                   uid: user.uid,
@@ -270,7 +270,7 @@ export default function Register() {
             <label className="block text-sm font-medium text-slate-700 mb-1">
               I am joining as:
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1.5">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-1.5">
               <button
                 type="button"
                 onClick={() => setRole('CANDIDATE')}
@@ -286,6 +286,24 @@ export default function Register() {
                 </div>
                 <p className="text-xs text-slate-500">
                   Looking for training, internships, or student project guidance.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setRole('EMPLOYER')}
+                className={`p-3 rounded-lg border text-left transition-all ${
+                  role === 'EMPLOYER'
+                    ? 'border-blue-600 bg-blue-50/60 ring-2 ring-blue-500/20'
+                    : 'border-slate-200 hover:border-slate-300 bg-white'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-semibold text-sm text-slate-900">Employer</span>
+                  {role === 'EMPLOYER' && <CheckCircle2 className="w-4 h-4 text-blue-600" />}
+                </div>
+                <p className="text-xs text-slate-500">
+                  Manage employer-side project and payment activity.
                 </p>
               </button>
 

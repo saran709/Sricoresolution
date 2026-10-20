@@ -50,6 +50,7 @@ export default function Dashboard() {
       case 'INTERN':
         return <InternDashboard />;
       case 'CLIENT':
+      case 'EMPLOYER':
         return <ClientDashboard />;
       case 'CANDIDATE':
         return <CandidateDashboard />;
@@ -76,7 +77,7 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-4">
               <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider
-                ${userProfile?.role === 'CLIENT' ? 'bg-blue-100 text-blue-800' :
+                ${userProfile?.role === 'CLIENT' || userProfile?.role === 'EMPLOYER' ? 'bg-blue-100 text-blue-800' :
                   userProfile?.role === 'EMPLOYEE' ? 'bg-indigo-100 text-indigo-800' :
                   userProfile?.role === 'MENTOR' ? 'bg-purple-100 text-purple-800' :
                   userProfile?.role === 'INTERN' ? 'bg-emerald-100 text-emerald-800' :
@@ -97,7 +98,7 @@ export default function Dashboard() {
         </div>
 
         {/* My Projects (shown for clients & employees) */}
-        {(userProfile?.role === 'CLIENT' || userProfile?.role === 'EMPLOYEE') && (
+        {(userProfile?.role === 'CLIENT' || userProfile?.role === 'EMPLOYER' || userProfile?.role === 'EMPLOYEE') && (
           <div className="mb-6">
             <MyProjects />
           </div>

@@ -3,6 +3,7 @@ export type UserRole =
   | 'EMPLOYEE' 
   | 'MENTOR' 
   | 'INTERN' 
+  | 'EMPLOYER'
   | 'CLIENT' 
   | 'CANDIDATE';
 

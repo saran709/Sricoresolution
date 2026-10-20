@@ -82,7 +82,7 @@ service cloud.firestore {
         isAuthenticated()
         && request.auth.uid == userId
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.role in ['CANDIDATE', 'CLIENT']
+        && request.resource.data.role in ['CANDIDATE', 'CLIENT', 'EMPLOYER']
       );
 
       // Users may update profile fields but cannot change their assigned role.
@@ -157,6 +157,11 @@ service cloud.firestore {
     match /internship_applications/{applicationId} {
       allow create: if true; // Public applications
       allow read, update, delete: if isAuthenticated();
+    }
+
+    match /job_applications/{applicationId} {
+      allow create: if true; // Public job applications
+      allow read, update, delete: if isAdmin();
     }
 
     match /internship_programs/{programId} {

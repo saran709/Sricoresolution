@@ -294,6 +294,7 @@ export default function Users() {
     if (clean === 'MENTOR') return 'MENTOR';
     if (clean === 'INTERN') return 'INTERN';
     if (clean === 'CLIENT' || clean === 'CUSTOMER') return 'CLIENT';
+    if (clean === 'EMPLOYER' || clean === 'EMPLOYERS') return 'EMPLOYER';
     return 'CANDIDATE';
   };
 
@@ -552,6 +553,7 @@ GreenAgro,Enterprises,contact@greenagrotech.sample.in,+91 94440 88990,CLIENT,Cli
     MENTOR: users.filter(u => u.role === 'MENTOR').length,
     INTERN: users.filter(u => u.role === 'INTERN').length,
     CLIENT: users.filter(u => u.role === 'CLIENT').length,
+    EMPLOYER: users.filter(u => u.role === 'EMPLOYER').length,
     CANDIDATE: users.filter(u => u.role === 'CANDIDATE').length,
     ADMINISTRATOR: users.filter(u => u.role === 'ADMINISTRATOR').length
   };
@@ -760,6 +762,7 @@ GreenAgro,Enterprises,contact@greenagrotech.sample.in,+91 94440 88990,CLIENT,Cli
                 <option value="MENTOR">Mentor ({metrics.MENTOR})</option>
                 <option value="INTERN">Intern ({metrics.INTERN})</option>
                 <option value="CLIENT">Client ({metrics.CLIENT})</option>
+                <option value="EMPLOYER">Employer ({metrics.EMPLOYER})</option>
                 <option value="CANDIDATE">Candidate ({metrics.CANDIDATE})</option>
                 <option value="ADMINISTRATOR">Administrator ({metrics.ADMINISTRATOR})</option>
               </select>
