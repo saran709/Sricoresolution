@@ -72,10 +72,6 @@ export default function ProjectDetail() {
   const [apiLatency, setApiLatency] = useState(24);
   const [apiSuccess, setApiSuccess] = useState(true);
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [slug]);
-
   // Load project by slug or ID
   useEffect(() => {
     async function loadProject() {

@@ -23,7 +23,7 @@ export function CTASection({ title, description, primaryAction, secondaryAction,
   const primaryColor = settings?.theme?.primary || '#d97706';
   
   return (
-    <section className={`py-10 md:py-14 ${isDark ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-900 border-t border-slate-200'}`}>
+    <section className={`content-visibility-auto py-10 md:py-14 ${isDark ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-900 border-t border-slate-200'}`}>
       <Container>
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-3">

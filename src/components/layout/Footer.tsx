@@ -19,7 +19,7 @@ export function Footer() {
   };
 
   return (
-    <footer className="bg-slate-900 text-slate-300 py-12 md:py-16 border-t border-slate-800">
+    <footer className="content-visibility-auto bg-slate-900 text-slate-300 py-12 md:py-16 border-t border-slate-800">
       <Container>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
           {/* Company Info */}

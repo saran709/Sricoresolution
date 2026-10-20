@@ -26,11 +26,7 @@ export function ScrollToTop() {
       }
 
       // 1. Scroll window and document
-      window.scrollTo({
-        top: 0,
-        left: 0,
-        behavior: 'instant' as ScrollBehavior
-      });
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
 
@@ -43,16 +39,11 @@ export function ScrollToTop() {
       });
     };
 
-    // Execute immediately
-    scrollToTop();
-
-    // Also execute on the next animation frame and after tick to handle lazy-loaded / Suspense page transitions
+    // Batch all scroll writes after the route's DOM update has committed.
     const rafId = requestAnimationFrame(scrollToTop);
-    const timeoutId = setTimeout(scrollToTop, 50);
 
     return () => {
       cancelAnimationFrame(rafId);
-      clearTimeout(timeoutId);
     };
   }, [pathname, search, hash]);
 

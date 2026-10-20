@@ -65,6 +65,12 @@ body {
   min-height: 100vh;
 }
 
+/* Defer layout and paint for below-the-fold sections while preserving scroll geometry. */
+.content-visibility-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 560px;
+}
+
 /* Theme accent and brand utilities calibrated to CSRi logo */
 .theme-btn-primary {
   background-color: var(--theme-primary, #d97706);

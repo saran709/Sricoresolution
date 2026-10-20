@@ -124,7 +124,7 @@ export default function Home() {
 
       {/* Dynamic Key Metrics & Milestones */}
       {metrics && metrics.length > 0 && (
-        <section className="py-5 md:py-7 bg-white border-b border-slate-200">
+        <section className="content-visibility-auto py-5 md:py-7 bg-white border-b border-slate-200">
           <Container>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
               {metrics.map((metric) => (
@@ -151,7 +151,7 @@ export default function Home() {
       )}
 
       {/* Core Services Section */}
-      <section className="py-10 md:py-14 bg-white">
+      <section className="content-visibility-auto py-10 md:py-14 bg-white">
         <Container>
           <SectionHeader 
             title={settings?.services?.heroTitle || "Comprehensive Technical Solutions"} 
@@ -193,7 +193,7 @@ export default function Home() {
       </section>
 
       {/* Why Choose Us Section */}
-      <section className="py-10 md:py-14 bg-slate-50 border-y border-slate-200">
+      <section className="content-visibility-auto py-10 md:py-14 bg-slate-50 border-y border-slate-200">
         <Container>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-center">
             <div>
@@ -252,7 +252,7 @@ export default function Home() {
       </section>
 
       {/* Internships & Training Highlight */}
-      <section className="py-10 md:py-14 bg-white">
+      <section className="content-visibility-auto py-10 md:py-14 bg-white">
         <Container>
           <div className="bg-slate-900 rounded-2xl overflow-hidden shadow-xl">
             <div className="grid grid-cols-1 lg:grid-cols-2">
@@ -298,7 +298,7 @@ export default function Home() {
       </section>
 
       {/* Selected Projects */}
-      <section className="py-10 md:py-14 bg-slate-50">
+      <section className="content-visibility-auto py-10 md:py-14 bg-slate-50">
         <Container>
           <div className="flex flex-col md:flex-row justify-between items-end mb-6">
             <SectionHeader 
