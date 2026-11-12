@@ -19,6 +19,7 @@ import {
   ToggleLeft,
   ToggleRight,
   ExternalLink,
+  Download,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
@@ -465,6 +466,103 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     setStatusFilter('ALL');
   };
 
+  // Export registered users (respecting active search/role/status filters) to CSV for offline analysis
+  const handleDownloadCsv = async () => {
+    const recordsToExport = filteredUsers;
+    if (recordsToExport.length === 0) {
+      setFeedback({
+        type: 'error',
+        message: 'No user records match the current filters to export.',
+      });
+      return;
+    }
+
+    const escapeCsvField = (value: unknown): string => {
+      const str = value === null || value === undefined ? '' : String(value);
+      if (/[",\r\n]/.test(str)) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    const formatTimestamp = (val: any): string => {
+      if (!val) return '';
+      if (typeof val.toDate === 'function') {
+        return val.toDate().toISOString();
+      }
+      const parsed = new Date(val);
+      return Number.isNaN(parsed.getTime()) ? String(val) : parsed.toISOString();
+    };
+
+    const headers = [
+      'User ID',
+      'Full Name',
+      'First Name',
+      'Last Name',
+      'Email',
+      'Role',
+      'Account Status',
+      'Phone',
+      'Department',
+      'Position',
+      'Created At',
+    ];
+
+    const rows = recordsToExport.map((u) => {
+      const displayName = getDisplayName(u);
+      const isActive = u.isActive !== false;
+      const firstName =
+        u.firstName || (u.fullName ? u.fullName.split(' ')[0] : '');
+      const lastName =
+        u.lastName ||
+        (u.fullName ? u.fullName.split(' ').slice(1).join(' ') : '');
+
+      return [
+        u.id || '',
+        displayName,
+        firstName,
+        lastName,
+        u.email || '',
+        u.role || '',
+        isActive ? 'ACTIVE' : 'INACTIVE',
+        u.phone || u.phoneNumber || '',
+        u.department || '',
+        u.position || '',
+        formatTimestamp(u.createdAt),
+      ]
+        .map(escapeCsvField)
+        .join(',');
+    });
+
+    // Include UTF-8 BOM (\uFEFF) so Excel / spreadsheet software opens UTF-8 characters properly
+    const csvContent = '\uFEFF' + [headers.map(escapeCsvField).join(','), ...rows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const dateStamp = new Date().toISOString().slice(0, 10);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `sricore-users-export-${dateStamp}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    await logActivity(
+      'USERS_CSV_EXPORTED',
+      currentUser?.uid || 'admin',
+      'users_collection',
+      'user',
+      `Exported ${recordsToExport.length} registered users to CSV`
+    );
+
+    setFeedback({
+      type: 'success',
+      message: `Exported ${recordsToExport.length} user record${
+        recordsToExport.length === 1 ? '' : 's'
+      } to CSV.`,
+    });
+  };
+
   return (
     <section
       aria-label="User Management Interface"
@@ -505,6 +603,17 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                 Inactive: {stats.inactive}
               </span>
             </div>
+
+            <button
+              type="button"
+              onClick={handleDownloadCsv}
+              disabled={loading || filteredUsers.length === 0}
+              aria-label="Download registered users list as CSV"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
+            >
+              <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span>Download CSV</span>
+            </button>
 
             <button
               type="button"

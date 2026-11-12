@@ -22,8 +22,9 @@ export function Newsletter() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
 
-  // Hide public Newsletter section on Admin and User Dashboard Portal routes
-  if (location.pathname.startsWith('/admin') || location.pathname.startsWith('/dashboard')) {
+  // Hide public Newsletter section on Admin, User Dashboard Portal, and Auth routes
+  const hiddenPrefixes = ['/admin', '/dashboard', '/login', '/register', '/setup', '/forgot-password', '/unauthorized'];
+  if (hiddenPrefixes.some((prefix) => location.pathname.startsWith(prefix))) {
     return null;
   }
 

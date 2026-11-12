@@ -42,8 +42,7 @@ function initDb(): Firestore {
         tabManager: persistentMultipleTabManager()
       })
     }, databaseId);
-  } catch (err) {
-    console.warn("Persistent cache initialization failed, attempting fallback:", err);
+  } catch {
     try {
       return initializeFirestore(app, {
         experimentalAutoDetectLongPolling: true,

@@ -7,7 +7,6 @@ import { AdminDashboardLayout } from './components/AdminDashboard';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 import { ScrollToTop } from './components/layout/ScrollToTop';
 import { CookieBanner } from './components/ui/CookieBanner';
-import { Hero } from './components/Hero';
 import { useAdPolicyGuard } from './hooks/useAdPolicyGuard';
 
 // Main Pages
@@ -63,8 +62,12 @@ const AdminReports = React.lazy(() => import('./pages/admin/Reports'));
 const AdminSettings = React.lazy(() => import('./pages/admin/Settings'));
 
 const PageLoader = () => (
-  <div className="min-h-[50vh] flex items-center justify-center">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+  <div
+    role="status"
+    aria-label="Loading page content"
+    className="min-h-[50vh] flex items-center justify-center bg-slate-50/50 dark:bg-slate-950/50"
+  >
+    <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-300 dark:border-slate-700 border-t-amber-600" />
   </div>
 );
 
@@ -134,15 +137,7 @@ export function AppRouter() {
 
           {/* Main Application Routes */}
           <Route path="/" element={<MainLayout />}>
-            <Route
-              index
-              element={
-                <>
-                  <Hero />
-                  <Home />
-                </>
-              }
-            />
+            <Route index element={<Home />} />
             <Route path="about" element={<About />} />
             <Route path="services" element={<Services />} />
             <Route path="services/research" element={<ResearchServices />} />

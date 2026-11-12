@@ -39,6 +39,7 @@ import {
 import { logActivity } from '../../lib/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
 import { ConfirmModal } from '../../components/ui/ConfirmModal';
+import { useSearchParams } from 'react-router-dom';
 
 interface CsvUserCandidate {
   id: string;
@@ -56,11 +57,19 @@ interface CsvUserCandidate {
 
 export default function Users() {
   const { currentUser } = useAuth();
+  const [searchParams] = useSearchParams();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(() => searchParams.get('search') || '');
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+
+  useEffect(() => {
+    const q = searchParams.get('search');
+    if (q !== null) {
+      setSearchTerm(q);
+    }
+  }, [searchParams]);
   
   // Single User Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -576,6 +585,82 @@ GreenAgro,Enterprises,contact@greenagrotech.sample.in,+91 94440 88990,CLIENT,Cli
     setSearchTerm('');
   };
 
+  const handleExportUsersCsv = async () => {
+    if (filteredUsers.length === 0) {
+      setFeedback({ message: 'No users match the current filters to export.', type: 'error' });
+      return;
+    }
+
+    const escapeCsv = (val: unknown): string => {
+      const str = val === null || val === undefined ? '' : String(val);
+      return /[",\r\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+    };
+
+    const formatTs = (val: any): string => {
+      if (!val) return '';
+      if (typeof val.toDate === 'function') return val.toDate().toISOString();
+      const parsed = new Date(val);
+      return Number.isNaN(parsed.getTime()) ? String(val) : parsed.toISOString();
+    };
+
+    const headers = [
+      'User ID',
+      'First Name',
+      'Last Name',
+      'Email',
+      'Role',
+      'Status',
+      'Phone',
+      'Department',
+      'Position',
+      'Created At',
+    ];
+
+    const rows = filteredUsers.map((u) => {
+      const anyU = u as any;
+      const isActive = u.isActive ?? true;
+      return [
+        u.id || '',
+        u.firstName || '',
+        u.lastName || '',
+        u.email || '',
+        u.role || '',
+        isActive ? 'ACTIVE' : 'INACTIVE',
+        u.phone || anyU.phoneNumber || '',
+        anyU.department || '',
+        anyU.position || '',
+        formatTs(u.createdAt),
+      ]
+        .map(escapeCsv)
+        .join(',');
+    });
+
+    const csvContent = '\uFEFF' + [headers.map(escapeCsv).join(','), ...rows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const dateStamp = new Date().toISOString().slice(0, 10);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `sricore-users-export-${dateStamp}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    await logActivity(
+      'USERS_CSV_EXPORTED',
+      currentUser?.uid || 'admin',
+      'users_collection',
+      'user',
+      `Exported ${filteredUsers.length} registered users to CSV`
+    );
+
+    setFeedback({
+      message: `Successfully exported ${filteredUsers.length} user record${filteredUsers.length === 1 ? '' : 's'} to CSV.`,
+      type: 'success',
+    });
+  };
+
   const validCount = parsedCandidates.filter(c => c.status === 'VALID').length;
   const duplicateCount = parsedCandidates.filter(c => c.status === 'DUPLICATE').length;
   const invalidCount = parsedCandidates.filter(c => c.status === 'INVALID').length;
@@ -589,7 +674,17 @@ GreenAgro,Enterprises,contact@greenagrotech.sample.in,+91 94440 88990,CLIENT,Cli
           <h1 className="text-2xl font-bold text-slate-900">User Management</h1>
           <p className="text-sm text-slate-500">Manage credentials, administrative privileges, and global organizational accounts</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={handleExportUsersCsv}
+            disabled={loading || filteredUsers.length === 0}
+            className="flex items-center gap-2 shadow-sm border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+          >
+            <Download className="w-4 h-4" />
+            Download CSV
+          </Button>
+
           <Button 
             variant="outline"
             onClick={() => {

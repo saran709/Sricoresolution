@@ -1,14 +1,14 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { collection, query, where, getCountFromServer, getDocs, limit, orderBy } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-import { Users, Briefcase, MessageSquare, GraduationCap, Clock, AlertCircle, Shield, FileText, Database, CheckCircle2, Sparkles, Building2, Layers } from 'lucide-react';
+import { Users, Briefcase, MessageSquare, GraduationCap, Clock, AlertCircle, FileText, Database, CheckCircle2, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
 import { Button } from '../../components/ui/Button';
-import { seedAdminDashboardData, SeedResult } from '../../lib/dataSeeder';
+import { seedAdminDashboardData } from '../../lib/dataSeeder';
 import { useAuth } from '../../contexts/AuthContext';
 import { UserManagement } from '../../components/UserManagement';
+import { SystemInsights } from '../../components/SystemInsights';
 
 export default function AdminDashboard() {
   const { currentUser } = useAuth();
@@ -36,37 +36,42 @@ export default function AdminDashboard() {
     setLoading(true);
     try {
       const [
-        empSnap,
-        activeEmpSnap,
-        internSnap,
-        mentorSnap,
-        clientSnap,
-        totalProjSnap,
-        activeProjSnap,
+        usersSnap,
+        projectsSnap,
         enqSnap,
         internAppSnap,
         paymentSnap
       ] = await Promise.all([
-        getCountFromServer(query(collection(db, 'users'), where('role', '==', 'EMPLOYEE'))),
-        getCountFromServer(query(collection(db, 'users'), where('role', '==', 'EMPLOYEE'), where('isActive', '==', true))),
-        getCountFromServer(query(collection(db, 'users'), where('role', '==', 'INTERN'))),
-        getCountFromServer(query(collection(db, 'users'), where('role', '==', 'MENTOR'))),
-        getCountFromServer(query(collection(db, 'users'), where('role', '==', 'CLIENT'))),
-        getCountFromServer(collection(db, 'projects')),
-        getCountFromServer(query(collection(db, 'projects'), where('status', 'in', ['active', 'in_progress']))),
-        getCountFromServer(query(collection(db, 'enquiries'), where('status', 'in', ['NEW']))),
+        getDocs(collection(db, 'users')),
+        getDocs(collection(db, 'projects')),
+        getCountFromServer(query(collection(db, 'enquiries'), where('status', '==', 'NEW'))),
         getCountFromServer(query(collection(db, 'internship_applications'), where('status', '==', 'pending'))),
         getCountFromServer(query(collection(db, 'payments'), where('status', '==', 'pending')))
       ]);
-      
+
+      const allUsers = usersSnap.docs.map((d) => d.data());
+      const employees = allUsers.filter((u) => u.role === 'EMPLOYEE').length;
+      const activeEmployees = allUsers.filter(
+        (u) => u.role === 'EMPLOYEE' && u.isActive !== false
+      ).length;
+      const interns = allUsers.filter((u) => u.role === 'INTERN').length;
+      const mentors = allUsers.filter((u) => u.role === 'MENTOR').length;
+      const clients = allUsers.filter((u) => u.role === 'CLIENT').length;
+
+      const allProjects = projectsSnap.docs.map((d) => d.data());
+      const totalProjects = allProjects.length;
+      const activeProjects = allProjects.filter((p) =>
+        ['active', 'in_progress'].includes(p.status || p.projectStatus)
+      ).length;
+
       setStats({
-        employees: empSnap.data().count,
-        activeEmployees: activeEmpSnap.data().count,
-        interns: internSnap.data().count,
-        mentors: mentorSnap.data().count,
-        clients: clientSnap.data().count,
-        totalProjects: totalProjSnap.data().count,
-        activeProjects: activeProjSnap.data().count,
+        employees,
+        activeEmployees,
+        interns,
+        mentors,
+        clients,
+        totalProjects,
+        activeProjects,
         pendingEnquiries: enqSnap.data().count,
         internApplications: internAppSnap.data().count,
         pendingPayments: paymentSnap.data().count
@@ -77,8 +82,12 @@ export default function AdminDashboard() {
         const activitiesQuery = query(collection(db, 'auditLogs'), orderBy('timestamp', 'desc'), limit(6));
         const actSnap = await getDocs(activitiesQuery);
         setActivities(actSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-      } catch (e) {
-        console.warn("Audit logs listener note:", e);
+      } catch {
+        // Fallback if timestamp index is not yet built
+        try {
+          const fallbackActSnap = await getDocs(query(collection(db, 'auditLogs'), limit(6)));
+          setActivities(fallbackActSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        } catch {}
       }
 
       // Load tasks (try projectTasks then tasks)
@@ -92,9 +101,7 @@ export default function AdminDashboard() {
           taskDocs = fallbackTaskSnap.docs.map(d => ({ id: d.id, ...d.data() }));
         }
         setTasks(taskDocs);
-      } catch (e) {
-        console.warn("Tasks listener note:", e);
-      }
+      } catch {}
 
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -145,23 +152,23 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6">
       {/* Top Header with Company Logo & Quick Action */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs transition-colors">
         <div className="flex items-center gap-3.5">
-          <div className="bg-slate-50 p-2 rounded-xl border border-slate-200 shadow-xs shrink-0">
+          <div className="bg-slate-50 dark:bg-slate-800 p-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs shrink-0">
             <img 
               src="/logo.png" 
-              alt="Sri core solutions Logo" 
+              alt="Sricore Solutions Logo" 
               className="h-10 w-auto object-contain" 
             />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Administrator Control Center</h1>
-              <span className="hidden sm:inline-flex text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 bg-amber-100 text-amber-800 rounded-md">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Administrator Control Center</h1>
+              <span className="hidden sm:inline-flex text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 rounded-md">
                 Live
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Real-time organizational telemetry, workforce operations, and active delivery pipelines</p>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">Real-time organizational telemetry, workforce operations, and active delivery pipelines</p>
           </div>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -178,26 +185,26 @@ export default function AdminDashboard() {
 
       {/* Seed Success or Error Banner */}
       {seedResult && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl flex items-start gap-3 text-sm shadow-sm animate-in fade-in">
-          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+        <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-300 rounded-2xl flex items-start gap-3 text-sm shadow-sm">
+          <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
           <div className="flex-1">
-            <h4 className="font-bold text-emerald-900">Operational Data Inserted</h4>
+            <h4 className="font-bold text-emerald-900 dark:text-emerald-200">Operational Data Inserted</h4>
             <p className="mt-0.5 leading-relaxed">{seedResult}</p>
           </div>
-          <button onClick={() => setSeedResult(null)} className="text-emerald-700 hover:text-emerald-900 text-xs font-bold">
+          <button onClick={() => setSeedResult(null)} className="text-emerald-700 dark:text-emerald-300 hover:underline text-xs font-bold">
             Dismiss
           </button>
         </div>
       )}
 
       {seedError && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-800 rounded-2xl flex items-start gap-3 text-sm shadow-sm animate-in fade-in">
-          <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+        <div className="p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 text-red-800 dark:text-red-300 rounded-2xl flex items-start gap-3 text-sm shadow-sm">
+          <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
           <div className="flex-1">
-            <h4 className="font-bold text-red-900">Insertion Failed</h4>
+            <h4 className="font-bold text-red-900 dark:text-red-200">Insertion Failed</h4>
             <p className="mt-0.5">{seedError}</p>
           </div>
-          <button onClick={() => setSeedError(null)} className="text-red-700 hover:text-red-900 text-xs font-bold">
+          <button onClick={() => setSeedError(null)} className="text-red-700 dark:text-red-300 hover:underline text-xs font-bold">
             Dismiss
           </button>
         </div>
@@ -205,15 +212,15 @@ export default function AdminDashboard() {
 
       {/* Empty State Banner if no employees yet */}
       {!loading && stats.employees === 0 && !seedResult && (
-        <div className="p-6 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 border border-blue-200 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
+        <div className="p-6 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 border border-blue-200 dark:border-slate-700 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md">
               <Sparkles className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="font-bold text-lg text-slate-900">Populate Initial Admin Dashboard Data</h3>
-              <p className="text-sm text-slate-600 mt-1 max-w-2xl leading-relaxed">
-                Your database is ready. With one click, you can insert realistic operational records for Sri core solutions: 5 engineering departments, staff engineers, designated mentors, active interns, ongoing commercial and research projects, tasks, customer enquiries, and attendance logs.
+              <h3 className="font-bold text-lg text-slate-900 dark:text-white">Populate Initial Admin Dashboard Data</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 max-w-2xl leading-relaxed">
+                Your database is ready. With one click, you can insert realistic operational records for Sricore Solutions: 5 engineering departments, staff engineers, designated mentors, active interns, ongoing commercial and research projects, tasks, customer enquiries, and attendance logs.
               </p>
             </div>
           </div>
@@ -232,7 +239,7 @@ export default function AdminDashboard() {
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[...Array(8)].map((_, i) => (
-            <div key={i} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm animate-pulse h-28" />
+            <div key={i} className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm animate-pulse h-28" />
           ))}
         </div>
       ) : (
@@ -260,90 +267,39 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* System Insights Widget (30-Day Registration Trends & Engagement Metrics) */}
+      <div className="mt-8">
+        <SystemInsights />
+      </div>
+
       {/* Embedded User Management Interface */}
       <div className="mt-8">
         <UserManagement compact maxRows={8} />
       </div>
 
-      {/* Analytics Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-base font-bold text-slate-900">Application & Recruitment Inflow</h3>
-            <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">Weekly Trend</span>
-          </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={[
-                { name: 'Mon', applications: 4 },
-                { name: 'Tue', applications: 7 },
-                { name: 'Wed', applications: 5 },
-                { name: 'Thu', applications: 10 },
-                { name: 'Fri', applications: 8 },
-                { name: 'Sat', applications: 3 },
-                { name: 'Sun', applications: 2 },
-              ]}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="name" stroke="#64748b" textAnchor="middle" />
-                <YAxis stroke="#64748b" />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="applications" stroke="#2563eb" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-        
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-base font-bold text-slate-900">Workforce & Portal Activity</h3>
-            <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full">Active Sessions</span>
-          </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={[
-                { name: 'Mon', logins: 22 },
-                { name: 'Tue', logins: 28 },
-                { name: 'Wed', logins: 34 },
-                { name: 'Thu', logins: 38 },
-                { name: 'Fri', logins: 42 },
-                { name: 'Sat', logins: 12 },
-                { name: 'Sun', logins: 8 },
-              ]}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="name" stroke="#64748b" />
-                <YAxis stroke="#64748b" />
-                <Tooltip />
-                <Bar dataKey="logins" fill="#6366f1" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
       {/* Recent Activities & Attention Tasks */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-blue-600" />
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden transition-colors">
+          <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/40">
+            <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               Recent Operations & Audit Log
             </h2>
-            <Link to="/admin/audit" className="text-xs font-bold text-blue-600 hover:text-blue-700">View Full Log</Link>
+            <Link to="/admin/audit" className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline">View Full Log</Link>
           </div>
           <div className="p-0">
             {activities.length > 0 ? (
-              <ul className="divide-y divide-slate-100">
+              <ul className="divide-y divide-slate-100 dark:divide-slate-800">
                 {activities.map((activity) => (
-                  <li key={activity.id} className="p-4 hover:bg-slate-50 transition-colors">
+                  <li key={activity.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <span className="text-xs font-bold uppercase tracking-wider text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
+                        <span className="text-xs font-bold uppercase tracking-wider text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded">
                           {activity.action}
                         </span>
-                        <p className="text-sm font-medium text-slate-900 mt-1">{activity.details}</p>
+                        <p className="text-sm font-medium text-slate-900 dark:text-slate-200 mt-1">{activity.details}</p>
                       </div>
-                      <span className="text-xs text-slate-400 whitespace-nowrap shrink-0">
+                      <span className="text-xs text-slate-400 whitespace-nowrap shrink-0 tabular-nums">
                         {activity.timestamp?.toDate ? format(activity.timestamp.toDate(), 'MMM d, h:mm a') : 'Recent'}
                       </span>
                     </div>
@@ -351,36 +307,36 @@ export default function AdminDashboard() {
                 ))}
               </ul>
             ) : (
-              <div className="p-8 text-center text-slate-500 text-sm">
+              <div className="p-8 text-center text-slate-500 dark:text-slate-400 text-sm">
                 No recent activity events logged yet.
               </div>
             )}
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden transition-colors">
+          <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/40">
+            <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <AlertCircle className="w-5 h-5 text-amber-500" />
               Tasks Requiring Technical Attention
             </h2>
           </div>
           <div className="p-0">
             {tasks.length > 0 ? (
-              <ul className="divide-y divide-slate-100">
+              <ul className="divide-y divide-slate-100 dark:divide-slate-800">
                 {tasks.map((task) => (
-                  <li key={task.id} className="p-4 hover:bg-slate-50 transition-colors">
+                  <li key={task.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                     <div className="flex items-center justify-between gap-4">
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-900 truncate">{task.title}</p>
-                        <p className="text-xs text-slate-500 mt-0.5">Assigned: <strong className="text-slate-700">{task.assignedTo || 'Unassigned'}</strong> • {task.projectId || 'General'}</p>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{task.title}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Assigned: <strong className="text-slate-700 dark:text-slate-300">{task.assignedTo || 'Unassigned'}</strong> • {task.projectId || 'General'}</p>
                       </div>
                       <span className={`px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 ${
-                        task.status === 'TODO' ? 'bg-slate-100 text-slate-800' :
-                        task.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' :
-                        task.status === 'BLOCKED' ? 'bg-red-100 text-red-800' :
-                        task.status === 'REVIEW' ? 'bg-amber-100 text-amber-800' :
-                        'bg-emerald-100 text-emerald-800'
+                        task.status === 'TODO' ? 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200' :
+                        task.status === 'IN_PROGRESS' ? 'bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300' :
+                        task.status === 'BLOCKED' ? 'bg-red-100 dark:bg-red-950/60 text-red-800 dark:text-red-300' :
+                        task.status === 'REVIEW' ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300' :
+                        'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
                       }`}>
                         {task.status?.replace('_', ' ')}
                       </span>
@@ -389,7 +345,7 @@ export default function AdminDashboard() {
                 ))}
               </ul>
             ) : (
-              <div className="p-8 text-center text-slate-500 text-sm">
+              <div className="p-8 text-center text-slate-500 dark:text-slate-400 text-sm">
                 No active tasks found.
               </div>
             )}

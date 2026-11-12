@@ -1,7 +1,7 @@
 import React from 'react';
 import { Container } from '../components/ui/Container';
 import { SectionHeader } from '../components/ui/SectionHeader';
-import { CTASection } from '../components/ui/CTASection';
+import { Hero } from '../components/Hero';
 import { ServicesSection } from '../components/Services';
 import { FeaturedProjects } from '../components/FeaturedProjects';
 import { FAQ } from '../components/FAQ';
@@ -17,25 +17,30 @@ export default function Home() {
 
   return (
     <div className="flex flex-col w-full">
+      {/* Hero Banner */}
+      <Hero />
 
       {/* Dynamic Key Metrics & Milestones */}
       {metrics && metrics.length > 0 && (
-        <section className="content-visibility-auto py-5 md:py-7 bg-white border-b border-slate-200">
+        <section className="content-visibility-auto py-6 md:py-8 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 transition-colors">
           <Container>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
               {metrics.map((metric) => (
-                <div key={metric.id} className="p-4 md:p-5 rounded-lg bg-slate-50 border border-slate-200 text-center flex flex-col items-center justify-center hover:shadow-xs transition-shadow">
-                  <div 
+                <div
+                  key={metric.id}
+                  className="p-4 md:p-5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/80 text-center flex flex-col items-center justify-center hover:shadow-xs transition-all tabular-nums"
+                >
+                  <div
                     className="text-xl md:text-2xl lg:text-3xl font-extrabold tracking-tight mb-1"
                     style={{ color: primaryColor }}
                   >
                     {metric.value}
                   </div>
-                  <div className="font-semibold text-slate-900 text-[11px] md:text-xs mb-1">
+                  <div className="font-semibold text-slate-900 dark:text-white text-[11px] md:text-xs mb-1">
                     {metric.label}
                   </div>
                   {metric.description && (
-                    <div className="text-[10px] md:text-[11px] text-slate-500 max-w-xs">
+                    <div className="text-[10px] md:text-[11px] text-slate-500 dark:text-slate-400 max-w-xs">
                       {metric.description}
                     </div>
                   )}
@@ -53,12 +58,12 @@ export default function Home() {
       <FeaturedProjects />
 
       {/* Why Choose Us Section */}
-      <section className="content-visibility-auto py-10 md:py-14 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800">
+      <section className="content-visibility-auto py-10 md:py-14 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 transition-colors">
         <Container>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-center">
             <div>
-              <SectionHeader 
-                title="Built on Engineering Excellence" 
+              <SectionHeader
+                title="Built on Engineering Excellence"
                 align="left"
                 badge={`Why ${settings?.brandName || 'Sricore Solutions'}`}
                 className="mb-3 md:mb-4"
@@ -66,42 +71,69 @@ export default function Home() {
               <p className="text-sm text-slate-600 dark:text-slate-300 mb-4 leading-relaxed">
                 We bridge the gap between academic research and industrial application. Our team of experienced engineers and domain experts deliver solutions that are not only technologically advanced but also practically viable and commercially scalable.
               </p>
-              
+
               <ul className="space-y-2.5">
                 {[
                   'Integrated approach combining software, hardware, and AI',
                   'Rigorous research-backed development methodologies',
                   'End-to-end project lifecycle support and maintenance',
                   'Dedicated training and mentorship programs',
-                  'Focus on scalable and secure architectures'
+                  'Focus on scalable and secure architectures',
                 ].map((item, i) => (
                   <li key={i} className="flex items-start">
-                    <CheckCircle2 className="h-4 w-4 mr-2 flex-shrink-0 mt-0.5" style={{ color: primaryColor }} />
-                    <span className="text-slate-700 dark:text-slate-300 text-xs md:text-sm font-medium">{item}</span>
+                    <CheckCircle2
+                      className="h-4 w-4 mr-2 shrink-0 mt-0.5"
+                      style={{ color: primaryColor }}
+                    />
+                    <span className="text-slate-700 dark:text-slate-300 text-xs md:text-sm font-medium">
+                      {item}
+                    </span>
                   </li>
                 ))}
               </ul>
             </div>
-            
+
             <div className="bg-slate-50 dark:bg-slate-900 p-6 md:p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Our Workflow</h3>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">
+                Our Engineering Workflow
+              </h3>
               <div className="space-y-3.5">
                 {[
-                  { step: '01', title: 'Analysis & Research', desc: 'Thorough requirement gathering and technical feasibility studies.' },
-                  { step: '02', title: 'Architecture & Design', desc: 'Scalable system design encompassing software, hardware, and data flows.' },
-                  { step: '03', title: 'Development & Integration', desc: 'Agile development with continuous integration and rigorous testing.' },
-                  { step: '04', title: 'Deployment & Support', desc: 'Seamless transition to production with ongoing maintenance and updates.' },
+                  {
+                    step: '01',
+                    title: 'Analysis & Research',
+                    desc: 'Thorough requirement gathering and technical feasibility studies.',
+                  },
+                  {
+                    step: '02',
+                    title: 'Architecture & Design',
+                    desc: 'Scalable system design encompassing software, hardware, and data flows.',
+                  },
+                  {
+                    step: '03',
+                    title: 'Development & Integration',
+                    desc: 'Agile development with continuous integration and rigorous testing.',
+                  },
+                  {
+                    step: '04',
+                    title: 'Deployment & Support',
+                    desc: 'Seamless transition to production with ongoing maintenance and updates.',
+                  },
                 ].map((phase, i) => (
                   <div key={i} className="flex gap-3">
-                    <div 
-                      className="text-base font-bold font-mono opacity-60"
+                    <div
+                      className="text-base font-bold font-mono opacity-60 tabular-nums"
                       style={{ color: primaryColor }}
                     >
                       {phase.step}
                     </div>
                     <div>
-                      <h4 className="text-xs md:text-sm font-bold text-slate-900 dark:text-white mb-0.5">{phase.title}</h4>
-                      <p className="text-slate-600 dark:text-slate-400 text-xs">{phase.desc}</p>
+                      <h4 className="text-xs md:text-sm font-bold text-slate-900 dark:text-white mb-0.5">
+                        {phase.title}
+                      </h4>
+                      <p className="text-slate-600 dark:text-slate-400 text-xs">
+                        {phase.desc}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -112,12 +144,12 @@ export default function Home() {
       </section>
 
       {/* Internships & Training Highlight */}
-      <section className="content-visibility-auto py-10 md:py-14 bg-slate-50 dark:bg-slate-900/40">
+      <section className="content-visibility-auto py-10 md:py-14 bg-slate-50 dark:bg-slate-900/40 transition-colors">
         <Container>
-          <div className="bg-slate-900 rounded-2xl overflow-hidden shadow-xl">
+          <div className="bg-slate-900 rounded-2xl overflow-hidden shadow-xl border border-slate-800">
             <div className="grid grid-cols-1 lg:grid-cols-2">
               <div className="p-6 md:p-10 flex flex-col justify-center">
-                <span 
+                <span
                   className="text-xs font-bold uppercase tracking-widest mb-2.5"
                   style={{ color: primaryColor }}
                 >
@@ -129,25 +161,35 @@ export default function Home() {
                 <p className="text-slate-300 text-xs md:text-sm mb-5 leading-relaxed">
                   {settings?.brandName || 'Sricore Solutions'} offers paid internships and specialized practical training programs. Work on live industrial projects, receive mentorship from senior engineers, and build a portfolio that stands out.
                 </p>
-                <Link 
-                  to="/careers?type=internships" 
+                <Link
+                  to="/careers?type=internships"
                   className="inline-flex items-center font-semibold transition-colors text-sm hover:underline"
                   style={{ color: primaryColor }}
                 >
-                  Explore Jobs & Internship Programs <ArrowRight className="ml-1.5 h-4 w-4" />
+                  Explore Jobs & Internship Programs{' '}
+                  <ArrowRight className="ml-1.5 h-4 w-4" />
                 </Link>
               </div>
               <div className="bg-slate-800 relative hidden lg:block">
-                <div className="absolute inset-0 opacity-20" style={{ backgroundImage: `radial-gradient(${primaryColor} 2px, transparent 2px)`, backgroundSize: '24px 24px' }}></div>
+                <div
+                  className="absolute inset-0 opacity-20"
+                  style={{
+                    backgroundImage: `radial-gradient(${primaryColor} 2px, transparent 2px)`,
+                    backgroundSize: '24px 24px',
+                  }}
+                />
                 <div className="absolute inset-0 flex items-center justify-center p-6">
                   <div className="w-full h-full border border-slate-700 rounded-xl bg-slate-900/50 backdrop-blur-sm p-4 flex flex-col gap-2.5">
-                    <div className="h-2.5 w-1/3 bg-slate-700 rounded"></div>
-                    <div className="h-2.5 w-3/4 bg-slate-700 rounded"></div>
-                    <div className="h-2.5 w-2/3 bg-slate-700 rounded"></div>
-                    <div className="h-2.5 w-1/2 bg-slate-700 rounded"></div>
+                    <div className="h-2.5 w-1/3 bg-slate-700 rounded" />
+                    <div className="h-2.5 w-3/4 bg-slate-700 rounded" />
+                    <div className="h-2.5 w-2/3 bg-slate-700 rounded" />
+                    <div className="h-2.5 w-1/2 bg-slate-700 rounded" />
                     <div className="mt-auto flex justify-between items-end">
-                      <div className="h-7 w-16 rounded" style={{ backgroundColor: primaryColor }}></div>
-                      <div className="h-7 w-7 bg-slate-700 rounded-full"></div>
+                      <div
+                        className="h-7 w-16 rounded"
+                        style={{ backgroundColor: primaryColor }}
+                      />
+                      <div className="h-7 w-7 bg-slate-700 rounded-full" />
                     </div>
                   </div>
                 </div>
@@ -162,14 +204,6 @@ export default function Home() {
 
       {/* Get In Touch Contact Section */}
       <GetInTouch />
-
-      {/* Final CTA */}
-      <CTASection 
-        title="Ready to transform your ideas into reality?"
-        description={`Connect with the ${settings?.brandName || 'Sricore Solutions'} technical team to discuss your project requirements or inquire about our services.`}
-        primaryAction={{ label: "Contact Us Today", href: "/contact" }}
-        secondaryAction={{ label: "View Our Services", href: "/services" }}
-      />
     </div>
   );
 }

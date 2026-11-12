@@ -26,6 +26,7 @@ import { cn } from '../utils/cn';
 import { ThemeToggle } from './ThemeToggle';
 import { UserProfile } from './user/UserProfile';
 import { UserManagement } from './UserManagement';
+import { AdminGlobalSearch } from './AdminGlobalSearch';
 
 export interface AdminDashboardProps {
   children?: React.ReactNode;
@@ -342,6 +343,11 @@ export function AdminDashboardLayout({ children }: AdminDashboardProps) {
                 {currentBreadcrumb}
               </span>
             </div>
+          </div>
+
+          {/* Global Search across Users, Projects, and Inquiries */}
+          <div className="flex-1 flex justify-center px-2 sm:px-4 max-w-xl">
+            <AdminGlobalSearch />
           </div>
 
           {/* Right Header Controls & User-Profile Toggle Dropdown */}

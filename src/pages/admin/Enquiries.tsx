@@ -6,14 +6,22 @@ import { Search, ArrowRightCircle } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { logActivity } from '../../lib/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 export default function Enquiries() {
   const { userProfile } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(() => searchParams.get('search') || '');
+
+  useEffect(() => {
+    const q = searchParams.get('search');
+    if (q !== null) {
+      setSearchTerm(q);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     setLoading(true);
@@ -98,7 +106,9 @@ export default function Enquiries() {
   };
 
   const filteredEnquiries = enquiries.filter(e => 
-    `${e.firstName} ${e.lastName} ${e.company} ${e.email}`.toLowerCase().includes(searchTerm.toLowerCase())
+    `${e.name || ''} ${e.firstName || ''} ${e.lastName || ''} ${e.company || ''} ${e.email || ''} ${e.subject || ''} ${e.serviceInterest || ''} ${e.message || ''}`
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase())
   );
 
   return (

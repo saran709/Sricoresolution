@@ -46,6 +46,7 @@ import { Button } from '../../components/ui/Button';
 import { logActivity } from '../../lib/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
 import { ConfirmModal } from '../../components/ui/ConfirmModal';
+import { useSearchParams } from 'react-router-dom';
 import { 
   auditAndReconcileProjects, 
   MigrationSummaryReport, 
@@ -91,16 +92,24 @@ const VERIFICATION_OPTIONS: { value: DataVerificationStatus; label: string }[] =
 
 export default function AdminProjects() {
   const { userProfile, currentUser } = useAuth();
+  const [searchParams] = useSearchParams();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Filters & Search
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(() => searchParams.get('search') || '');
   const [filterType, setFilterType] = useState<string>('all');
   const [filterOwnership, setFilterOwnership] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterVerification, setFilterVerification] = useState<string>('all');
   const [filterVisibility, setFilterVisibility] = useState<string>('all');
+
+  useEffect(() => {
+    const q = searchParams.get('search');
+    if (q !== null) {
+      setSearchTerm(q);
+    }
+  }, [searchParams]);
 
   // Modals & Panels
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
