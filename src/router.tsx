@@ -1,11 +1,12 @@
 import React, { Suspense } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { MainLayout } from './components/layout/MainLayout';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { PagePlaceholder } from './components/ui/PagePlaceholder';
 import { AdminLayout } from './components/layout/AdminLayout';
 import { ScrollToTop } from './components/layout/ScrollToTop';
 import { CookieBanner } from './components/ui/CookieBanner';
+import { Hero } from './components/Hero';
 import { useAdPolicyGuard } from './hooks/useAdPolicyGuard';
 
 // Main Pages
@@ -73,7 +74,7 @@ function AdPolicyWatcher() {
 
 export function AppRouter() {
   return (
-    <BrowserRouter>
+    <>
       <ScrollToTop />
       <AdPolicyWatcher />
       <Suspense fallback={<PageLoader />}>
@@ -116,7 +117,15 @@ export function AppRouter() {
 
           {/* Main Application Routes */}
           <Route path="/" element={<MainLayout />}>
-            <Route index element={<Home />} />
+            <Route
+              index
+              element={
+                <>
+                  <Hero />
+                  <Home />
+                </>
+              }
+            />
             <Route path="about" element={<About />} />
             <Route path="services" element={<Services />} />
             <Route path="services/research" element={<ResearchServices />} />
@@ -154,6 +163,6 @@ export function AppRouter() {
         </Routes>
       </Suspense>
       <CookieBanner />
-    </BrowserRouter>
+    </>
   );
 }
