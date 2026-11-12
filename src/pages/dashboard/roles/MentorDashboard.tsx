@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
@@ -9,12 +10,20 @@ import { Input } from '../../../components/ui/Input';
 import { Textarea } from '../../../components/ui/Textarea';
 import { logActivity } from '../../../lib/activityLogger';
 
+type MentorTab = 'overview' | 'interns' | 'evaluations';
+const VALID_MENTOR_TABS: MentorTab[] = ['overview', 'interns', 'evaluations'];
+
 export default function MentorDashboard() {
   const { userProfile } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [interns, setInterns] = useState<User[]>([]);
   const [tasks, setTasks] = useState<ProjectTask[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'interns' | 'evaluations'>('overview');
+
+  const queryTab = searchParams.get('tab') as MentorTab | null;
+  const [activeTab, setActiveTabState] = useState<MentorTab>(
+    queryTab && VALID_MENTOR_TABS.includes(queryTab) ? queryTab : 'overview'
+  );
   
   const [selectedInternId, setSelectedInternId] = useState<string | null>(null);
   const [showAssignForm, setShowAssignForm] = useState(false);
@@ -22,6 +31,19 @@ export default function MentorDashboard() {
   
   const [evaluatingTaskId, setEvaluatingTaskId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState('');
+
+  useEffect(() => {
+    if (queryTab && VALID_MENTOR_TABS.includes(queryTab)) {
+      setActiveTabState(queryTab);
+    } else if (!queryTab) {
+      setActiveTabState('overview');
+    }
+  }, [queryTab]);
+
+  const setActiveTab = (tab: MentorTab) => {
+    setActiveTabState(tab);
+    setSearchParams({ tab });
+  };
 
   useEffect(() => {
     if (!userProfile?.uid) return;

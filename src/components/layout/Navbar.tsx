@@ -62,17 +62,24 @@ export function Navbar() {
                     (e.target as HTMLElement).style.display = 'none';
                   }}
                 />
-                <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-                  {settings?.brandName ? (
-                    <>
-                      {settings.brandName.split(' ')[0]}
-                      <span style={{ color: primaryColor }} className="ml-1">
-                        {settings.brandName.split(' ').slice(1).join(' ') || 'core solutions'}
-                      </span>
-                    </>
-                  ) : (
-                    <>Sri <span style={{ color: primaryColor }}>core solutions</span></>
-                  )}
+                <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white flex items-baseline gap-1">
+                  {(() => {
+                    const raw = (settings?.brandName || 'Sricore Solutions').trim();
+                    const normalized = /^sri\s*core\s*solutions$/i.test(raw)
+                      ? 'SRICORE SOLUTIONS'
+                      : raw;
+                    const parts = normalized.split(/\s+/).filter(Boolean);
+                    const primary = parts[0] || 'SRICORE';
+                    const accent = parts.slice(1).join(' ');
+                    return (
+                      <>
+                        <span>{primary}</span>
+                        {accent && (
+                          <span style={{ color: primaryColor }}>{accent}</span>
+                        )}
+                      </>
+                    );
+                  })()}
                 </span>
               </Link>
             </div>

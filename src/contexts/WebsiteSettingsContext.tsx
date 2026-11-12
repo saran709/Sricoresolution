@@ -103,8 +103,40 @@ export interface WebsiteSettings {
   updatedBy?: string;
 }
 
+export function normalizeBrandName(raw?: string): string {
+  const trimmed = (raw || '').trim();
+  if (!trimmed) return 'Sricore Solutions';
+  if (/^sri\s*core\s*solutions$/i.test(trimmed)) {
+    return 'Sricore Solutions';
+  }
+  return trimmed;
+}
+
+export function formatBrandParts(raw?: string): { primary: string; accent: string } {
+  const normalized = normalizeBrandName(raw);
+  if (/^sricore\s+solutions$/i.test(normalized)) {
+    return { primary: 'SRICORE', accent: 'SOLUTIONS' };
+  }
+  const parts = normalized.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return {
+      primary: parts[0],
+      accent: parts.slice(1).join(' '),
+    };
+  }
+  // Single word that isn't Sricore Solutions: don't append duplicate SOLUTIONS if it already ends with solutions
+  if (/solutions$/i.test(normalized) && normalized.length > 9) {
+    const prefix = normalized.slice(0, normalized.length - 9).trim();
+    return {
+      primary: prefix || normalized,
+      accent: prefix ? 'SOLUTIONS' : '',
+    };
+  }
+  return { primary: normalized, accent: '' };
+}
+
 export const DEFAULT_WEBSITE_SETTINGS: WebsiteSettings = {
-  brandName: APP_CONFIG.company.name || 'Sri core solutions',
+  brandName: normalizeBrandName(APP_CONFIG.company.name),
   brandTagline: APP_CONFIG.company.tagline || 'Technology Solutions & Services',
   brandDescription: APP_CONFIG.company.description || 'A premier technology partner offering comprehensive solutions in software, hardware, AI/ML, and research.',
   logoUrl: '/logo.png',
@@ -225,6 +257,7 @@ export function WebsiteSettingsProvider({ children }: { children: React.ReactNod
         setSettings((prev) => ({
           ...prev,
           ...data,
+          brandName: normalizeBrandName(data.brandName || prev.brandName),
           theme: finalTheme,
           announcement: { 
             ...DEFAULT_WEBSITE_SETTINGS.announcement, 

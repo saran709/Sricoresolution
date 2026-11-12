@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { collection, query, where, getDocs, doc } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
@@ -8,15 +9,36 @@ import { Button } from '../../../components/ui/Button';
 import { CheckoutButton } from '../../../components/payments/CheckoutButton';
 import { useClientDashboard } from '../../../hooks/useDashboardQueries';
 
+type ClientTab = 'overview' | 'projects' | 'enquiries' | 'payments' | 'documents';
+const VALID_CLIENT_TABS: ClientTab[] = ['overview', 'projects', 'enquiries', 'payments', 'documents'];
+
 export default function ClientDashboard() {
   const { userProfile } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data, isLoading: loading } = useClientDashboard(userProfile?.uid);
 
   const enquiries = data?.enquiries || [];
   const projects = data?.projects || [];
   const payments = (data?.payments || []) as Payment[];
   const documents = data?.documents || [];
-  const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'enquiries' | 'payments' | 'documents'>('overview');
+
+  const queryTab = searchParams.get('tab') as ClientTab | null;
+  const [activeTab, setActiveTabState] = useState<ClientTab>(
+    queryTab && VALID_CLIENT_TABS.includes(queryTab) ? queryTab : 'overview'
+  );
+
+  useEffect(() => {
+    if (queryTab && VALID_CLIENT_TABS.includes(queryTab)) {
+      setActiveTabState(queryTab);
+    } else if (!queryTab) {
+      setActiveTabState('overview');
+    }
+  }, [queryTab]);
+
+  const setActiveTab = (tab: ClientTab) => {
+    setActiveTabState(tab);
+    setSearchParams({ tab });
+  };
 
   if (loading) return <div className="animate-pulse h-32 bg-slate-100 rounded-xl"></div>;
 

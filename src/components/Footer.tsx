@@ -10,8 +10,8 @@ export function Footer() {
   const location = useLocation();
   const { settings } = useWebsiteSettings();
 
-  // Hide public Footer on Admin Portal routes where AdminLayout manages its own workspace shell
-  if (location.pathname.startsWith('/admin')) {
+  // Hide public Footer on Admin and User Dashboard Portal routes where workspace layouts manage their own shell
+  if (location.pathname.startsWith('/admin') || location.pathname.startsWith('/dashboard')) {
     return null;
   }
 

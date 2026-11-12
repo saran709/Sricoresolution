@@ -1,9 +1,10 @@
 import React, { Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { MainLayout } from './components/layout/MainLayout';
-import { ProtectedRoute } from './components/layout/ProtectedRoute';
+import { PrivateRoute, AdminPrivateRoute } from './components/PrivateRoute';
 import { PagePlaceholder } from './components/ui/PagePlaceholder';
-import { AdminLayout } from './components/layout/AdminLayout';
+import { AdminDashboardLayout } from './components/AdminDashboard';
+import { DashboardLayout } from './components/layout/DashboardLayout';
 import { ScrollToTop } from './components/layout/ScrollToTop';
 import { CookieBanner } from './components/ui/CookieBanner';
 import { Hero } from './components/Hero';
@@ -79,12 +80,15 @@ export function AppRouter() {
       <AdPolicyWatcher />
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          {/* Admin Routes */}
-          <Route path="/admin" element={
-            <ProtectedRoute allowedRoles={['ADMINISTRATOR']}>
-              <AdminLayout />
-            </ProtectedRoute>
-          }>
+          {/* Admin Routes protected by AdminPrivateRoute guard */}
+          <Route
+            path="/admin"
+            element={
+              <AdminPrivateRoute>
+                <AdminDashboardLayout />
+              </AdminPrivateRoute>
+            }
+          >
             <Route index element={<AdminDashboard />} />
             <Route path="reports" element={<AdminReports />} />
             <Route path="audit" element={<AdminAudit />} />
@@ -113,6 +117,19 @@ export function AppRouter() {
             <Route path="notifications" element={<PagePlaceholder title="Notifications" />} />
             
             <Route path="settings" element={<AdminSettings />} />
+          </Route>
+
+          {/* Protected User Workspace Routes (Client, Employee, Mentor, Intern, Candidate) */}
+          <Route
+            path="/dashboard"
+            element={
+              <PrivateRoute>
+                <DashboardLayout />
+              </PrivateRoute>
+            }
+          >
+            <Route index element={<Dashboard />} />
+            <Route path="*" element={<Dashboard />} />
           </Route>
 
           {/* Main Application Routes */}
@@ -150,13 +167,6 @@ export function AppRouter() {
             <Route path="setup" element={<Setup />} />
             <Route path="forgot-password" element={<ForgotPassword />} />
             <Route path="unauthorized" element={<Unauthorized />} />
-            
-            {/* Protected Client/Employee Routes */}
-            <Route path="dashboard" element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } />
             
             <Route path="*" element={<PagePlaceholder title="Page Not Found" />} />
           </Route>

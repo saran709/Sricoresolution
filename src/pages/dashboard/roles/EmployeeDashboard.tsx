@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp, addDoc, orderBy } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
@@ -19,8 +20,12 @@ import {
 } from '../../../lib/attendanceService';
 import { setDoc } from 'firebase/firestore';
 
+type EmployeeTab = 'overview' | 'tasks' | 'projects' | 'attendance' | 'reports';
+const VALID_EMPLOYEE_TABS: EmployeeTab[] = ['overview', 'tasks', 'projects', 'attendance', 'reports'];
+
 export default function EmployeeDashboard() {
   const { userProfile } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const employeeData = userProfile as Employee | null;
   const { data, isLoading: loading } = useEmployeeDashboard(userProfile?.uid);
 
@@ -29,9 +34,25 @@ export default function EmployeeDashboard() {
   const leaveRequests = data?.leaveRequests || [];
   const attendances = data?.attendances || [];
   
-  const [activeTab, setActiveTab] = useState<'overview' | 'tasks' | 'projects' | 'attendance' | 'reports'>('overview');
+  const queryTab = searchParams.get('tab') as EmployeeTab | null;
+  const [activeTab, setActiveTabState] = useState<EmployeeTab>(
+    queryTab && VALID_EMPLOYEE_TABS.includes(queryTab) ? queryTab : 'overview'
+  );
   const [showLeaveForm, setShowLeaveForm] = useState(false);
   const [submittingLeave, setSubmittingLeave] = useState(false);
+
+  useEffect(() => {
+    if (queryTab && VALID_EMPLOYEE_TABS.includes(queryTab)) {
+      setActiveTabState(queryTab);
+    } else if (!queryTab) {
+      setActiveTabState('overview');
+    }
+  }, [queryTab]);
+
+  const setActiveTab = (tab: EmployeeTab) => {
+    setActiveTabState(tab);
+    setSearchParams({ tab });
+  };
 
   const updateTaskStatus = async (taskId: string, newStatus: string) => {
     try {

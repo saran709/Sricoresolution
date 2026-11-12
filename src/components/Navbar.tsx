@@ -4,7 +4,7 @@ import { Menu, X, ChevronDown, User as UserIcon, ArrowRight } from 'lucide-react
 import { Container } from './ui/Container';
 import { cn } from '../utils/cn';
 import { useAuth } from '../contexts/AuthContext';
-import { useWebsiteSettings } from '../contexts/WebsiteSettingsContext';
+import { useWebsiteSettings, formatBrandParts } from '../contexts/WebsiteSettingsContext';
 import { ThemeToggle } from './ui/ThemeToggle';
 
 export interface NavItem {
@@ -39,8 +39,8 @@ export function Navbar() {
   const { currentUser, userProfile } = useAuth();
   const { settings } = useWebsiteSettings();
 
-  // Hide public Navbar on Admin Portal routes where AdminLayout manages its own header
-  if (location.pathname.startsWith('/admin')) {
+  // Hide public Navbar on Admin and User Dashboard Portal routes where workspace layouts manage their own header
+  if (location.pathname.startsWith('/admin') || location.pathname.startsWith('/dashboard')) {
     return null;
   }
 
@@ -106,19 +106,18 @@ export function Navbar() {
                     (e.target as HTMLElement).style.display = 'none';
                   }}
                 />
-                <span className="text-lg md:text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-                  {settings?.brandName ? (
-                    <>
-                      {settings.brandName.split(' ')[0]}
-                      <span style={{ color: primaryColor }} className="ml-0.5">
-                        {settings.brandName.split(' ').slice(1).join(' ') || 'SOLUTIONS'}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      SRICORE<span style={{ color: primaryColor }}>SOLUTIONS</span>
-                    </>
-                  )}
+                <span className="text-lg md:text-xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-baseline gap-1">
+                  {(() => {
+                    const { primary, accent } = formatBrandParts(settings?.brandName);
+                    return (
+                      <>
+                        <span>{primary}</span>
+                        {accent && (
+                          <span style={{ color: primaryColor }}>{accent}</span>
+                        )}
+                      </>
+                    );
+                  })()}
                 </span>
               </Link>
             </div>

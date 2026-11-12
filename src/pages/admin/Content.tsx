@@ -1340,11 +1340,24 @@ export default function AdminContent() {
                 <div className="h-14 px-6 border-b border-slate-200 bg-white/95 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <img src={formData.logoUrl || '/logo.png'} alt="Logo" className="h-7 w-auto object-contain" />
-                    <span className="font-bold text-sm tracking-tight text-slate-900">
-                      {formData.brandName.split(' ')[0]}
-                      <span style={{ color: primaryColor }} className="ml-1">
-                        {formData.brandName.split(' ').slice(1).join(' ') || 'SOLUTIONS'}
-                      </span>
+                    <span className="font-bold text-sm tracking-tight text-slate-900 flex items-baseline gap-1">
+                      {(() => {
+                        const raw = (formData.brandName || 'Sricore Solutions').trim();
+                        const normalized = /^sri\s*core\s*solutions$/i.test(raw)
+                          ? 'SRICORE SOLUTIONS'
+                          : raw;
+                        const parts = normalized.split(/\s+/).filter(Boolean);
+                        return (
+                          <>
+                            <span>{parts[0] || 'SRICORE'}</span>
+                            {parts.length > 1 && (
+                              <span style={{ color: primaryColor }}>
+                                {parts.slice(1).join(' ')}
+                              </span>
+                            )}
+                          </>
+                        );
+                      })()}
                     </span>
                   </div>
 

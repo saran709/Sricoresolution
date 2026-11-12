@@ -4,19 +4,40 @@ import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firesto
 import { db } from '../../../lib/firebase';
 import { InternshipApplication, Document as AppDocument, Notification as AppNotification } from '../../../types';
 import { FileText, Clock, CheckCircle, Search, FolderOpen, Bell, Download } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Button } from '../../../components/ui/Button';
 
 import { useCandidateDashboard } from '../../../hooks/useDashboardQueries';
 
+type CandidateTab = 'applications' | 'documents' | 'notifications';
+const VALID_CANDIDATE_TABS: CandidateTab[] = ['applications', 'documents', 'notifications'];
+
 export default function CandidateDashboard() {
   const { userProfile } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data, isLoading: loading } = useCandidateDashboard(userProfile?.uid);
 
   const applications = data?.applications || [];
   const documents = data?.documents || [];
   const notifications = data?.notifications || [];
-  const [activeTab, setActiveTab] = useState<'applications' | 'documents' | 'notifications'>('applications');
+
+  const queryTab = searchParams.get('tab') as CandidateTab | null;
+  const [activeTab, setActiveTabState] = useState<CandidateTab>(
+    queryTab && VALID_CANDIDATE_TABS.includes(queryTab) ? queryTab : 'applications'
+  );
+
+  useEffect(() => {
+    if (queryTab && VALID_CANDIDATE_TABS.includes(queryTab)) {
+      setActiveTabState(queryTab);
+    } else if (!queryTab) {
+      setActiveTabState('applications');
+    }
+  }, [queryTab]);
+
+  const setActiveTab = (tab: CandidateTab) => {
+    setActiveTabState(tab);
+    setSearchParams({ tab });
+  };
 
   if (loading) return <div className="animate-pulse h-32 bg-slate-100 rounded-xl"></div>;
 

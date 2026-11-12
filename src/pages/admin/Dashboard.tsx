@@ -8,6 +8,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Button } from '../../components/ui/Button';
 import { seedAdminDashboardData, SeedResult } from '../../lib/dataSeeder';
 import { useAuth } from '../../contexts/AuthContext';
+import { UserManagement } from '../../components/UserManagement';
 
 export default function AdminDashboard() {
   const { currentUser } = useAuth();
@@ -240,17 +241,17 @@ export default function AdminDashboard() {
             <Link 
               key={stat.name} 
               to={stat.link}
-              className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4 group"
+              className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4 group"
             >
               <div className={`p-4 rounded-xl ${stat.color} bg-opacity-10 group-hover:scale-105 transition-transform`}>
                 <stat.icon className={`w-8 h-8 ${stat.color.replace('bg-', 'text-')}`} />
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{stat.name}</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{stat.name}</p>
                 <div className="flex items-baseline gap-2 mt-1">
-                  <p className="text-3xl font-extrabold text-slate-900">{stat.value}</p>
+                  <p className="text-3xl font-extrabold text-slate-900 dark:text-white tabular-nums">{stat.value}</p>
                   {stat.total !== null && (
-                    <p className="text-xs text-slate-400 font-medium">/ {stat.total} total</p>
+                    <p className="text-xs text-slate-400 font-medium tabular-nums">/ {stat.total} total</p>
                   )}
                 </div>
               </div>
@@ -258,6 +259,11 @@ export default function AdminDashboard() {
           ))}
         </div>
       )}
+
+      {/* Embedded User Management Interface */}
+      <div className="mt-8">
+        <UserManagement compact maxRows={8} />
+      </div>
 
       {/* Analytics Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">

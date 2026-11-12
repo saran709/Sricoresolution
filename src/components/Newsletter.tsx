@@ -22,8 +22,8 @@ export function Newsletter() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
 
-  // Hide public Newsletter section on Admin Portal routes
-  if (location.pathname.startsWith('/admin')) {
+  // Hide public Newsletter section on Admin and User Dashboard Portal routes
+  if (location.pathname.startsWith('/admin') || location.pathname.startsWith('/dashboard')) {
     return null;
   }
 

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
@@ -8,17 +9,38 @@ import { Button } from '../../../components/ui/Button';
 import { Textarea } from '../../../components/ui/Textarea';
 import { logActivity } from '../../../lib/activityLogger';
 
+type InternTab = 'overview' | 'assignments' | 'feedback' | 'certificates';
+const VALID_INTERN_TABS: InternTab[] = ['overview', 'assignments', 'feedback', 'certificates'];
+
 export default function InternDashboard() {
   const { userProfile } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [mentor, setMentor] = useState<User | null>(null);
   const [program, setProgram] = useState<InternshipProgram | null>(null);
   const [tasks, setTasks] = useState<ProjectTask[]>([]);
   const [feedback, setFeedback] = useState<ActivityHistory[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'assignments' | 'feedback' | 'certificates'>('overview');
+
+  const queryTab = searchParams.get('tab') as InternTab | null;
+  const [activeTab, setActiveTabState] = useState<InternTab>(
+    queryTab && VALID_INTERN_TABS.includes(queryTab) ? queryTab : 'overview'
+  );
   
   const [submittingTaskId, setSubmittingTaskId] = useState<string | null>(null);
   const [submissionNote, setSubmissionNote] = useState('');
+
+  useEffect(() => {
+    if (queryTab && VALID_INTERN_TABS.includes(queryTab)) {
+      setActiveTabState(queryTab);
+    } else if (!queryTab) {
+      setActiveTabState('overview');
+    }
+  }, [queryTab]);
+
+  const setActiveTab = (tab: InternTab) => {
+    setActiveTabState(tab);
+    setSearchParams({ tab });
+  };
 
   useEffect(() => {
     if (!userProfile?.uid) return;
