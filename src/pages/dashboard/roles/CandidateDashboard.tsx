@@ -43,15 +43,6 @@ export default function CandidateDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex space-x-1 bg-white p-1 rounded-lg border border-slate-200 w-fit overflow-x-auto mb-6">
-        <button onClick={() => setActiveTab('applications')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'applications' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>My Applications</button>
-        <button onClick={() => setActiveTab('documents')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'documents' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>My Documents</button>
-        <button onClick={() => setActiveTab('notifications')} className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'notifications' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>
-          Notifications
-          {notifications.filter(n => !n.read).length > 0 && <span className="ml-1 bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full text-xs">{notifications.filter(n => !n.read).length}</span>}
-        </button>
-      </div>
-
       {activeTab === 'applications' && (
         <div className="grid grid-cols-1 gap-6">
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">

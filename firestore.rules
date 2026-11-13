@@ -2,165 +2,494 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
     // =========================================================================
-    // Helpers
+    // Default-Deny Catch-All Safety Net
     // =========================================================================
-    function isAuthenticated() { 
-      return request.auth != null; 
+    match /{document=**} {
+      allow read, write: if false;
     }
-    
-    function incoming() { 
-      return request.resource.data; 
+
+    // =========================================================================
+    // Core Authentication & Document Helpers
+    // =========================================================================
+    function isAuthenticated() {
+      return request.auth != null;
     }
-    
-    function existing() { 
-      return resource.data; 
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function hasUserDoc() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid));
     }
 
     function getUserData() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
-    
+
+    // Verify account is not suspended or deactivated
+    function isAccountActive() {
+      return isAuthenticated() && (
+        !hasUserDoc() || (
+          getUserData().get('isActive', true) != false &&
+          getUserData().get('status', 'active') != 'suspended'
+        )
+      );
+    }
+
+    // =========================================================================
+    // Five-Role RBAC Claim & Profile Validators
+    // Validates Firebase Auth Token Custom Claims (`request.auth.token.role`
+    // and `request.auth.token.admin`) with synchronized Firestore role lookup.
+    // Permitted Roles:
+    //   1. ADMIN
+    //   2. CLIENT
+    //   3. EMPLOYEE
+    //   4. MENTOR
+    //   5. INTERN_STUDENT
+    // =========================================================================
+    function hasTokenRole(allowedRoles) {
+      return isAuthenticated() &&
+        ('role' in request.auth.token) &&
+        (request.auth.token.role in allowedRoles);
+    }
+
+    function hasProfileRole(allowedRoles) {
+      return hasUserDoc() && (
+        (getUserData().get('role', '') in allowedRoles) ||
+        (getUserData().get('canonicalRole', '') in allowedRoles)
+      );
+    }
+
+    // 1. ADMIN Role Validator
     function isAdmin() {
       return isAuthenticated() && (
+        request.auth.token.get('admin', false) == true ||
+        hasTokenRole(['ADMIN', 'ADMINISTRATOR', 'admin', 'administrator']) ||
         (request.auth.token.email != null &&
           request.auth.token.email.lower() == 'saranramesh709@gmail.com') ||
-        request.auth.token.admin == true ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in [
-            'ADMINISTRATOR', 'ADMIN', 'administrator', 'admin'
-          ])
+        hasProfileRole(['ADMIN', 'ADMINISTRATOR', 'admin', 'administrator'])
       );
     }
 
+    // 2. CLIENT Role Validator
+    function isClient() {
+      return isAccountActive() && (
+        hasTokenRole(['CLIENT', 'EMPLOYER', 'client']) ||
+        hasProfileRole(['CLIENT', 'EMPLOYER', 'client'])
+      );
+    }
+
+    // 3. EMPLOYEE Role Validator
     function isEmployee() {
-      return isAuthenticated() && (
+      return isAccountActive() && (
         isAdmin() ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
-          getUserData().role in ['EMPLOYEE', 'employee', 'ADMINISTRATOR', 'ADMIN', 'administrator', 'admin']
-        ))
+        hasTokenRole(['EMPLOYEE', 'employee']) ||
+        hasProfileRole(['EMPLOYEE', 'employee'])
       );
     }
 
+    // 4. MENTOR Role Validator
     function isMentor() {
-      return isAuthenticated() && (
+      return isAccountActive() && (
         isAdmin() ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
-          getUserData().role in ['MENTOR', 'mentor', 'ADMINISTRATOR', 'ADMIN', 'administrator', 'admin']
-        ))
+        hasTokenRole(['MENTOR', 'mentor']) ||
+        hasProfileRole(['MENTOR', 'mentor'])
       );
     }
 
-    function isOwner(userId) { 
-      return isAuthenticated() && request.auth.uid == userId; 
+    // 5. INTERN_STUDENT Role Validator
+    function isInternStudent() {
+      return isAccountActive() && (
+        hasTokenRole([
+          'INTERN_STUDENT', 'INTERN', 'STUDENT', 'CANDIDATE',
+          'intern_student', 'intern', 'student'
+        ]) ||
+        hasProfileRole([
+          'INTERN_STUDENT', 'INTERN', 'STUDENT', 'CANDIDATE',
+          'intern_student', 'intern', 'student'
+        ])
+      );
+    }
+
+    // Verify caller holds one of the 5 defined roles
+    function hasValidRole() {
+      return isAdmin() || isClient() || isEmployee() || isMentor() || isInternStudent();
+    }
+
+    // Relational helpers for Projects & Tasks
+    function isAssignedToProject(projectData) {
+      return isAuthenticated() && (
+        projectData.get('clientId', '') == request.auth.uid ||
+        projectData.get('employerId', '') == request.auth.uid ||
+        projectData.get('projectManagerId', '') == request.auth.uid ||
+        projectData.get('createdBy', '') == request.auth.uid ||
+        (projectData.get('teamMemberIds', []) is list &&
+          request.auth.uid in projectData.get('teamMemberIds', [])) ||
+        (projectData.get('assignedEmployees', []) is list &&
+          request.auth.uid in projectData.get('assignedEmployees', [])) ||
+        (projectData.get('assignedInterns', []) is list &&
+          request.auth.uid in projectData.get('assignedInterns', []))
+      );
+    }
+
+    function isTaskAssignee(taskData) {
+      return isAuthenticated() && (
+        taskData.get('assignedTo', '') == request.auth.uid ||
+        taskData.get('assigneeId', '') == request.auth.uid ||
+        taskData.get('userId', '') == request.auth.uid ||
+        (request.auth.token.email != null &&
+          taskData.get('assignedTo', '') == request.auth.token.email)
+      );
     }
 
     // =========================================================================
-    // System Setup
-    // =========================================================================
-    match /system/{docId} {
-      allow read: if true;
-      // Keep first-run setup, but only the configured administrator can claim it once.
-      allow create: if isAuthenticated()
-        && docId == 'setup'
-        && request.auth.token.email != null
-        && request.auth.token.email.lower() == 'saranramesh709@gmail.com'
-        && !exists(/databases/$(database)/documents/system/setup);
-      allow update, delete: if isAdmin();
-    }
-
-    // =========================================================================
-    // Users Collection
+    // 1. Users Collection (`/users/{userId}`)
     // =========================================================================
     match /users/{userId} {
-      // Keep authenticated user-directory reads for the existing admin/profile lookup flow.
-      allow read: if isAuthenticated();
+      // Authenticated members with a valid role can read user profiles needed
+      // for project/mentorship collaboration; unauthenticated access is blocked.
+      allow read: if isOwner(userId) || isAdmin() || isEmployee() || isMentor() || isClient() || isInternStudent();
 
-      // Admins can manage records. Self-registration must not permit a role escalation.
+      // Self-registration is strictly limited to non-privileged roles (CLIENT or INTERN_STUDENT)
+      // and cannot inject custom permissionOverrides or limitOverrides.
       allow create: if isAdmin() || (
-        isAuthenticated()
-        && request.auth.uid == userId
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.role in ['CANDIDATE', 'CLIENT', 'EMPLOYER']
+        isOwner(userId) &&
+        incoming().get('uid', userId) == request.auth.uid &&
+        incoming().get('role', 'INTERN_STUDENT') in [
+          'CLIENT', 'INTERN_STUDENT', 'INTERN', 'CANDIDATE', 'EMPLOYER'
+        ] &&
+        !('permissionOverrides' in incoming()) &&
+        !('limitOverrides' in incoming())
       );
 
-      // Users may update profile fields but cannot change their assigned role.
+      // Non-admin users can update their own profile details but are strictly
+      // forbidden from modifying their role, canonicalRole, permissions, limits, or active status.
       allow update: if isAdmin() || (
-        isAuthenticated()
-        && request.auth.uid == userId
-        && request.resource.data.role == resource.data.role
+        isOwner(userId) &&
+        isAccountActive() &&
+        incoming().get('role', existing().get('role', '')) == existing().get('role', '') &&
+        incoming().get('canonicalRole', existing().get('canonicalRole', '')) == existing().get('canonicalRole', '') &&
+        incoming().get('permissionOverrides', null) == existing().get('permissionOverrides', null) &&
+        incoming().get('limitOverrides', null) == existing().get('limitOverrides', null) &&
+        incoming().get('isActive', true) == existing().get('isActive', true) &&
+        incoming().get('status', 'active') == existing().get('status', 'active')
       );
 
-      // Only admins can delete user profiles.
+      // Only ADMIN can delete user accounts.
       allow delete: if isAdmin();
     }
 
     // =========================================================================
-    // Organization Entities
+    // 2. Projects Collection (`/projects/{projectId}`)
     // =========================================================================
-    match /departments/{deptId} {
+    match /projects/{projectId} {
+      // Public portfolio showcase projects are readable on the public site;
+      // internal/client projects require one of the 5 roles.
+      allow read: if existing().get('portfolioVisibility', true) == true ||
+        isAdmin() ||
+        isEmployee() ||
+        isMentor() ||
+        (isClient() && (isAssignedToProject(existing()) || existing().get('clientId', null) != null)) ||
+        isInternStudent();
+
+      // ADMIN and EMPLOYEE can create new projects; CLIENT can submit proposed project requests.
+      allow create: if isAdmin() || isEmployee() || (
+        isClient() && incoming().get('clientId', request.auth.uid) == request.auth.uid
+      );
+
+      // ADMIN and EMPLOYEE can manage projects; MENTOR can update review notes;
+      // CLIENT can update feedback/approval on their own assigned projects.
+      allow update: if isAdmin() ||
+        isEmployee() ||
+        isMentor() ||
+        (isClient() && isAssignedToProject(existing()) &&
+          !incoming().diff(existing()).affectedKeys().hasAny(['budget', 'projectManagerId', 'createdBy']));
+
+      // Only ADMIN can delete projects.
+      allow delete: if isAdmin();
+    }
+
+    // =========================================================================
+    // 3. Tasks Collections (`/tasks/{taskId}` and `/projectTasks/{taskId}`)
+    // =========================================================================
+    match /tasks/{taskId} {
+      allow read: if hasValidRole();
+
+      // Only ADMIN, EMPLOYEE, and MENTOR can create and assign tasks.
+      allow create: if isAdmin() || isEmployee() || isMentor();
+
+      // ADMIN, EMPLOYEE, and MENTOR can update any task;
+      // INTERN_STUDENT can update status/submission fields on tasks assigned to them.
+      allow update: if isAdmin() ||
+        isEmployee() ||
+        isMentor() ||
+        (isInternStudent() && (
+          isTaskAssignee(existing()) ||
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'status', 'submissionNote', 'submittedAt', 'updatedAt', 'progressPercentage'
+          ])
+        ));
+
+      // Only ADMIN, EMPLOYEE, or MENTOR can delete tasks.
+      allow delete: if isAdmin() || isEmployee() || isMentor();
+    }
+
+    match /projectTasks/{taskId} {
+      allow read: if hasValidRole();
+
+      allow create: if isAdmin() || isEmployee() || isMentor();
+
+      allow update: if isAdmin() ||
+        isEmployee() ||
+        isMentor() ||
+        (isInternStudent() && (
+          isTaskAssignee(existing()) ||
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'status', 'submissionNote', 'submittedAt', 'updatedAt', 'progressPercentage'
+          ])
+        ));
+
+      allow delete: if isAdmin() || isEmployee() || isMentor();
+    }
+
+    // =========================================================================
+    // 4. Settings & Resource Permissions Collections
+    //    (`/settings/{docId}` and `/permissions/{permissionId}`)
+    // Enforces strict protection of administrative & RBAC configuration.
+    // =========================================================================
+    function isValidPermissionId(id) {
+      return id is string &&
+        id.size() >= 2 &&
+        id.size() <= 64 &&
+        id.matches('^[a-z0-9_-]+$');
+    }
+
+    function isValidRoleCrudAccess(entry) {
+      return entry is map &&
+        entry.keys().hasAll([
+          'create', 'read', 'update', 'delete',
+          'upload', 'download', 'approve', 'assign', 'export', 'scope'
+        ]) &&
+        entry.keys().hasOnly([
+          'create', 'read', 'update', 'delete',
+          'upload', 'download', 'approve', 'assign', 'export', 'scope'
+        ]) &&
+        entry.create is bool &&
+        entry.read is bool &&
+        entry.update is bool &&
+        entry.delete is bool &&
+        entry.upload is bool &&
+        entry.download is bool &&
+        entry.approve is bool &&
+        entry.assign is bool &&
+        entry.export is bool &&
+        entry.scope in ['all', 'assigned', 'own', 'none'];
+    }
+
+    function isValidPermissionDoc(data, permissionId) {
+      return data.keys().hasAll([
+          'id', 'resourceKey', 'resourceName', 'category',
+          'description', 'roleAccess', 'updatedAt', 'updatedBy'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'resourceKey', 'resourceName', 'category',
+          'description', 'isSystem', 'roleAccess',
+          'createdAt', 'createdBy', 'updatedAt', 'updatedBy'
+        ]) &&
+        data.id == permissionId &&
+        data.resourceKey == permissionId &&
+        data.resourceName is string &&
+        data.resourceName.size() >= 2 &&
+        data.resourceName.size() <= 120 &&
+        data.category in [
+          'Core Operations', 'Workforce & Mentorship',
+          'Finance & Legal', 'System & Security', 'Custom'
+        ] &&
+        data.description is string &&
+        data.description.size() <= 500 &&
+        (!('isSystem' in data) || data.isSystem is bool) &&
+        data.roleAccess is map &&
+        data.roleAccess.keys().hasAll([
+          'ADMIN', 'CLIENT', 'EMPLOYEE', 'MENTOR', 'INTERN_STUDENT'
+        ]) &&
+        data.roleAccess.keys().hasOnly([
+          'ADMIN', 'CLIENT', 'EMPLOYEE', 'MENTOR', 'INTERN_STUDENT'
+        ]) &&
+        isValidRoleCrudAccess(data.roleAccess.ADMIN) &&
+        isValidRoleCrudAccess(data.roleAccess.CLIENT) &&
+        isValidRoleCrudAccess(data.roleAccess.EMPLOYEE) &&
+        isValidRoleCrudAccess(data.roleAccess.MENTOR) &&
+        isValidRoleCrudAccess(data.roleAccess.INTERN_STUDENT) &&
+        (!(permissionId in ['settings', 'users', 'auditLogs']) || (
+          data.roleAccess.ADMIN.read == true &&
+          data.roleAccess.ADMIN.create == true &&
+          data.roleAccess.ADMIN.update == true &&
+          data.roleAccess.ADMIN.scope == 'all'
+        )) &&
+        data.updatedAt is timestamp &&
+        data.updatedBy is string &&
+        data.updatedBy == request.auth.uid;
+    }
+
+    match /permissions/{permissionId} {
+      // Authenticated users may read resource permission policies to evaluate UI capabilities.
       allow read: if isAuthenticated();
+
+      // Strictly only ADMIN can create, update, or delete permission rules with full schema validation.
+      allow create: if isAdmin() &&
+        isValidPermissionId(permissionId) &&
+        isValidPermissionDoc(incoming(), permissionId) &&
+        incoming().get('createdAt', null) is timestamp &&
+        incoming().get('createdBy', '') == request.auth.uid;
+
+      allow update: if isAdmin() &&
+        isValidPermissionId(permissionId) &&
+        isValidPermissionDoc(incoming(), permissionId);
+
+      allow delete: if isAdmin() &&
+        isValidPermissionId(permissionId) &&
+        !(permissionId in ['settings', 'users', 'auditLogs']);
+    }
+
+    match /settings/{docId} {
+      // `rbac_config` requires authentication to read; public branding/website
+      // settings (`website`, `company`, `general`) can be read by the public site.
+      allow read: if docId != 'rbac_config' || isAuthenticated();
+
+      // Strictly only ADMIN can create, update, or delete any settings or RBAC rules.
+      allow write: if isAdmin();
+    }
+
+    // =========================================================================
+    // 5. Dynamic Quotas & Resource Consumption (`/quotas/{userId}`)
+    // =========================================================================
+    match /quotas/{userId} {
+      allow read: if isOwner(userId) || isAdmin() || isMentor();
+      allow create, update: if isAdmin() || (isOwner(userId) && isAccountActive());
+      allow delete: if isAdmin();
+    }
+
+    // =========================================================================
+    // 6. Administrative & Organization Collections
+    // =========================================================================
+    match /system/{docId} {
+      allow read: if true;
+      allow create: if isAuthenticated() &&
+        docId == 'setup' &&
+        request.auth.token.email != null &&
+        request.auth.token.email.lower() == 'saranramesh709@gmail.com' &&
+        !exists(/databases/$(database)/documents/system/setup);
+      allow update, delete: if isAdmin();
+    }
+
+    match /departments/{deptId} {
+      allow read: if hasValidRole();
       allow write: if isAdmin();
     }
 
     match /employees/{docId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow read: if isAdmin() || isEmployee() || isMentor() || isOwner(docId);
+      allow update: if isAdmin() || (isEmployee() && isOwner(docId));
+      allow create, delete: if isAdmin();
     }
 
     match /mentors/{docId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow read: if hasValidRole();
+      allow update: if isAdmin() || (isMentor() && isOwner(docId));
+      allow create, delete: if isAdmin();
     }
 
     match /interns/{docId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow read: if isAdmin() || isMentor() || isEmployee() || isOwner(docId);
+      allow update: if isAdmin() || isMentor() || (isInternStudent() && isOwner(docId));
+      allow create, delete: if isAdmin();
     }
 
     match /clients/{docId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow read: if isAdmin() || isEmployee() || isOwner(docId);
+      allow update: if isAdmin() || (isClient() && isOwner(docId));
+      allow create, delete: if isAdmin();
     }
 
     match /candidates/{docId} {
-      allow read: if isAuthenticated();
+      allow read: if isAdmin() || isEmployee() || isMentor() || isOwner(docId);
+      allow create: if isAuthenticated();
+      allow update: if isAdmin() || isOwner(docId);
+      allow delete: if isAdmin();
+    }
+
+    match /vendors/{vendorId} {
+      allow read: if isAdmin() || isEmployee();
       allow write: if isAdmin();
     }
 
     // =========================================================================
-    // Projects & Tasks
+    // 7. Audit Logs (`/auditLogs/{logId}`) — Administrative & Mentor Read + Targeted Evaluations
     // =========================================================================
-    match /projects/{projectId} {
-      // Projects and portfolio items are readable by all or authenticated users
-      allow read: if true;
-      allow write: if isAdmin() || isEmployee();
-    }
-
-    match /projectTasks/{taskId} {
-      allow read, write: if isAuthenticated();
-    }
-
-    match /tasks/{taskId} {
-      allow read, write: if isAuthenticated();
+    match /auditLogs/{logId} {
+      // ADMIN and MENTOR can read activity logs for UserActivity telemetry;
+      // users/interns can read evaluation logs explicitly targeting their own UID.
+      allow read: if isAdmin() ||
+        isMentor() ||
+        (isAuthenticated() && existing().get('resourceId', '') == request.auth.uid);
+      allow create: if isAuthenticated();
+      allow update, delete: if false;
     }
 
     // =========================================================================
-    // Communications & Inquiries
+    // 8. Operations, Documents, Payments & Communications
     // =========================================================================
+    match /documents/{docId} {
+      allow read: if hasValidRole();
+      allow create: if hasValidRole();
+      allow update: if isAdmin() || isEmployee() || isMentor() ||
+        (isAuthenticated() && existing().get('ownerId', '') == request.auth.uid);
+      allow delete: if isAdmin() ||
+        (isAuthenticated() && existing().get('ownerId', '') == request.auth.uid);
+    }
+
+    match /payments/{paymentId} {
+      allow read: if isAdmin() || isEmployee() ||
+        (isAuthenticated() && (
+          existing().get('clientId', '') == request.auth.uid ||
+          existing().get('userId', '') == request.auth.uid
+        ));
+      allow create: if hasValidRole();
+      allow update, delete: if isAdmin();
+    }
+
     match /enquiries/{enquiryId} {
-      allow create: if true; // Public submission from website contact forms
-      allow read, update, delete: if isAuthenticated();
+      // Public website contact / enquiry form submissions allowed
+      allow create: if true;
+      allow read: if isAdmin() || isEmployee() ||
+        (isClient() && existing().get('clientId', '') == request.auth.uid);
+      allow update: if isAdmin() || isEmployee();
+      allow delete: if isAdmin();
     }
 
     match /internship_applications/{applicationId} {
-      allow create: if true; // Public applications
-      allow read, update, delete: if isAuthenticated();
+      allow create: if true;
+      allow read: if isAdmin() || isEmployee() || isMentor() ||
+        (isAuthenticated() && existing().get('candidateId', '') == request.auth.uid);
+      allow update: if isAdmin() || isEmployee() || isMentor() ||
+        (isAuthenticated() && existing().get('candidateId', '') == request.auth.uid);
+      allow delete: if isAdmin();
     }
 
     match /job_applications/{applicationId} {
-      allow create: if true; // Public job applications
+      allow create: if true;
       allow read, update, delete: if isAdmin();
     }
 
@@ -174,19 +503,21 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // =========================================================================
-    // Operations & Workforce Governance
-    // =========================================================================
     match /attendance/{attId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAdmin() || isEmployee() || isMentor() ||
+        (isAuthenticated() && existing().get('userId', '') == request.auth.uid);
+      allow create, update: if isAdmin() || isEmployee() || isMentor() ||
+        (isInternStudent() && incoming().get('userId', '') == request.auth.uid);
+      allow delete: if isAdmin();
     }
 
     match /leaveRequests/{leaveId} {
-      allow read, write: if isAuthenticated();
-    }
-
-    match /vendors/{vendorId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAdmin() || isEmployee() || isMentor() ||
+        (isAuthenticated() && existing().get('userId', '') == request.auth.uid);
+      allow create: if hasValidRole();
+      allow update: if isAdmin() || isEmployee() || isMentor() ||
+        (isAuthenticated() && existing().get('userId', '') == request.auth.uid);
+      allow delete: if isAdmin();
     }
 
     match /announcements/{annId} {
@@ -195,26 +526,16 @@ service cloud.firestore {
     }
 
     match /notifications/{notifId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAdmin() ||
+        (isAuthenticated() && existing().get('userId', '') == request.auth.uid);
+      allow create: if hasValidRole();
+      allow update, delete: if isAdmin() ||
+        (isAuthenticated() && existing().get('userId', '') == request.auth.uid);
     }
 
-    match /auditLogs/{logId} {
-      allow read, create: if isAuthenticated();
-      allow update, delete: if false; // Logs are immutable
-    }
-
-    match /settings/{docId} {
+    match /websiteContent/{docId} {
       allow read: if true;
       allow write: if isAdmin();
     }
-
-    match /documents/{docId} {
-      allow read, write: if isAuthenticated();
-    }
-
-    match /payments/{paymentId} {
-      allow read, write: if isAuthenticated();
-    }
-
   }
 }

@@ -47,6 +47,7 @@ import firebaseConfig from '../../firebase-applet-config.json';
 import { User, UserRole } from '../types';
 import { logActivity } from '../lib/activityLogger';
 import { useAuth } from '../contexts/AuthContext';
+import { FIVE_ROLES, ROLE_METADATA, normalizeToCanonicalRole, CanonicalRole } from '../lib/rbac';
 
 export interface UserManagementProps {
   /** Compact mode when embedded inside the main AdminDashboard overview */
@@ -62,15 +63,7 @@ type ExtendedUser = User & {
   position?: string;
 };
 
-const ALL_ROLES: UserRole[] = [
-  'ADMINISTRATOR',
-  'EMPLOYEE',
-  'MENTOR',
-  'INTERN',
-  'CLIENT',
-  'EMPLOYER',
-  'CANDIDATE',
-];
+const ALL_ROLES: CanonicalRole[] = [...FIVE_ROLES];
 
 const getDisplayName = (user: ExtendedUser): string => {
   const combined = `${user.firstName || ''} ${user.lastName || ''}`.trim();
@@ -108,7 +101,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     lastName: '',
     email: '',
     password: '',
-    role: 'INTERN' as UserRole,
+    role: 'INTERN_STUDENT' as UserRole,
     phone: '',
     department: '',
     isActive: true,
@@ -173,7 +166,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({
         phoneStr.includes(queryStr) ||
         deptStr.includes(queryStr);
 
-      const matchesRole = roleFilter === 'ALL' || user.role === roleFilter;
+      const canonicalUserRole = normalizeToCanonicalRole(user.role);
+      const matchesRole = roleFilter === 'ALL' || canonicalUserRole === roleFilter;
 
       const isUserActive = user.isActive !== false;
       const matchesStatus =
@@ -197,7 +191,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     const total = users.length;
     const active = users.filter((u) => u.isActive !== false).length;
     const inactive = total - active;
-    const admins = users.filter((u) => u.role === 'ADMINISTRATOR').length;
+    const admins = users.filter((u) => normalizeToCanonicalRole(u.role) === 'ADMIN').length;
     return { total, active, inactive, admins };
   }, [users]);
 
@@ -284,7 +278,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
       lastName: '',
       email: '',
       password: '',
-      role: 'INTERN',
+      role: 'INTERN_STUDENT',
       phone: '',
       department: '',
       isActive: true,
@@ -307,7 +301,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
       lastName: fallbackLast,
       email: user.email || '',
       password: '',
-      role: (user.role as UserRole) || 'INTERN',
+      role: normalizeToCanonicalRole(user.role),
       phone: user.phone || user.phoneNumber || '',
       department: user.department || '',
       isActive: user.isActive !== false,
@@ -689,10 +683,10 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                 onChange={(e) => setRoleFilter(e.target.value)}
                 className="w-full pl-8 pr-3 py-2 text-sm bg-slate-50 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="ALL">All Roles</option>
+                <option value="ALL">All 5 Roles</option>
                 {ALL_ROLES.map((role) => (
                   <option key={role} value={role}>
-                    {role}
+                    {ROLE_METADATA[role].label}
                   </option>
                 ))}
               </select>
@@ -808,7 +802,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                         <Shield className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                         <select
                           aria-label={`Change role for ${displayName}`}
-                          value={user.role}
+                          value={normalizeToCanonicalRole(user.role)}
                           disabled={isUpdatingRole}
                           onChange={(e) =>
                             handleRoleChange(user, e.target.value as UserRole)
@@ -817,7 +811,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                         >
                           {ALL_ROLES.map((role) => (
                             <option key={role} value={role}>
-                              {role}
+                              {ROLE_METADATA[role].shortLabel}
                             </option>
                           ))}
                         </select>
@@ -1039,7 +1033,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                   >
                     {ALL_ROLES.map((role) => (
                       <option key={role} value={role}>
-                        {role}
+                        {ROLE_METADATA[role].label}
                       </option>
                     ))}
                   </select>

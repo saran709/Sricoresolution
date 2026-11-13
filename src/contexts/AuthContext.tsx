@@ -1,17 +1,23 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, query, where, getDocs, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { UserRole } from '../types';
 import { autoMarkEmployeeAttendance, getLocalDateString } from '../lib/attendanceService';
+import { CanonicalRole, normalizeToCanonicalRole } from '../lib/rbac';
+import { logActivity } from '../lib/activityLogger';
 
 export interface UserProfile {
   uid: string;
   email: string;
   role: UserRole;
+  canonicalRole?: CanonicalRole;
   firstName?: string;
   lastName?: string;
   photoUrl?: string;
+  isActive?: boolean;
+  permissionOverrides?: Record<string, boolean>;
+  limitOverrides?: Record<string, any>;
   [key: string]: any;
 }
 
@@ -35,6 +41,8 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
+const ADMIN_EMAILS = ['saranramesh709@gmail.com'];
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(() => {
@@ -48,161 +56,258 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(true);
 
-  const fetchProfile = useCallback(async (user: FirebaseUser | null) => {
-    setProfileLoading(true);
-    if (!user) {
-      setUserProfile(null);
-      try { localStorage.removeItem('sricore_active_profile'); } catch {}
-      setProfileLoading(false);
-      return;
+  const hydrateAndPersistProfile = useCallback((user: FirebaseUser, rawData: any) => {
+    const isConfiguredAdmin = Boolean(
+      user.email && ADMIN_EMAILS.includes(user.email.toLowerCase().trim())
+    );
+
+    const canonicalRole: CanonicalRole = isConfiguredAdmin
+      ? 'ADMIN'
+      : normalizeToCanonicalRole(rawData?.role);
+
+    // Keep backward-compatible role value while exposing canonicalRole
+    const effectiveRole: UserRole =
+      canonicalRole === 'ADMIN'
+        ? 'ADMINISTRATOR'
+        : (canonicalRole as UserRole);
+
+    const profileData: UserProfile = {
+      uid: user.uid,
+      ...rawData,
+      email: rawData?.email || user.email || '',
+      role: effectiveRole,
+      canonicalRole,
+      isActive: rawData?.isActive !== false,
+    };
+
+    setUserProfile(profileData);
+    try {
+      localStorage.setItem(`sricore_profile_${user.uid}`, JSON.stringify(profileData));
+      localStorage.setItem('sricore_active_profile', JSON.stringify(profileData));
+    } catch {}
+
+    return profileData;
+  }, []);
+
+  const syncSessionSideEffects = useCallback((user: FirebaseUser, profileData: UserProfile) => {
+    const todayStr = getLocalDateString();
+    const loginSessionKey = `sricore_login_logged_${user.uid}_${todayStr}`;
+    if (!sessionStorage.getItem(loginSessionKey)) {
+      sessionStorage.setItem(loginSessionKey, 'done');
+      logActivity(
+        'USER_LOGIN',
+        user.uid,
+        user.uid,
+        'user',
+        `Authenticated login session (${profileData.canonicalRole || profileData.role})`
+      ).catch(() => {});
+      setDoc(
+        doc(db, 'users', user.uid),
+        { lastLoginAt: serverTimestamp() },
+        { merge: true }
+      ).catch(() => {});
     }
 
-    try {
-      // 1. Try cache
-      const cachedStr = localStorage.getItem(`sricore_profile_${user.uid}`);
-      if (cachedStr) {
-        const cached = JSON.parse(cachedStr);
-        if (cached && cached.uid === user.uid) {
-          setUserProfile(cached);
-        }
+    if (
+      ['EMPLOYEE', 'MENTOR', 'INTERN_STUDENT', 'INTERN'].includes(
+        profileData.canonicalRole || profileData.role
+      )
+    ) {
+      const sessionKey = `sricore_att_checked_${user.uid}_${todayStr}`;
+      if (!sessionStorage.getItem(sessionKey)) {
+        sessionStorage.setItem(sessionKey, 'done');
+        autoMarkEmployeeAttendance(profileData).catch(() => {});
       }
+    }
+  }, []);
 
-      // 2. Fetch fresh data in background
-      // First attempt: check doc by auth.currentUser.uid
-      let userDoc = await getDoc(doc(db, 'users', user.uid));
-      let rawData: any = userDoc.exists() ? userDoc.data() : null;
-
-      // Second attempt: if doc was saved under a random or custom ID, query by email
-      if (!rawData && user.email) {
+  const resolveMissingProfile = useCallback(
+    async (user: FirebaseUser) => {
+      let rawData: any = null;
+      if (user.email) {
         try {
           const q = query(collection(db, 'users'), where('email', '==', user.email.trim()));
           const querySnap = await getDocs(q);
           if (!querySnap.empty) {
-            const firstDoc = querySnap.docs[0];
-            rawData = firstDoc.data();
-            // Re-sync to doc(users, user.uid) if missing so Firestore rules can match request.auth.uid
+            rawData = querySnap.docs[0].data();
             try {
-              await setDoc(doc(db, 'users', user.uid), {
-                ...rawData,
-                uid: user.uid,
-                updatedAt: serverTimestamp()
-              }, { merge: true });
-            } catch (e) {
-              console.warn("Could not auto-sync user document ID:", e);
-            }
+              await setDoc(
+                doc(db, 'users', user.uid),
+                {
+                  ...rawData,
+                  uid: user.uid,
+                  updatedAt: serverTimestamp(),
+                },
+                { merge: true }
+              );
+            } catch {}
           }
-        } catch (queryErr) {
-          console.warn("Could not query users by email:", queryErr);
-        }
+        } catch {}
       }
-
-      const ADMIN_EMAILS = ['saranramesh709@gmail.com'];
-      const isConfiguredAdmin = user.email && ADMIN_EMAILS.includes(user.email.toLowerCase().trim());
 
       if (rawData) {
-        let rawRole = (rawData.role || '').toUpperCase();
-        if (rawRole === 'USER') rawRole = 'CLIENT';
-        if (rawRole === 'ADMIN' || isConfiguredAdmin) rawRole = 'ADMINISTRATOR';
-
-        if (isConfiguredAdmin && rawData.role !== 'ADMINISTRATOR') {
-          try {
-            await setDoc(doc(db, 'users', user.uid), {
-              role: 'ADMINISTRATOR',
-              updatedAt: serverTimestamp()
-            }, { merge: true });
-          } catch (syncErr) {
-            console.warn("Could not sync admin role to Firestore document:", syncErr);
-          }
-        }
-
-        const profileData = { 
-          uid: user.uid, 
-          ...rawData,
-          role: rawRole || 'CLIENT'
-        } as UserProfile;
-        
-        setUserProfile(profileData);
-        localStorage.setItem(`sricore_profile_${user.uid}`, JSON.stringify(profileData));
-        localStorage.setItem('sricore_active_profile', JSON.stringify(profileData));
-
-        // Auto-check in employee if logging in between 9:00 AM and 4:00 PM
-        if (['EMPLOYEE', 'MENTOR', 'INTERN'].includes(profileData.role)) {
-          const todayStr = getLocalDateString();
-          const sessionKey = `sricore_att_checked_${user.uid}_${todayStr}`;
-          if (!sessionStorage.getItem(sessionKey)) {
-            sessionStorage.setItem(sessionKey, 'done');
-            autoMarkEmployeeAttendance(profileData).then((res) => {
-              if (res.marked) {
-                console.info(`[Attendance] Employee ${profileData.email} auto-marked PRESENT.`);
-              }
-            }).catch((err) => {
-              console.warn('[Attendance] Auto-checkin failed:', err);
-            });
-          }
-        }
-      } else {
-        // Fallback profile if Firestore document does not exist yet
-        const displayNameParts = (user.displayName || '').split(' ');
-        const fallback: UserProfile = {
-          uid: user.uid,
-          email: user.email || '',
-          firstName: displayNameParts[0] || 'User',
-          lastName: displayNameParts.slice(1).join(' ') || '',
-          role: isConfiguredAdmin ? 'ADMINISTRATOR' : 'CANDIDATE',
-        };
-
-        // If this is the admin email, automatically initialize the admin record in Firestore
-        if (isConfiguredAdmin) {
-          try {
-            await setDoc(doc(db, 'users', user.uid), {
-              email: user.email,
-              firstName: fallback.firstName,
-              lastName: fallback.lastName,
-              role: 'ADMINISTRATOR',
-              isActive: true,
-              createdAt: serverTimestamp(),
-              updatedAt: serverTimestamp()
-            }, { merge: true });
-          } catch (initErr) {
-            console.warn("Could not auto-create admin doc:", initErr);
-          }
-        }
-
-        setUserProfile(fallback);
-        localStorage.setItem(`sricore_profile_${user.uid}`, JSON.stringify(fallback));
-        localStorage.setItem('sricore_active_profile', JSON.stringify(fallback));
+        const profileData = hydrateAndPersistProfile(user, rawData);
+        syncSessionSideEffects(user, profileData);
+        return;
       }
-    } catch (error) {
-      console.warn("Could not fetch profile:", error);
+
+      const isConfiguredAdmin = Boolean(
+        user.email && ADMIN_EMAILS.includes(user.email.toLowerCase().trim())
+      );
+      const displayNameParts = (user.displayName || '').split(' ');
+      const initialRole: CanonicalRole = isConfiguredAdmin ? 'ADMIN' : 'INTERN_STUDENT';
+      const fallbackRaw = {
+        uid: user.uid,
+        email: user.email || '',
+        firstName: displayNameParts[0] || 'User',
+        lastName: displayNameParts.slice(1).join(' ') || '',
+        role: isConfiguredAdmin ? 'ADMINISTRATOR' : 'INTERN_STUDENT',
+        isActive: true,
+      };
+
+      if (isConfiguredAdmin) {
+        try {
+          await setDoc(
+            doc(db, 'users', user.uid),
+            {
+              ...fallbackRaw,
+              canonicalRole: initialRole,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true }
+          );
+        } catch {}
+      }
+
+      hydrateAndPersistProfile(user, fallbackRaw);
+    },
+    [hydrateAndPersistProfile, syncSessionSideEffects]
+  );
+
+  const refreshProfile = useCallback(async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+    setProfileLoading(true);
+    try {
+      const snap = await getDoc(doc(db, 'users', user.uid));
+      if (snap.exists()) {
+        const profileData = hydrateAndPersistProfile(user, snap.data());
+        syncSessionSideEffects(user, profileData);
+      } else {
+        await resolveMissingProfile(user);
+      }
+    } catch {
+      // Retain cached profile if offline
     } finally {
       setProfileLoading(false);
     }
-  }, []);
-
-  const refreshProfile = useCallback(async () => {
-    if (auth.currentUser) {
-      await fetchProfile(auth.currentUser);
-    }
-  }, [fetchProfile]);
+  }, [hydrateAndPersistProfile, resolveMissingProfile, syncSessionSideEffects]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    let profileUnsubscribe: (() => void) | null = null;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      if (profileUnsubscribe) {
+        profileUnsubscribe();
+        profileUnsubscribe = null;
+      }
+
       setCurrentUser(user);
-      setLoading(false); // Auth is known
-      await fetchProfile(user); // Profile loads in background
+      setLoading(false);
+
+      if (!user) {
+        setUserProfile(null);
+        try {
+          localStorage.removeItem('sricore_active_profile');
+        } catch {}
+        setProfileLoading(false);
+        return;
+      }
+
+      // Immediately hydrate per-user cached profile if present
+      setProfileLoading(true);
+      try {
+        const cachedStr = localStorage.getItem(`sricore_profile_${user.uid}`);
+        if (cachedStr) {
+          const cached = JSON.parse(cachedStr);
+          if (cached && cached.uid === user.uid) {
+            setUserProfile(cached);
+          }
+        }
+      } catch {}
+
+      let initialized = false;
+      const isConfiguredAdmin = Boolean(
+        user.email && ADMIN_EMAILS.includes(user.email.toLowerCase().trim())
+      );
+
+      // Single real-time subscription delivers both initial read & live RBAC updates
+      profileUnsubscribe = onSnapshot(
+        doc(db, 'users', user.uid),
+        async (snap) => {
+          try {
+            if (snap.exists()) {
+              const rawData = snap.data();
+              if (
+                !initialized &&
+                isConfiguredAdmin &&
+                rawData.role !== 'ADMINISTRATOR' &&
+                rawData.role !== 'ADMIN'
+              ) {
+                setDoc(
+                  doc(db, 'users', user.uid),
+                  { role: 'ADMIN', updatedAt: serverTimestamp() },
+                  { merge: true }
+                ).catch(() => {});
+              }
+
+              const profileData = hydrateAndPersistProfile(user, rawData);
+              if (!initialized) {
+                initialized = true;
+                syncSessionSideEffects(user, profileData);
+              }
+            } else if (!initialized) {
+              initialized = true;
+              await resolveMissingProfile(user);
+            }
+          } finally {
+            setProfileLoading(false);
+          }
+        },
+        () => {
+          setProfileLoading(false);
+        }
+      );
     });
 
-    return unsubscribe;
-  }, [fetchProfile]);
+    return () => {
+      unsubscribeAuth();
+      if (profileUnsubscribe) {
+        profileUnsubscribe();
+      }
+    };
+  }, [hydrateAndPersistProfile, resolveMissingProfile, syncSessionSideEffects]);
 
-  const value = {
-    currentUser,
-    userProfile,
-    loading,
-    profileLoading,
-    isAdmin: userProfile?.role === 'ADMINISTRATOR',
-    refreshProfile,
-  };
+  const isAdmin = useMemo(
+    () =>
+      userProfile?.role === 'ADMINISTRATOR' ||
+      userProfile?.role === 'ADMIN' ||
+      userProfile?.canonicalRole === 'ADMIN',
+    [userProfile?.role, userProfile?.canonicalRole]
+  );
+
+  const value = useMemo<AuthContextType>(
+    () => ({
+      currentUser,
+      userProfile,
+      loading,
+      profileLoading,
+      isAdmin,
+      refreshProfile,
+    }),
+    [currentUser, userProfile, loading, profileLoading, isAdmin, refreshProfile]
+  );
 
   return (
     <AuthContext.Provider value={value}>

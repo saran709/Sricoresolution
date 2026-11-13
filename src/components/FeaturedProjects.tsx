@@ -11,16 +11,14 @@ import {
 } from 'lucide-react';
 import { Container } from './ui/Container';
 import {
-  SELECTED_WORKS,
-  transformHistoricalToCaseStudy,
-  ProjectCaseStudy,
-} from '../data/projectsData';
-import { HISTORICAL_PROJECTS_INVENTORY } from '../lib/projectMigration';
+  FEATURED_CASE_STUDIES,
+  FeaturedProjectSummary,
+} from '../data/featuredProjectsSummary';
 import { useWebsiteSettings } from '../contexts/WebsiteSettingsContext';
 
 type DomainFilter = 'all' | 'software' | 'iot' | 'ai';
 
-function getProjectTrack(project: ProjectCaseStudy): 'software' | 'iot' | 'ai' {
+function getProjectTrack(project: FeaturedProjectSummary): 'software' | 'iot' | 'ai' {
   const combined = `${project.category} ${project.domain} ${project.type}`.toLowerCase();
   if (combined.includes('ai') || combined.includes('vision') || combined.includes('ml')) {
     return 'ai';
@@ -31,27 +29,11 @@ function getProjectTrack(project: ProjectCaseStudy): 'software' | 'iot' | 'ai' {
   return 'software';
 }
 
-export function FeaturedProjects() {
+export const FeaturedProjects = React.memo(function FeaturedProjects() {
   const { settings } = useWebsiteSettings();
   const primaryColor = settings?.theme?.primary || '#d97706';
 
-  const allCaseStudies = useMemo<ProjectCaseStudy[]>(() => {
-    const publicHistorical = HISTORICAL_PROJECTS_INVENTORY.filter(
-      (item) =>
-        item.portfolioVisibility &&
-        item.canonicalId !== 'sri-hackerrank-campus-crew' &&
-        item.canonicalId !== 'sri-paavai-bloodconnect'
-    )
-      .slice(0, 3)
-      .map(transformHistoricalToCaseStudy);
-
-    const existingSlugs = new Set(SELECTED_WORKS.map((p) => p.slug));
-    const merged = [
-      ...SELECTED_WORKS,
-      ...publicHistorical.filter((p) => !existingSlugs.has(p.slug)),
-    ];
-    return merged;
-  }, []);
+  const allCaseStudies = FEATURED_CASE_STUDIES;
 
   const [activeFilter, setActiveFilter] = useState<DomainFilter>('all');
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
@@ -160,6 +142,7 @@ export function FeaturedProjects() {
                     alt={spotlightProject.title}
                     className="w-full h-full object-cover opacity-85 transition-transform duration-500"
                     loading="lazy"
+                    decoding="async"
                   />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/35 to-transparent p-6 flex flex-col justify-between">
@@ -299,6 +282,7 @@ export function FeaturedProjects() {
                         alt={project.title}
                         className="w-full h-full object-cover opacity-85 group-hover:scale-105 transition-transform duration-300"
                         loading="lazy"
+                        decoding="async"
                       />
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent p-4 flex flex-col justify-between">
@@ -363,6 +347,6 @@ export function FeaturedProjects() {
       </Container>
     </section>
   );
-}
+});
 
 export default FeaturedProjects;

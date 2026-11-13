@@ -1,14 +1,18 @@
 export type UserRole = 
-  | 'ADMINISTRATOR' 
+  | 'ADMIN'
+  | 'CLIENT' 
   | 'EMPLOYEE' 
   | 'MENTOR' 
+  | 'INTERN_STUDENT'
+  // Legacy aliases mapped automatically to the 5 canonical roles
+  | 'ADMINISTRATOR' 
   | 'INTERN' 
   | 'EMPLOYER'
-  | 'CLIENT' 
   | 'CANDIDATE';
 
 export interface User {
   id?: string;
+  uid?: string;
   email: string;
   role: UserRole;
   firstName: string;
@@ -17,6 +21,8 @@ export interface User {
   createdAt: any;
   updatedAt: any;
   isActive: boolean;
+  permissionOverrides?: Record<string, boolean>;
+  limitOverrides?: Record<string, any>;
 }
 
 export interface Employee extends User {

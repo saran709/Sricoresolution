@@ -1,3 +1,4 @@
 import { healthHandler } from "../src/server/apiHandlers";
+import { withServerlessGuard } from "../src/server/apiMiddleware";
 
-export default healthHandler;
+export default withServerlessGuard(["GET"], null, healthHandler);

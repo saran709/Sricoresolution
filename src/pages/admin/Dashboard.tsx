@@ -1,40 +1,36 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, Suspense } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { collection, query, where, getCountFromServer, getDocs, limit, orderBy } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Users, Briefcase, MessageSquare, GraduationCap, Clock, AlertCircle, FileText, Database, CheckCircle2, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Button } from '../../components/ui/Button';
-import { seedAdminDashboardData } from '../../lib/dataSeeder';
 import { useAuth } from '../../contexts/AuthContext';
-import { UserManagement } from '../../components/UserManagement';
-import { SystemInsights } from '../../components/SystemInsights';
+import { normalizeToCanonicalRole } from '../../lib/rbac';
+
+const RBACManagement = React.lazy(() =>
+  import('../../components/admin/RBACManagement').then((m) => ({ default: m.RBACManagement }))
+);
+const SystemInsights = React.lazy(() =>
+  import('../../components/SystemInsights').then((m) => ({ default: m.SystemInsights }))
+);
+const UserActivity = React.lazy(() =>
+  import('../../components/UserActivity').then((m) => ({ default: m.UserActivity }))
+);
+const UserManagement = React.lazy(() =>
+  import('../../components/UserManagement').then((m) => ({ default: m.UserManagement }))
+);
 
 export default function AdminDashboard() {
   const { currentUser } = useAuth();
-  const [stats, setStats] = useState({
-    employees: 0,
-    activeEmployees: 0,
-    interns: 0,
-    mentors: 0,
-    clients: 0,
-    activeProjects: 0,
-    totalProjects: 0,
-    pendingEnquiries: 0,
-    internApplications: 0,
-    pendingPayments: 0,
-  });
-  
-  const [activities, setActivities] = useState<any[]>([]);
-  const [tasks, setTasks] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isSeeding, setIsSeeding] = useState(false);
   const [seedResult, setSeedResult] = useState<string | null>(null);
   const [seedError, setSeedError] = useState<string | null>(null);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  const { data, isLoading: loading, refetch } = useQuery({
+    queryKey: ['admin-dashboard-overview'],
+    queryFn: async () => {
       const [
         usersSnap,
         projectsSnap,
@@ -50,13 +46,21 @@ export default function AdminDashboard() {
       ]);
 
       const allUsers = usersSnap.docs.map((d) => d.data());
-      const employees = allUsers.filter((u) => u.role === 'EMPLOYEE').length;
-      const activeEmployees = allUsers.filter(
-        (u) => u.role === 'EMPLOYEE' && u.isActive !== false
+      const employees = allUsers.filter(
+        (u) => normalizeToCanonicalRole(u.role) === 'EMPLOYEE'
       ).length;
-      const interns = allUsers.filter((u) => u.role === 'INTERN').length;
-      const mentors = allUsers.filter((u) => u.role === 'MENTOR').length;
-      const clients = allUsers.filter((u) => u.role === 'CLIENT').length;
+      const activeEmployees = allUsers.filter(
+        (u) => normalizeToCanonicalRole(u.role) === 'EMPLOYEE' && u.isActive !== false
+      ).length;
+      const interns = allUsers.filter(
+        (u) => normalizeToCanonicalRole(u.role) === 'INTERN_STUDENT'
+      ).length;
+      const mentors = allUsers.filter(
+        (u) => normalizeToCanonicalRole(u.role) === 'MENTOR'
+      ).length;
+      const clients = allUsers.filter(
+        (u) => normalizeToCanonicalRole(u.role) === 'CLIENT'
+      ).length;
 
       const allProjects = projectsSnap.docs.map((d) => d.data());
       const totalProjects = allProjects.length;
@@ -64,7 +68,7 @@ export default function AdminDashboard() {
         ['active', 'in_progress'].includes(p.status || p.projectStatus)
       ).length;
 
-      setStats({
+      const stats = {
         employees,
         activeEmployees,
         interns,
@@ -74,45 +78,50 @@ export default function AdminDashboard() {
         activeProjects,
         pendingEnquiries: enqSnap.data().count,
         internApplications: internAppSnap.data().count,
-        pendingPayments: paymentSnap.data().count
-      });
+        pendingPayments: paymentSnap.data().count,
+      };
 
-      // Load activities
+      let activities: any[] = [];
       try {
         const activitiesQuery = query(collection(db, 'auditLogs'), orderBy('timestamp', 'desc'), limit(6));
         const actSnap = await getDocs(activitiesQuery);
-        setActivities(actSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        activities = actSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
       } catch {
-        // Fallback if timestamp index is not yet built
         try {
           const fallbackActSnap = await getDocs(query(collection(db, 'auditLogs'), limit(6)));
-          setActivities(fallbackActSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+          activities = fallbackActSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
         } catch {}
       }
 
-      // Load tasks (try projectTasks then tasks)
+      let tasks: any[] = [];
       try {
-        let taskDocs: any[] = [];
         const taskSnap = await getDocs(query(collection(db, 'projectTasks'), limit(6)));
         if (!taskSnap.empty) {
-          taskDocs = taskSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+          tasks = taskSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
         } else {
           const fallbackTaskSnap = await getDocs(query(collection(db, 'tasks'), limit(6)));
-          taskDocs = fallbackTaskSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+          tasks = fallbackTaskSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
         }
-        setTasks(taskDocs);
       } catch {}
 
-    } catch (error) {
-      console.error("Error fetching stats:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return { stats, activities, tasks };
+    },
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const stats = data?.stats || {
+    employees: 0,
+    activeEmployees: 0,
+    interns: 0,
+    mentors: 0,
+    clients: 0,
+    activeProjects: 0,
+    totalProjects: 0,
+    pendingEnquiries: 0,
+    internApplications: 0,
+    pendingPayments: 0,
+  };
+  const activities = data?.activities || [];
+  const tasks = data?.tasks || [];
 
   const handleSeedData = async () => {
     setIsSeeding(true);
@@ -120,6 +129,7 @@ export default function AdminDashboard() {
     setSeedError(null);
 
     try {
+      const { seedAdminDashboardData } = await import('../../lib/dataSeeder');
       const res = await seedAdminDashboardData(currentUser?.uid);
       if (res.errors && res.errors.length > 0 && res.departmentsCount === 0 && res.usersCount === 0) {
         setSeedError(`Failed to insert sample data: ${res.errors.join('; ')}`);
@@ -129,7 +139,7 @@ export default function AdminDashboard() {
           `Successfully populated demo operational data! Synced ${res.departmentsCount} Departments, ${res.usersCount} Staff & Mentors, ${res.projectsCount} Projects, ${res.tasksCount} Tasks, ${res.enquiriesCount} Enquiries, ${res.vendorsCount} Vendors, and ${res.announcementsCount} Announcements.${warningSuffix}`
         );
       }
-      await fetchData();
+      await refetch();
     } catch (err: any) {
       console.error("Error inserting sample data:", err);
       setSeedError(err?.message || "Failed to insert sample data. Please verify Firestore permissions.");
@@ -267,14 +277,32 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* Centralized Five-Role RBAC, Permission Engine & Dynamic Limits Management */}
+      <div className="mt-8">
+        <Suspense fallback={<div className="h-64 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 animate-pulse" />}>
+          <RBACManagement />
+        </Suspense>
+      </div>
+
       {/* System Insights Widget (30-Day Registration Trends & Engagement Metrics) */}
       <div className="mt-8">
-        <SystemInsights />
+        <Suspense fallback={<div className="h-72 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 animate-pulse" />}>
+          <SystemInsights />
+        </Suspense>
+      </div>
+
+      {/* User Activity Widget (30-Day Role Login Frequency & Resource Usage — Admin & Mentor Only) */}
+      <div className="mt-8">
+        <Suspense fallback={<div className="h-72 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 animate-pulse" />}>
+          <UserActivity />
+        </Suspense>
       </div>
 
       {/* Embedded User Management Interface */}
       <div className="mt-8">
-        <UserManagement compact maxRows={8} />
+        <Suspense fallback={<div className="h-64 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 animate-pulse" />}>
+          <UserManagement compact maxRows={8} />
+        </Suspense>
       </div>
 
       {/* Recent Activities & Attention Tasks */}

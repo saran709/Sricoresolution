@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { collection, query, orderBy, getDocs, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, orderBy, limit, getDocs, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from '../../lib/firebase';
 import { Document as AppDocument } from '../../types';
-import { Search, Upload, File, Download, Trash2 } from 'lucide-react';
+import { Search, Upload, File, Download, Trash2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { logActivity } from '../../lib/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
@@ -14,6 +14,8 @@ export default function AdminDocuments() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [notice, setNotice] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // New document form state
@@ -27,15 +29,16 @@ export default function AdminDocuments() {
   const fetchDocuments = async () => {
     setLoading(true);
     try {
-      const q = query(collection(db, 'documents'), orderBy('createdAt', 'desc'));
+      const q = query(collection(db, 'documents'), orderBy('createdAt', 'desc'), limit(200));
       const snapshot = await getDocs(q);
       const items: AppDocument[] = [];
-      snapshot.forEach(doc => {
-        items.push({ id: doc.id, ...doc.data() } as AppDocument);
+      snapshot.forEach(docSnap => {
+        items.push({ id: docSnap.id, ...docSnap.data() } as AppDocument);
       });
       setDocuments(items);
     } catch (error) {
       console.error("Error fetching documents:", error);
+      setNotice({ type: 'error', text: 'Failed to load documents list.' });
     } finally {
       setLoading(false);
     }
@@ -44,11 +47,12 @@ export default function AdminDocuments() {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !userProfile?.uid) return;
+    setNotice(null);
 
     // Validate file size (max 10MB)
     const MAX_FILE_SIZE = 10 * 1024 * 1024;
     if (file.size > MAX_FILE_SIZE) {
-      alert("File size exceeds 10MB limit.");
+      setNotice({ type: 'error', text: 'File size exceeds 10MB limit.' });
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
@@ -56,7 +60,7 @@ export default function AdminDocuments() {
     // Validate file type (basic safety check)
     const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain', 'text/csv', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/zip', 'application/x-zip-compressed'];
     if (!allowedTypes.includes(file.type)) {
-      alert("Invalid file type. Please upload PDF, images, Word, Excel, text, or zip files.");
+      setNotice({ type: 'error', text: 'Invalid file type. Please upload PDF, images, Word, Excel, text, or zip files.' });
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
@@ -82,26 +86,28 @@ export default function AdminDocuments() {
         'DOCUMENT_UPLOADED',
         userProfile.uid,
         docRef.id,
-        'project', // generic
+        'project',
         `Uploaded document: ${file.name}`
       );
       
       await fetchDocuments();
+      setNotice({ type: 'success', text: `Uploaded "${file.name}" successfully.` });
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (error) {
       console.error("Failed to upload document", error);
-      alert("Failed to upload document");
+      setNotice({ type: 'error', text: 'Failed to upload document.' });
     } finally {
       setIsUploading(false);
     }
   };
 
-  const handleDelete = async (document: AppDocument) => {
-    if (!window.confirm(`Are you sure you want to delete ${document.title}?`)) return;
+  const handleDelete = async (documentItem: AppDocument) => {
+    setNotice(null);
+    setPendingDeleteId(null);
     
     try {
       // 1. Delete from Storage
-      const fileRef = ref(storage, document.fileUrl);
+      const fileRef = ref(storage, documentItem.fileUrl);
       try {
         await deleteObject(fileRef);
       } catch (storageError) {
@@ -109,22 +115,23 @@ export default function AdminDocuments() {
       }
 
       // 2. Delete from Firestore
-      await deleteDoc(doc(db, 'documents', document.id!));
+      await deleteDoc(doc(db, 'documents', documentItem.id!));
       
-      setDocuments(documents.filter(d => d.id !== document.id));
+      setDocuments((prev) => prev.filter(d => d.id !== documentItem.id));
       
       if (userProfile?.uid) {
         await logActivity(
           'DOCUMENT_DELETED',
           userProfile.uid,
-          document.id!,
+          documentItem.id!,
           'project',
-          `Deleted document: ${document.title}`
+          `Deleted document: ${documentItem.title}`
         );
       }
+      setNotice({ type: 'success', text: `Deleted "${documentItem.title}".` });
     } catch (error) {
       console.error("Failed to delete document", error);
-      alert("Failed to delete document");
+      setNotice({ type: 'error', text: 'Failed to delete document.' });
     }
   };
 
@@ -140,6 +147,22 @@ export default function AdminDocuments() {
           <p className="text-sm text-slate-500">Securely upload and manage organizational files</p>
         </div>
       </div>
+
+      {notice && (
+        <div className={`p-3.5 rounded-xl border text-sm flex items-center justify-between gap-3 ${
+          notice.type === 'error'
+            ? 'bg-red-50 border-red-200 text-red-800'
+            : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+        }`}>
+          <div className="flex items-center gap-2">
+            {notice.type === 'error' ? <AlertCircle className="w-4 h-4 shrink-0" /> : <CheckCircle2 className="w-4 h-4 shrink-0" />}
+            <span>{notice.text}</span>
+          </div>
+          <button type="button" onClick={() => setNotice(null)} className="text-xs font-bold underline cursor-pointer">
+            Dismiss
+          </button>
+        </div>
+      )}
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
         <h2 className="text-sm font-semibold text-slate-800 mb-4 uppercase tracking-wider">Upload New Document</h2>
@@ -282,13 +305,33 @@ export default function AdminDocuments() {
                       >
                         <Download className="w-4 h-4" />
                       </a>
-                      <button 
-                        onClick={() => handleDelete(doc)}
-                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {pendingDeleteId === doc.id ? (
+                        <div className="inline-flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(doc)}
+                            className="px-2 py-1 text-xs font-bold rounded bg-red-600 text-white hover:bg-red-700 cursor-pointer"
+                          >
+                            Confirm
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPendingDeleteId(null)}
+                            className="px-2 py-1 text-xs font-medium rounded border border-slate-300 text-slate-600 hover:bg-slate-100 cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button 
+                          type="button"
+                          onClick={() => setPendingDeleteId(doc.id || null)}
+                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors cursor-pointer"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))

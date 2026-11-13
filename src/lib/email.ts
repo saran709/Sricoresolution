@@ -3,17 +3,17 @@ export const sendEmailNotification = async (to: string, subject: string, html: s
     const response = await fetch('/api/email/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(12000),
       body: JSON.stringify({ to, subject, html }),
     });
-    
+
     if (!response.ok) {
-      console.error("Failed to send email API");
       return false;
     }
-    
+
     return true;
   } catch (error) {
-    console.error("Error triggering email via API:", error);
+    console.error('Error triggering email via API:', error);
     return false;
   }
 };

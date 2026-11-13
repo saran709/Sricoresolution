@@ -33,10 +33,10 @@ export const PRIMARY_NAV_LINKS: NavItem[] = [
   { name: 'Contact', href: '/contact' },
 ];
 
-export function Navbar() {
+export const Navbar = React.memo(function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
-  const { currentUser, userProfile } = useAuth();
+  const { currentUser, userProfile, isAdmin } = useAuth();
   const { settings } = useWebsiteSettings();
 
   // Hide public Navbar on Admin and User Dashboard Portal routes where workspace layouts manage their own header
@@ -102,6 +102,7 @@ export function Navbar() {
                   src={settings?.logoUrl || '/logo.png'}
                   alt={settings?.brandName || 'Sricore Solutions Logo'}
                   className="h-9 w-auto object-contain"
+                  decoding="async"
                   onError={(e) => {
                     (e.target as HTMLElement).style.display = 'none';
                   }}
@@ -205,7 +206,7 @@ export function Navbar() {
 
               {currentUser ? (
                 <div className="flex items-center gap-2">
-                  {userProfile?.role === 'ADMINISTRATOR' && (
+                  {isAdmin && (
                     <Link
                       to="/admin"
                       className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded bg-amber-500 hover:bg-amber-600 text-white uppercase tracking-wider transition-colors shadow-xs"
@@ -317,7 +318,7 @@ export function Navbar() {
               <div className="pt-4 mt-2 border-t border-slate-200 dark:border-slate-800 space-y-2">
                 {currentUser ? (
                   <>
-                    {userProfile?.role === 'ADMINISTRATOR' && (
+                    {isAdmin && (
                       <Link
                         to="/admin"
                         onClick={closeMobileMenu}
@@ -360,6 +361,6 @@ export function Navbar() {
       </header>
     </>
   );
-}
+});
 
 export default Navbar;

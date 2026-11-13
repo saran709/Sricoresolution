@@ -85,7 +85,7 @@ export function CheckoutButton({
   const handleConfirmPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userProfile) {
-      alert("Please log in to complete payment submission.");
+      setError("Please log in to complete payment submission.");
       return;
     }
 

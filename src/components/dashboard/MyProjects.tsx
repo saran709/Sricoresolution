@@ -6,12 +6,11 @@ import { Clock, Download, Search } from 'lucide-react';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 export function MyProjects() {
   const { userProfile } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
+  const [exportingProjectId, setExportingProjectId] = useState<string | null>(null);
 
   const { data, isLoading } = useMyProjects(userProfile?.uid);
   const projects = data?.projects || [];
@@ -22,25 +21,34 @@ export function MyProjects() {
     p.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const generatePDF = (project: Project) => {
-    const doc = new jsPDF();
-    const projectTasks = tasks.filter(t => t.projectId === project.id);
-    
-    doc.text(`Project Summary: ${project.name}`, 14, 15);
-    doc.text(`Status: ${project.status}`, 14, 22);
-    doc.text(`Description: ${project.description}`, 14, 30);
-    
-    autoTable(doc, {
-      startY: 40,
-      head: [['Task', 'Status', 'Due Date']],
-      body: projectTasks.map(task => [
-        task.title,
-        task.status,
-        task.dueDate?.toDate ? new Date(task.dueDate.toDate()).toLocaleDateString() : 'TBD'
-      ]),
-    });
-    
-    doc.save(`${project.name}_Summary.pdf`);
+  const generatePDF = async (project: Project) => {
+    setExportingProjectId(project.id || project.name);
+    try {
+      const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+        import('jspdf'),
+        import('jspdf-autotable'),
+      ]);
+      const doc = new jsPDF();
+      const projectTasks = tasks.filter(t => t.projectId === project.id);
+
+      doc.text(`Project Summary: ${project.name}`, 14, 15);
+      doc.text(`Status: ${project.status}`, 14, 22);
+      doc.text(`Description: ${project.description}`, 14, 30);
+
+      autoTable(doc, {
+        startY: 40,
+        head: [['Task', 'Status', 'Due Date']],
+        body: projectTasks.map(task => [
+          task.title,
+          task.status,
+          task.dueDate?.toDate ? new Date(task.dueDate.toDate()).toLocaleDateString() : 'TBD'
+        ]),
+      });
+
+      doc.save(`${project.name}_Summary.pdf`);
+    } finally {
+      setExportingProjectId(null);
+    }
   };
 
   if (isLoading) return <LoadingSpinner />;
@@ -70,8 +78,15 @@ export function MyProjects() {
                 <h3 className="font-semibold text-slate-900">{project.name}</h3>
                 <div className="flex items-center gap-2">
                   <span className="text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-800 uppercase font-bold">{project.status}</span>
-                  <Button variant="outline" size="sm" onClick={() => generatePDF(project)} className="flex items-center gap-1">
-                    <Download className="w-4 h-4" /> PDF
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => generatePDF(project)}
+                    disabled={exportingProjectId === (project.id || project.name)}
+                    className="flex items-center gap-1"
+                  >
+                    <Download className="w-4 h-4" />
+                    {exportingProjectId === (project.id || project.name) ? 'Exporting...' : 'PDF'}
                   </Button>
                 </div>
               </div>

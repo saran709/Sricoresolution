@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { APP_CONFIG } from '../config';
@@ -216,6 +216,40 @@ export const DEFAULT_WEBSITE_SETTINGS: WebsiteSettings = {
   footerCopyright: '© ' + new Date().getFullYear() + ' Sricore Solutions Pvt Ltd. All rights reserved.'
 };
 
+const WEBSITE_SETTINGS_CACHE_KEY = 'sricore_website_settings_cache_v1';
+
+function readCachedSettings(): WebsiteSettings {
+  try {
+    const raw = localStorage.getItem(WEBSITE_SETTINGS_CACHE_KEY);
+    if (!raw) return DEFAULT_WEBSITE_SETTINGS;
+    const parsed = JSON.parse(raw) as Partial<WebsiteSettings>;
+    return {
+      ...DEFAULT_WEBSITE_SETTINGS,
+      ...parsed,
+      brandName: normalizeBrandName(parsed.brandName || DEFAULT_WEBSITE_SETTINGS.brandName),
+      theme: { ...DEFAULT_WEBSITE_SETTINGS.theme, ...(parsed.theme || {}) },
+      announcement: { ...DEFAULT_WEBSITE_SETTINGS.announcement, ...(parsed.announcement || {}) },
+      hero: { ...DEFAULT_WEBSITE_SETTINGS.hero, ...(parsed.hero || {}) },
+      metrics: Array.isArray(parsed.metrics) && parsed.metrics.length > 0 ? parsed.metrics : DEFAULT_WEBSITE_SETTINGS.metrics,
+      about: { ...DEFAULT_WEBSITE_SETTINGS.about, ...(parsed.about || {}) },
+      services: { ...DEFAULT_WEBSITE_SETTINGS.services, ...(parsed.services || {}) },
+      contact: { ...DEFAULT_WEBSITE_SETTINGS.contact, ...(parsed.contact || {}) },
+      socials: { ...DEFAULT_WEBSITE_SETTINGS.socials, ...(parsed.socials || {}) },
+    };
+  } catch {
+    return DEFAULT_WEBSITE_SETTINGS;
+  }
+}
+
+function writeCachedSettings(next: WebsiteSettings) {
+  try {
+    const { updatedAt: _u, ...serializable } = next;
+    localStorage.setItem(WEBSITE_SETTINGS_CACHE_KEY, JSON.stringify(serializable));
+  } catch {
+    // Ignore quota/storage errors
+  }
+}
+
 export interface WebsiteSettingsContextType {
   settings: WebsiteSettings;
   loading: boolean;
@@ -231,16 +265,15 @@ const WebsiteSettingsContext = createContext<WebsiteSettingsContextType>({
 });
 
 export function WebsiteSettingsProvider({ children }: { children: React.ReactNode }) {
-  const [settings, setSettings] = useState<WebsiteSettings>(DEFAULT_WEBSITE_SETTINGS);
+  const [settings, setSettings] = useState<WebsiteSettings>(() => readCachedSettings());
   const [loading, setLoading] = useState<boolean>(true);
-
-  // CSS custom properties are dynamically managed and calibrated in ThemeProvider
+  const settingsRef = useRef<WebsiteSettings>(settings);
+  settingsRef.current = settings;
 
   // Subscribe to real-time updates from Firestore
   useEffect(() => {
     const docRef = doc(db, 'settings', 'website_cms');
     
-    // Also check legacy doc 'website_content' to hydrate if new doc does not exist yet
     const unsubscribe = onSnapshot(docRef, async (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.data() as Partial<WebsiteSettings>;
@@ -254,25 +287,29 @@ export function WebsiteSettingsProvider({ children }: { children: React.ReactNod
           ? { ...DEFAULT_WEBSITE_SETTINGS.theme } 
           : { ...DEFAULT_WEBSITE_SETTINGS.theme, ...rawTheme };
 
-        setSettings((prev) => ({
-          ...prev,
-          ...data,
-          brandName: normalizeBrandName(data.brandName || prev.brandName),
-          theme: finalTheme,
-          announcement: { 
-            ...DEFAULT_WEBSITE_SETTINGS.announcement, 
-            ...data.announcement,
-            bgColor: isOldBlue && (data.announcement?.bgColor === '#1e40af' || data.announcement?.bgColor === '#2563eb')
-              ? DEFAULT_WEBSITE_SETTINGS.announcement.bgColor 
-              : (data.announcement?.bgColor || DEFAULT_WEBSITE_SETTINGS.announcement.bgColor)
-          },
-          hero: { ...DEFAULT_WEBSITE_SETTINGS.hero, ...data.hero },
-          metrics: Array.isArray(data.metrics) && data.metrics.length > 0 ? data.metrics : DEFAULT_WEBSITE_SETTINGS.metrics,
-          about: { ...DEFAULT_WEBSITE_SETTINGS.about, ...data.about },
-          services: { ...DEFAULT_WEBSITE_SETTINGS.services, ...data.services },
-          contact: { ...DEFAULT_WEBSITE_SETTINGS.contact, ...data.contact },
-          socials: { ...DEFAULT_WEBSITE_SETTINGS.socials, ...data.socials }
-        }));
+        setSettings((prev) => {
+          const next: WebsiteSettings = {
+            ...prev,
+            ...data,
+            brandName: normalizeBrandName(data.brandName || prev.brandName),
+            theme: finalTheme,
+            announcement: { 
+              ...DEFAULT_WEBSITE_SETTINGS.announcement, 
+              ...data.announcement,
+              bgColor: isOldBlue && (data.announcement?.bgColor === '#1e40af' || data.announcement?.bgColor === '#2563eb')
+                ? DEFAULT_WEBSITE_SETTINGS.announcement.bgColor 
+                : (data.announcement?.bgColor || DEFAULT_WEBSITE_SETTINGS.announcement.bgColor)
+            },
+            hero: { ...DEFAULT_WEBSITE_SETTINGS.hero, ...data.hero },
+            metrics: Array.isArray(data.metrics) && data.metrics.length > 0 ? data.metrics : DEFAULT_WEBSITE_SETTINGS.metrics,
+            about: { ...DEFAULT_WEBSITE_SETTINGS.about, ...data.about },
+            services: { ...DEFAULT_WEBSITE_SETTINGS.services, ...data.services },
+            contact: { ...DEFAULT_WEBSITE_SETTINGS.contact, ...data.contact },
+            socials: { ...DEFAULT_WEBSITE_SETTINGS.socials, ...data.socials }
+          };
+          writeCachedSettings(next);
+          return next;
+        });
         setLoading(false);
       } else {
         // Fallback: check legacy doc 'settings/website_content'
@@ -281,16 +318,20 @@ export function WebsiteSettingsProvider({ children }: { children: React.ReactNod
           const legacySnap = await getDoc(legacyRef);
           if (legacySnap.exists()) {
             const legacyData = legacySnap.data();
-            setSettings((prev) => ({
-              ...prev,
-              brandDescription: legacyData.companyDescription || prev.brandDescription,
-              contact: {
-                ...prev.contact,
-                primaryEmail: legacyData.contactEmail || prev.contact.primaryEmail,
-                primaryPhone: legacyData.contactPhone || prev.contact.primaryPhone,
-                address: legacyData.contactAddress || prev.contact.address
-              }
-            }));
+            setSettings((prev) => {
+              const next: WebsiteSettings = {
+                ...prev,
+                brandDescription: legacyData.companyDescription || prev.brandDescription,
+                contact: {
+                  ...prev.contact,
+                  primaryEmail: legacyData.contactEmail || prev.contact.primaryEmail,
+                  primaryPhone: legacyData.contactPhone || prev.contact.primaryPhone,
+                  address: legacyData.contactAddress || prev.contact.address
+                }
+              };
+              writeCachedSettings(next);
+              return next;
+            });
           }
         } catch (e) {
           console.warn('Could not read legacy website_content doc:', e);
@@ -299,44 +340,44 @@ export function WebsiteSettingsProvider({ children }: { children: React.ReactNod
         }
       }
     }, (error) => {
-      console.warn('Firestore settings listener error (falling back to defaults):', error);
+      console.warn('Firestore settings listener error (falling back to cached/defaults):', error);
       setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
-  const saveSettings = async (newSettings: Partial<WebsiteSettings>, updatedByUid?: string): Promise<boolean> => {
+  const saveSettings = useCallback(async (newSettings: Partial<WebsiteSettings>, updatedByUid?: string): Promise<boolean> => {
     try {
       const merged: WebsiteSettings = {
-        ...settings,
+        ...settingsRef.current,
         ...newSettings,
         updatedAt: serverTimestamp(),
         updatedBy: updatedByUid || 'admin'
       };
 
-      // Save to website_cms doc
-      await setDoc(doc(db, 'settings', 'website_cms'), merged, { merge: true });
+      await Promise.all([
+        setDoc(doc(db, 'settings', 'website_cms'), merged, { merge: true }),
+        setDoc(doc(db, 'settings', 'website_content'), {
+          companyDescription: merged.brandDescription || merged.about.story,
+          contactEmail: merged.contact.primaryEmail,
+          contactPhone: merged.contact.primaryPhone,
+          contactAddress: merged.contact.address,
+          updatedAt: serverTimestamp(),
+          updatedBy: updatedByUid || 'admin'
+        }, { merge: true })
+      ]);
 
-      // Also sync to legacy website_content for backwards compatibility with any existing components
-      await setDoc(doc(db, 'settings', 'website_content'), {
-        companyDescription: merged.brandDescription || merged.about.story,
-        contactEmail: merged.contact.primaryEmail,
-        contactPhone: merged.contact.primaryPhone,
-        contactAddress: merged.contact.address,
-        updatedAt: serverTimestamp(),
-        updatedBy: updatedByUid || 'admin'
-      }, { merge: true });
-
+      writeCachedSettings(merged);
       setSettings(merged);
       return true;
     } catch (err) {
       console.error('Failed to save website settings:', err);
       return false;
     }
-  };
+  }, []);
 
-  const resetToDefaults = async (updatedByUid?: string): Promise<boolean> => {
+  const resetToDefaults = useCallback(async (updatedByUid?: string): Promise<boolean> => {
     try {
       const defaults = {
         ...DEFAULT_WEBSITE_SETTINGS,
@@ -344,16 +385,22 @@ export function WebsiteSettingsProvider({ children }: { children: React.ReactNod
         updatedBy: updatedByUid || 'admin'
       };
       await setDoc(doc(db, 'settings', 'website_cms'), defaults);
+      writeCachedSettings(DEFAULT_WEBSITE_SETTINGS);
       setSettings(DEFAULT_WEBSITE_SETTINGS);
       return true;
     } catch (err) {
       console.error('Failed to reset website settings:', err);
       return false;
     }
-  };
+  }, []);
+
+  const value = useMemo<WebsiteSettingsContextType>(
+    () => ({ settings, loading, saveSettings, resetToDefaults }),
+    [settings, loading, saveSettings, resetToDefaults]
+  );
 
   return (
-    <WebsiteSettingsContext.Provider value={{ settings, loading, saveSettings, resetToDefaults }}>
+    <WebsiteSettingsContext.Provider value={value}>
       {children}
     </WebsiteSettingsContext.Provider>
   );

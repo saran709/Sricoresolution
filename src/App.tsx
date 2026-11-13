@@ -13,6 +13,7 @@ import { Newsletter } from './components/Newsletter';
 import { Footer } from './components/Footer';
 import { ThemeToggle } from './components/ThemeToggle';
 import { AuthProvider } from './contexts/AuthContext';
+import { RBACProvider } from './contexts/RBACContext';
 import { WebsiteSettingsProvider } from './contexts/WebsiteSettingsContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 
@@ -21,19 +22,21 @@ export default function App() {
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <WebsiteSettingsProvider>
-            <ThemeProvider>
-              <BrowserRouter>
-                <div className="flex flex-col min-h-screen">
-                  <Navbar />
-                  <AppRouter />
-                  <Newsletter />
-                  <Footer />
-                  <ThemeToggle variant="fab" />
-                </div>
-              </BrowserRouter>
-            </ThemeProvider>
-          </WebsiteSettingsProvider>
+          <RBACProvider>
+            <WebsiteSettingsProvider>
+              <ThemeProvider>
+                <BrowserRouter>
+                  <div className="flex flex-col min-h-screen">
+                    <Navbar />
+                    <AppRouter />
+                    <Newsletter />
+                    <Footer />
+                    <ThemeToggle variant="fab" />
+                  </div>
+                </BrowserRouter>
+              </ThemeProvider>
+            </WebsiteSettingsProvider>
+          </RBACProvider>
         </AuthProvider>
       </QueryClientProvider>
     </HelmetProvider>

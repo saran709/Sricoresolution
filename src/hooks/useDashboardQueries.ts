@@ -1,12 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import {
+  User,
   Project,
   ProjectTask,
   Enquiry,
   Document as AppDocument,
   InternshipApplication,
+  InternshipProgram,
+  ActivityHistory,
   Notification as AppNotification,
   LeaveRequest,
   Attendance,
@@ -59,6 +62,7 @@ export function useClientDashboard(clientId?: string) {
         return {
           enquiries: [],
           projects: [],
+          payments: [],
           documents: [],
         };
       }
@@ -210,6 +214,143 @@ export function useEmployeeDashboard(employeeId?: string) {
         : [];
 
       return { projects, tasks, leaveRequests, attendances };
+    },
+  });
+}
+
+/**
+ * Fetch mentor dashboard data with React Query caching and single-field index safety
+ */
+export function useMentorDashboard(mentorId?: string) {
+  return useQuery({
+    queryKey: ['mentor-dashboard', mentorId],
+    enabled: Boolean(mentorId),
+    queryFn: async () => {
+      if (!mentorId) {
+        return { interns: [], tasks: [] };
+      }
+
+      const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3500));
+
+      const mentorFieldPromise = getDocs(
+        query(collection(db, 'users'), where('mentorId', '==', mentorId))
+      );
+      const assignedMentorPromise = getDocs(
+        query(collection(db, 'users'), where('assignedMentorId', '==', mentorId))
+      );
+
+      const [resA, resB] = await Promise.allSettled([
+        Promise.race([mentorFieldPromise, timeout]),
+        Promise.race([assignedMentorPromise, timeout]),
+      ]);
+
+      const internMap = new Map<string, User>();
+      if (resA.status === 'fulfilled' && resA.value) {
+        resA.value.docs.forEach((d) => internMap.set(d.id, { id: d.id, ...d.data() } as User));
+      }
+      if (resB.status === 'fulfilled' && resB.value) {
+        resB.value.docs.forEach((d) => internMap.set(d.id, { id: d.id, ...d.data() } as User));
+      }
+
+      const interns = Array.from(internMap.values());
+      const tasks: ProjectTask[] = [];
+
+      if (interns.length > 0) {
+        const internIds = interns.map((i) => i.id!).filter(Boolean);
+        const batchPromises = [];
+        for (let i = 0; i < Math.min(internIds.length, 20); i += 10) {
+          const batch = internIds.slice(i, i + 10);
+          batchPromises.push(
+            Promise.race([
+              getDocs(query(collection(db, 'projectTasks'), where('assignedTo', 'in', batch))),
+              timeout,
+            ])
+          );
+        }
+        const taskSnapshots = await Promise.allSettled(batchPromises);
+        taskSnapshots.forEach((snapRes) => {
+          if (snapRes.status === 'fulfilled' && snapRes.value) {
+            snapRes.value.docs.forEach((d) => {
+              tasks.push({ id: d.id, ...d.data() } as ProjectTask);
+            });
+          }
+        });
+      }
+
+      return { interns, tasks };
+    },
+  });
+}
+
+/**
+ * Fetch intern/student dashboard data with React Query caching and single-field index safety
+ */
+export function useInternDashboard(
+  userProfile?: (User & { mentorId?: string; assignedMentorId?: string; programId?: string }) | null
+) {
+  const uid = userProfile?.uid;
+  const mentorId = userProfile?.mentorId || userProfile?.assignedMentorId;
+  const programId = userProfile?.programId;
+
+  return useQuery({
+    queryKey: ['intern-dashboard', uid, mentorId, programId],
+    enabled: Boolean(uid),
+    queryFn: async () => {
+      if (!uid) {
+        return { mentor: null, program: null, tasks: [], feedback: [] };
+      }
+
+      const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3500));
+
+      const mentorPromise = mentorId ? getDoc(doc(db, 'users', mentorId)) : Promise.resolve(null);
+      const programPromise = programId
+        ? getDoc(doc(db, 'internship_programs', programId))
+        : Promise.resolve(null);
+      const taskPromise = getDocs(
+        query(collection(db, 'projectTasks'), where('assignedTo', '==', uid))
+      );
+      const fbPromise = getDocs(
+        query(collection(db, 'auditLogs'), where('resourceId', '==', uid))
+      );
+
+      const [mentorRes, programRes, taskRes, fbRes] = await Promise.allSettled([
+        Promise.race([mentorPromise, timeout]),
+        Promise.race([programPromise, timeout]),
+        Promise.race([taskPromise, timeout]),
+        Promise.race([fbPromise, timeout]),
+      ]);
+
+      const mentor: User | null =
+        mentorRes.status === 'fulfilled' &&
+        mentorRes.value &&
+        'exists' in mentorRes.value &&
+        mentorRes.value.exists()
+          ? ({ id: mentorRes.value.id, ...mentorRes.value.data() } as User)
+          : null;
+
+      const program: InternshipProgram | null =
+        programRes.status === 'fulfilled' &&
+        programRes.value &&
+        'exists' in programRes.value &&
+        programRes.value.exists()
+          ? ({ id: programRes.value.id, ...programRes.value.data() } as InternshipProgram)
+          : null;
+
+      const tasks: ProjectTask[] =
+        taskRes.status === 'fulfilled' && taskRes.value && 'docs' in taskRes.value
+          ? taskRes.value.docs.map((d) => ({ id: d.id, ...d.data() } as ProjectTask))
+          : [];
+
+      const feedback: ActivityHistory[] =
+        fbRes.status === 'fulfilled' && fbRes.value && 'docs' in fbRes.value
+          ? fbRes.value.docs
+              .map((d) => ({ id: d.id, ...d.data() } as ActivityHistory))
+              .filter((item) =>
+                ['INTERN_FEEDBACK', 'INTERN_EVALUATION'].includes(item.action)
+              )
+          : [];
+
+      return { mentor, program, tasks, feedback };
     },
   });
 }

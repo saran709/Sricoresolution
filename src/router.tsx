@@ -3,11 +3,17 @@ import { Routes, Route } from 'react-router-dom';
 import { MainLayout } from './components/layout/MainLayout';
 import { PrivateRoute, AdminPrivateRoute } from './components/PrivateRoute';
 import { PagePlaceholder } from './components/ui/PagePlaceholder';
-import { AdminDashboardLayout } from './components/AdminDashboard';
-import { DashboardLayout } from './components/layout/DashboardLayout';
 import { ScrollToTop } from './components/layout/ScrollToTop';
 import { CookieBanner } from './components/ui/CookieBanner';
 import { useAdPolicyGuard } from './hooks/useAdPolicyGuard';
+
+// Lazy-loaded Unified Workspace Layouts
+const AdminDashboardLayout = React.lazy(() =>
+  import('./components/AdminDashboard').then((m) => ({ default: m.AdminDashboardLayout }))
+);
+const DashboardLayout = React.lazy(() =>
+  import('./components/layout/DashboardLayout').then((m) => ({ default: m.DashboardLayout }))
+);
 
 // Main Pages
 const Home = React.lazy(() => import('./pages/Home'));
@@ -60,6 +66,7 @@ const AdminVendors = React.lazy(() => import('./pages/admin/Vendors'));
 const AdminAnnouncements = React.lazy(() => import('./pages/admin/Announcements'));
 const AdminReports = React.lazy(() => import('./pages/admin/Reports'));
 const AdminSettings = React.lazy(() => import('./pages/admin/Settings'));
+const AdminPermissions = React.lazy(() => import('./components/PermissionConfiguration'));
 
 const PageLoader = () => (
   <div
@@ -119,6 +126,7 @@ export function AppRouter() {
             <Route path="announcements" element={<AdminAnnouncements />} />
             <Route path="notifications" element={<PagePlaceholder title="Notifications" />} />
             
+            <Route path="permissions" element={<AdminPermissions />} />
             <Route path="settings" element={<AdminSettings />} />
           </Route>
 

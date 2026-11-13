@@ -24,7 +24,7 @@ import {
   LineChart as LineChartIcon,
   Layers,
 } from 'lucide-react';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { collection, onSnapshot, query, limit, orderBy } from 'firebase/firestore';
 import { format, subDays, startOfDay, isSameDay } from 'date-fns';
 import { db } from '../lib/firebase';
 import { User, AuditLog, Attendance, Enquiry } from '../types';
@@ -66,7 +66,7 @@ export const SystemInsights: React.FC = () => {
   const [chartMode, setChartMode] = useState<InsightChartMode>('composed');
   const [timeWindow, setTimeWindow] = useState<TimeWindow>(30);
 
-  // Real-time listeners for users, auditLogs, attendance, and enquiries
+  // Bounded real-time listeners for users, auditLogs, attendance, and enquiries
   useEffect(() => {
     let loaded = 0;
     const markReady = () => {
@@ -75,7 +75,7 @@ export const SystemInsights: React.FC = () => {
     };
 
     const unsubUsers = onSnapshot(
-      collection(db, 'users'),
+      query(collection(db, 'users'), limit(500)),
       (snap) => {
         setUsers(
           snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as User[]
@@ -86,7 +86,7 @@ export const SystemInsights: React.FC = () => {
     );
 
     const unsubAudit = onSnapshot(
-      collection(db, 'auditLogs'),
+      query(collection(db, 'auditLogs'), orderBy('timestamp', 'desc'), limit(500)),
       (snap) => {
         setAuditLogs(
           snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as AuditLog[]
@@ -97,7 +97,7 @@ export const SystemInsights: React.FC = () => {
     );
 
     const unsubAttendance = onSnapshot(
-      collection(db, 'attendance'),
+      query(collection(db, 'attendance'), limit(500)),
       (snap) => {
         setAttendanceLogs(
           snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as Attendance[]
@@ -107,7 +107,7 @@ export const SystemInsights: React.FC = () => {
     );
 
     const unsubEnquiries = onSnapshot(
-      collection(db, 'enquiries'),
+      query(collection(db, 'enquiries'), limit(500)),
       (snap) => {
         setEnquiries(
           snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as Enquiry[]
