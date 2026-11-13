@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/Button';
 import { logActivity } from '../../lib/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
 import { SeedInternshipsButton } from '../../components/admin/SeedInternshipsButton';
+import { ShimmerTableRows } from '../../components/ui/DashboardSuspense';
 
 const STATUSES: { value: InternshipApplication['status']; label: string }[] = [
   { value: 'internship_enquiry', label: 'Enquiry' },
@@ -129,13 +130,7 @@ export default function AdminInternships() {
             </thead>
             <tbody>
               {loading ? (
-                <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-slate-500">
-                    <div className="animate-pulse flex flex-col items-center">
-                      <div className="h-4 w-24 bg-slate-200 rounded mb-2"></div>
-                    </div>
-                  </td>
-                </tr>
+                <ShimmerTableRows rows={5} cols={4} />
               ) : filteredApplications.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-8 text-center text-slate-500">

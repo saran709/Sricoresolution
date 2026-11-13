@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { ShieldAlert, Lock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useRBAC } from '../contexts/RBACContext';
 import { UserRole } from '../types';
 import { normalizeToCanonicalRole } from '../lib/rbac';
+import { prefetchDashboardForRole } from '../hooks/useDashboardQueries';
 
 export interface PrivateRouteProps {
   children?: React.ReactNode;
@@ -27,6 +28,21 @@ export const PrivateRoute: React.FC<PrivateRouteProps> = ({
     ? ['ADMIN', 'ADMINISTRATOR']
     : allowedRoles;
 
+  const userCanonical = normalizeToCanonicalRole(userProfile?.role);
+  const canPrefetch = Boolean(
+    currentUser?.uid && userProfile && (userCanonical === 'ADMIN' || (!suspended && !expired))
+  );
+
+  // Warm TanStack Query cache for RBAC, sidebar config, and role data while lazy child chunks resolve
+  useEffect(() => {
+    if (!canPrefetch) return;
+    void prefetchDashboardForRole({
+      role: userCanonical,
+      actualRole: userCanonical,
+      userProfile: userProfile as any,
+    });
+  }, [canPrefetch, userCanonical, userProfile]);
+
   if (loading || (effectiveRoles && effectiveRoles.length > 0 && profileLoading)) {
     return (
       <div
@@ -45,8 +61,6 @@ export const PrivateRoute: React.FC<PrivateRouteProps> = ({
   if (!currentUser) {
     return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
-
-  const userCanonical = normalizeToCanonicalRole(userProfile?.role);
 
   // Block suspended accounts or expired access dates (except ADMIN)
   if (userCanonical !== 'ADMIN' && (suspended || expired)) {

@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { collection, query, orderBy, limit, getDocs, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
+import React, { useState, useRef } from 'react';
+import { collection, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from '../../lib/firebase';
 import { Document as AppDocument } from '../../types';
@@ -7,11 +7,21 @@ import { Search, Upload, File, Download, Trash2, AlertCircle, CheckCircle2 } fro
 import { Button } from '../../components/ui/Button';
 import { logActivity } from '../../lib/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
+import { queryClient } from '../../lib/queryClient';
+import {
+  dashboardQueryKeys,
+  invalidateAdminCaches,
+  useAdminDocuments,
+} from '../../hooks/useDashboardQueries';
+import { ShimmerTableRows } from '../../components/ui/DashboardSuspense';
 
 export default function AdminDocuments() {
   const { userProfile } = useAuth();
-  const [documents, setDocuments] = useState<AppDocument[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    data: documents = [],
+    isLoading: loading,
+    isError,
+  } = useAdminDocuments(200);
   const [searchTerm, setSearchTerm] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [notice, setNotice] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
@@ -21,28 +31,6 @@ export default function AdminDocuments() {
   // New document form state
   const [docType, setDocType] = useState<AppDocument['documentType']>('other');
   const [accessLevel, setAccessLevel] = useState<AppDocument['accessLevel']>('company');
-
-  useEffect(() => {
-    fetchDocuments();
-  }, []);
-
-  const fetchDocuments = async () => {
-    setLoading(true);
-    try {
-      const q = query(collection(db, 'documents'), orderBy('createdAt', 'desc'), limit(200));
-      const snapshot = await getDocs(q);
-      const items: AppDocument[] = [];
-      snapshot.forEach(docSnap => {
-        items.push({ id: docSnap.id, ...docSnap.data() } as AppDocument);
-      });
-      setDocuments(items);
-    } catch (error) {
-      console.error("Error fetching documents:", error);
-      setNotice({ type: 'error', text: 'Failed to load documents list.' });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -90,7 +78,7 @@ export default function AdminDocuments() {
         `Uploaded document: ${file.name}`
       );
       
-      await fetchDocuments();
+      invalidateAdminCaches(['documents']);
       setNotice({ type: 'success', text: `Uploaded "${file.name}" successfully.` });
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (error) {
@@ -117,7 +105,11 @@ export default function AdminDocuments() {
       // 2. Delete from Firestore
       await deleteDoc(doc(db, 'documents', documentItem.id!));
       
-      setDocuments((prev) => prev.filter(d => d.id !== documentItem.id));
+      queryClient.setQueryData<AppDocument[]>(
+        dashboardQueryKeys.adminDocuments(200),
+        (prev) => (prev ? prev.filter((d) => d.id !== documentItem.id) : [])
+      );
+      invalidateAdminCaches(['documents']);
       
       if (userProfile?.uid) {
         await logActivity(
@@ -147,6 +139,13 @@ export default function AdminDocuments() {
           <p className="text-sm text-slate-500">Securely upload and manage organizational files</p>
         </div>
       </div>
+
+      {isError && !notice && (
+        <div className="p-3.5 rounded-xl border text-sm flex items-center gap-2 bg-red-50 border-red-200 text-red-800">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span>Failed to load documents list.</span>
+        </div>
+      )}
 
       {notice && (
         <div className={`p-3.5 rounded-xl border text-sm flex items-center justify-between gap-3 ${
@@ -255,13 +254,7 @@ export default function AdminDocuments() {
             </thead>
             <tbody>
               {loading ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
-                    <div className="animate-pulse flex flex-col items-center">
-                      <div className="h-4 w-24 bg-slate-200 rounded mb-2"></div>
-                    </div>
-                  </td>
-                </tr>
+                <ShimmerTableRows rows={5} cols={5} />
               ) : filteredDocs.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center text-slate-500">

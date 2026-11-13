@@ -225,17 +225,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      // Immediately hydrate per-user cached profile if present
-      setProfileLoading(true);
+      // Immediately hydrate per-user cached profile if present so workspaces do not block behind a spinner
+      let hasCachedProfile = false;
       try {
         const cachedStr = localStorage.getItem(`sricore_profile_${user.uid}`);
         if (cachedStr) {
           const cached = JSON.parse(cachedStr);
           if (cached && cached.uid === user.uid) {
             setUserProfile(cached);
+            hasCachedProfile = true;
           }
         }
       } catch {}
+      setProfileLoading(!hasCachedProfile);
 
       let initialized = false;
       const isConfiguredAdmin = Boolean(

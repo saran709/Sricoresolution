@@ -5,7 +5,8 @@ import { Container } from './ui/Container';
 import { cn } from '../utils/cn';
 import { useAuth } from '../contexts/AuthContext';
 import { useWebsiteSettings, formatBrandParts } from '../contexts/WebsiteSettingsContext';
-import { ThemeToggle } from './ui/ThemeToggle';
+import { normalizeToCanonicalRole } from '../lib/rbac';
+import { prefetchDashboardForRole } from '../hooks/useDashboardQueries';
 
 export interface NavItem {
   name: string;
@@ -202,13 +203,25 @@ export const Navbar = React.memo(function Navbar() {
 
             {/* Desktop Utility & Auth Actions */}
             <div className="hidden md:flex items-center space-x-3 shrink-0">
-              <ThemeToggle variant="switch" />
-
               {currentUser ? (
                 <div className="flex items-center gap-2">
                   {isAdmin && (
                     <Link
                       to="/admin"
+                      onMouseEnter={() =>
+                        void prefetchDashboardForRole({
+                          role: 'ADMIN',
+                          actualRole: 'ADMIN',
+                          userProfile: userProfile as any,
+                        })
+                      }
+                      onFocus={() =>
+                        void prefetchDashboardForRole({
+                          role: 'ADMIN',
+                          actualRole: 'ADMIN',
+                          userProfile: userProfile as any,
+                        })
+                      }
                       className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded bg-amber-500 hover:bg-amber-600 text-white uppercase tracking-wider transition-colors shadow-xs"
                     >
                       Admin Portal
@@ -216,6 +229,22 @@ export const Navbar = React.memo(function Navbar() {
                   )}
                   <Link
                     to="/dashboard"
+                    onMouseEnter={() => {
+                      const canonical = normalizeToCanonicalRole(userProfile?.role);
+                      void prefetchDashboardForRole({
+                        role: canonical,
+                        actualRole: canonical,
+                        userProfile: userProfile as any,
+                      });
+                    }}
+                    onFocus={() => {
+                      const canonical = normalizeToCanonicalRole(userProfile?.role);
+                      void prefetchDashboardForRole({
+                        role: canonical,
+                        actualRole: canonical,
+                        userProfile: userProfile as any,
+                      });
+                    }}
                     className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
                   >
                     <UserIcon className="w-4 h-4" />
@@ -243,7 +272,6 @@ export const Navbar = React.memo(function Navbar() {
 
             {/* Mobile Toggle Controls */}
             <div className="flex md:hidden items-center gap-1.5">
-              <ThemeToggle variant="icon" showLabel />
               <button
                 type="button"
                 onClick={toggleMobileMenu}
@@ -265,13 +293,6 @@ export const Navbar = React.memo(function Navbar() {
         {isMobileMenuOpen && (
           <div className="md:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl">
             <div className="px-4 pt-3 pb-5 space-y-1 max-h-[82vh] overflow-y-auto">
-              <div className="flex items-center justify-between px-3 py-2 mb-2 rounded-lg bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700">
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Theme Mode
-                </span>
-                <ThemeToggle variant="switch" />
-              </div>
-
               {PRIMARY_NAV_LINKS.map((item) => (
                 <React.Fragment key={item.name}>
                   {item.children ? (

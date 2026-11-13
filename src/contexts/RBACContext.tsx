@@ -6,8 +6,9 @@ import React, {
   useMemo,
   useCallback,
 } from 'react';
-import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { queryClient } from '../lib/queryClient';
 import { useAuth } from './AuthContext';
 import {
   CanonicalRole,
@@ -23,7 +24,6 @@ import {
   ResourcePermissionEntry,
   ResourceCRUDAction,
   ResourceAccessScope,
-  resolveResourcePermissionsMap,
   resolveRoleResourceAccess,
   normalizeToCanonicalRole,
   resolveEffectivePermissions,
@@ -41,6 +41,14 @@ import {
   CreatePermissionInput,
   UpdatePermissionInput,
 } from '../services/PermissionService';
+import {
+  createDefaultUsageMetrics,
+  dashboardQueryKeys,
+  DEFAULT_RBAC_CONFIG,
+  prefetchSidebarNavigation,
+  useRbacConfigQuery,
+  useUserQuotaQuery,
+} from '../hooks/useDashboardQueries';
 
 interface RBACContextValue {
   /** The authenticated user's true canonical role (1 of 5) */
@@ -50,7 +58,7 @@ interface RBACContextValue {
   /** Admin-only role preview override for testing all 5 roles independently */
   simulatedRole: CanonicalRole | null;
   setSimulatedRole: (role: CanonicalRole | null) => void;
-  /** Global 5-role configuration streamed in real-time from Firestore `settings/rbac_config` */
+  /** Global 5-role configuration cached via TanStack Query from Firestore `settings/rbac_config` */
   rbacConfig: RBACConfigDocument;
   /** Effective 11 permissions for the current user / active role */
   permissions: RolePermissionsMap;
@@ -114,25 +122,13 @@ interface RBACContextValue {
       limitOverrides?: Partial<RoleLimits>;
     }
   ) => Promise<void>;
+  /** Force revalidate cached RBAC and sidebar queries from Firestore */
+  refreshRBAC: () => Promise<void>;
   loading: boolean;
 }
 
-const DEFAULT_USAGE: UserUsageMetrics = {
-  projectsCount: 0,
-  assignedTasksCount: 0,
-  aiRequestsToday: 0,
-  aiRequestsDate: new Date().toISOString().slice(0, 10),
-  storageUsedMB: 0,
-  reportsGeneratedCount: 0,
-  assignedMenteesCount: 0,
-  activeClientProjectsCount: 0,
-};
-
-const DEFAULT_CONFIG: RBACConfigDocument = {
-  rolePermissions: DEFAULT_ROLE_PERMISSIONS,
-  roleLimits: DEFAULT_ROLE_LIMITS,
-  resourcePermissions: DEFAULT_RESOURCE_PERMISSIONS,
-};
+const DEFAULT_USAGE: UserUsageMetrics = createDefaultUsageMetrics();
+const DEFAULT_CONFIG: RBACConfigDocument = DEFAULT_RBAC_CONFIG;
 
 const RBACContext = createContext<RBACContextValue>({
   actualRole: 'INTERN_STUDENT',
@@ -159,6 +155,7 @@ const RBACContext = createContext<RBACContextValue>({
   deleteResourcePermission: async () => {},
   saveAllResourcePermissions: async () => {},
   updateUserOverrides: async () => {},
+  refreshRBAC: async () => {},
   loading: true,
 });
 
@@ -168,12 +165,8 @@ export const RBACProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const { currentUser, userProfile } = useAuth();
-  const [rbacConfig, setRbacConfig] =
-    useState<RBACConfigDocument>(DEFAULT_CONFIG);
-  const [usage, setUsage] = useState<UserUsageMetrics>(DEFAULT_USAGE);
   const [simulatedRole, setSimulatedRoleState] =
     useState<CanonicalRole | null>(null);
-  const [loading, setLoading] = useState(true);
 
   const actualRole = useMemo<CanonicalRole>(() => {
     return normalizeToCanonicalRole(userProfile?.role);
@@ -198,128 +191,57 @@ export const RBACProvider: React.FC<{ children: React.ReactNode }> = ({
     [actualRole]
   );
 
-  // 1. Real-time listener on `settings/rbac_config` only for authenticated users so public visitors open 0 RBAC streams
+  // 1. TanStack Query cached `settings/rbac_config` (only runs when authenticated)
+  const isAuthenticated = Boolean(currentUser?.uid);
+  const {
+    data: cachedRbacConfig,
+    isLoading: rbacQueryLoading,
+    refetch: refetchRbacConfig,
+  } = useRbacConfigQuery(isAuthenticated);
+
+  const rbacConfig = isAuthenticated
+    ? cachedRbacConfig || DEFAULT_CONFIG
+    : DEFAULT_CONFIG;
+  const loading = isAuthenticated ? rbacQueryLoading : false;
+
+  // 2. TanStack Query cached `quotas/{uid}`
+  const { data: cachedUsage } = useUserQuotaQuery(currentUser?.uid);
+  const usage = isAuthenticated ? cachedUsage || DEFAULT_USAGE : DEFAULT_USAGE;
+
+  const suspended = useMemo(
+    () => userProfile?.isActive === false,
+    [userProfile?.isActive]
+  );
+
+  // 3. Proactively warm cached sidebar navigation configs in TanStack Query
   useEffect(() => {
-    if (!currentUser?.uid) {
-      setRbacConfig(DEFAULT_CONFIG);
-      setLoading(false);
-      return;
-    }
+    if (!currentUser?.uid || !cachedRbacConfig) return;
+    const rolesToPrefetch: CanonicalRole[] =
+      actualRole === 'ADMIN' ? [...FIVE_ROLES] : [activeRole];
 
-    setLoading(true);
-    const configRef = doc(db, 'settings', 'rbac_config');
-    const unsubscribe = onSnapshot(
-      configRef,
-      (snap) => {
-        if (snap.exists()) {
-          const data = snap.data() as Partial<RBACConfigDocument>;
-          const mergedPerms: Record<CanonicalRole, RolePermissionsMap> = {
-            ADMIN: {
-              ...DEFAULT_ROLE_PERMISSIONS.ADMIN,
-              ...(data.rolePermissions?.ADMIN || {}),
-            },
-            CLIENT: {
-              ...DEFAULT_ROLE_PERMISSIONS.CLIENT,
-              ...(data.rolePermissions?.CLIENT || {}),
-            },
-            EMPLOYEE: {
-              ...DEFAULT_ROLE_PERMISSIONS.EMPLOYEE,
-              ...(data.rolePermissions?.EMPLOYEE || {}),
-            },
-            MENTOR: {
-              ...DEFAULT_ROLE_PERMISSIONS.MENTOR,
-              ...(data.rolePermissions?.MENTOR || {}),
-            },
-            INTERN_STUDENT: {
-              ...DEFAULT_ROLE_PERMISSIONS.INTERN_STUDENT,
-              ...(data.rolePermissions?.INTERN_STUDENT || {}),
-            },
-          };
-
-          const mergedLimits: Record<CanonicalRole, RoleLimits> = {
-            ADMIN: {
-              ...DEFAULT_ROLE_LIMITS.ADMIN,
-              ...(data.roleLimits?.ADMIN || {}),
-            },
-            CLIENT: {
-              ...DEFAULT_ROLE_LIMITS.CLIENT,
-              ...(data.roleLimits?.CLIENT || {}),
-            },
-            EMPLOYEE: {
-              ...DEFAULT_ROLE_LIMITS.EMPLOYEE,
-              ...(data.roleLimits?.EMPLOYEE || {}),
-            },
-            MENTOR: {
-              ...DEFAULT_ROLE_LIMITS.MENTOR,
-              ...(data.roleLimits?.MENTOR || {}),
-            },
-            INTERN_STUDENT: {
-              ...DEFAULT_ROLE_LIMITS.INTERN_STUDENT,
-              ...(data.rolePermissions ? data.roleLimits?.INTERN_STUDENT || {} : data.roleLimits?.INTERN_STUDENT || {}),
-            },
-          };
-
-          const mergedResources = data.resourcePermissions
-            ? data.resourcePermissions
-            : resolveResourcePermissionsMap(undefined);
-
-          setRbacConfig({
-            rolePermissions: mergedPerms,
-            roleLimits: mergedLimits,
-            resourcePermissions: mergedResources,
-            updatedAt: data.updatedAt,
-            updatedBy: data.updatedBy,
-          });
-        }
-        setLoading(false);
-      },
-      () => {
-        setLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
-  }, [currentUser?.uid]);
-
-  // 2. Real-time listener on `quotas/{uid}` for live resource consumption tracking
-  useEffect(() => {
-    if (!currentUser?.uid) {
-      setUsage(DEFAULT_USAGE);
-      return;
-    }
-
-    const quotaRef = doc(db, 'quotas', currentUser.uid);
-    const unsubscribe = onSnapshot(
-      quotaRef,
-      (snap) => {
-        if (snap.exists()) {
-          const data = snap.data() as Partial<UserUsageMetrics>;
-          const todayStr = new Date().toISOString().slice(0, 10);
-          setUsage({
-            projectsCount: Number(data.projectsCount || 0),
-            assignedTasksCount: Number(data.assignedTasksCount || 0),
-            aiRequestsToday:
-              data.aiRequestsDate === todayStr
-                ? Number(data.aiRequestsToday || 0)
-                : 0,
-            aiRequestsDate: todayStr,
-            storageUsedMB: Number(data.storageUsedMB || 0),
-            reportsGeneratedCount: Number(data.reportsGeneratedCount || 0),
-            assignedMenteesCount: Number(data.assignedMenteesCount || 0),
-            activeClientProjectsCount: Number(
-              data.activeClientProjectsCount || 0
-            ),
-            lastUpdated: data.lastUpdated,
-          });
-        } else {
-          setUsage(DEFAULT_USAGE);
-        }
-      },
-      () => {}
-    );
-
-    return () => unsubscribe();
-  }, [currentUser?.uid]);
+    void prefetchSidebarNavigation({
+      roles: rolesToPrefetch,
+      rbacConfig: cachedRbacConfig,
+      permissionOverrides:
+        simulatedRole && actualRole === 'ADMIN'
+          ? undefined
+          : (userProfile?.permissionOverrides as Partial<RolePermissionsMap> | undefined),
+      limitOverrides:
+        simulatedRole && actualRole === 'ADMIN'
+          ? undefined
+          : (userProfile?.limitOverrides as Partial<RoleLimits> | undefined),
+      suspended,
+    });
+  }, [
+    currentUser?.uid,
+    cachedRbacConfig,
+    actualRole,
+    activeRole,
+    simulatedRole,
+    userProfile?.permissionOverrides,
+    userProfile?.limitOverrides,
+    suspended,
+  ]);
 
   const resourcePermissions = useMemo<Record<string, ResourcePermissionEntry>>(() => {
     if (
@@ -349,10 +271,26 @@ export const RBACProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [activeRole, actualRole, simulatedRole, rbacConfig, userProfile?.limitOverrides]);
 
   const expired = useMemo(() => isAccessExpired(limits), [limits]);
-  const suspended = useMemo(
-    () => userProfile?.isActive === false,
-    [userProfile?.isActive]
+
+  const syncRbacCache = useCallback(
+    (updater: RBACConfigDocument | ((prev: RBACConfigDocument) => RBACConfigDocument)) => {
+      queryClient.setQueryData<RBACConfigDocument>(
+        dashboardQueryKeys.rbacConfig,
+        (prev) => {
+          const base = prev || rbacConfig || DEFAULT_CONFIG;
+          return typeof updater === 'function' ? updater(base) : updater;
+        }
+      );
+      void queryClient.invalidateQueries({ queryKey: ['sidebar-config'] });
+    },
+    [rbacConfig]
   );
+
+  const refreshRBAC = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.rbacConfig });
+    await refetchRbacConfig();
+    void queryClient.invalidateQueries({ queryKey: ['sidebar-config'] });
+  }, [refetchRbacConfig]);
 
   const can = useCallback(
     (action: PermissionAction): boolean => {
@@ -466,13 +404,19 @@ export const RBACProvider: React.FC<{ children: React.ReactNode }> = ({
       if (!currentUser?.uid) {
         return { allowed: false, reason: 'Not authenticated' };
       }
-      return checkAndConsumeQuota({
+      const res = await checkAndConsumeQuota({
         userId: currentUser.uid,
         role: activeRole,
         metric,
         incrementBy,
         effectiveLimits: limits,
       });
+      if (res.allowed) {
+        void queryClient.invalidateQueries({
+          queryKey: dashboardQueryKeys.userQuota(currentUser.uid),
+        });
+      }
+      return res;
     },
     [currentUser?.uid, activeRole, limits]
   );
@@ -488,11 +432,13 @@ export const RBACProvider: React.FC<{ children: React.ReactNode }> = ({
           ...rbacConfig.rolePermissions,
           [targetRole]: updatedMap,
         },
+        updatedAt: Date.now(),
+        updatedBy: currentUser.uid,
       };
-      setRbacConfig(nextConfig);
+      syncRbacCache(nextConfig);
       await saveRBACConfigToFirestore(nextConfig, currentUser.uid);
     },
-    [actualRole, currentUser?.uid, rbacConfig]
+    [actualRole, currentUser?.uid, rbacConfig, syncRbacCache]
   );
 
   const updateRoleLimits = useCallback(
@@ -506,11 +452,13 @@ export const RBACProvider: React.FC<{ children: React.ReactNode }> = ({
           ...rbacConfig.roleLimits,
           [targetRole]: updatedLimits,
         },
+        updatedAt: Date.now(),
+        updatedBy: currentUser.uid,
       };
-      setRbacConfig(nextConfig);
+      syncRbacCache(nextConfig);
       await saveRBACConfigToFirestore(nextConfig, currentUser.uid);
     },
-    [actualRole, currentUser?.uid, rbacConfig]
+    [actualRole, currentUser?.uid, rbacConfig, syncRbacCache]
   );
 
   const createResourcePermission = useCallback(
@@ -523,8 +471,10 @@ export const RBACProvider: React.FC<{ children: React.ReactNode }> = ({
         email: currentUser.email,
       });
       if (result.data) {
-        setRbacConfig((prev) => ({
+        syncRbacCache((prev) => ({
           ...prev,
+          updatedAt: Date.now(),
+          updatedBy: currentUser.uid,
           resourcePermissions: {
             ...(prev.resourcePermissions || resourcePermissions),
             [result.resourceKey]: result.data!,
@@ -532,7 +482,7 @@ export const RBACProvider: React.FC<{ children: React.ReactNode }> = ({
         }));
       }
     },
-    [actualRole, currentUser?.email, currentUser?.uid, resourcePermissions]
+    [actualRole, currentUser?.email, currentUser?.uid, resourcePermissions, syncRbacCache]
   );
 
   const updateResourcePermission = useCallback(
@@ -545,8 +495,10 @@ export const RBACProvider: React.FC<{ children: React.ReactNode }> = ({
         email: currentUser.email,
       });
       if (result.data) {
-        setRbacConfig((prev) => ({
+        syncRbacCache((prev) => ({
           ...prev,
+          updatedAt: Date.now(),
+          updatedBy: currentUser.uid,
           resourcePermissions: {
             ...(prev.resourcePermissions || resourcePermissions),
             [result.resourceKey]: result.data!,
@@ -554,7 +506,7 @@ export const RBACProvider: React.FC<{ children: React.ReactNode }> = ({
         }));
       }
     },
-    [actualRole, currentUser?.email, currentUser?.uid, resourcePermissions]
+    [actualRole, currentUser?.email, currentUser?.uid, resourcePermissions, syncRbacCache]
   );
 
   const upsertResourcePermission = useCallback(
@@ -594,16 +546,18 @@ export const RBACProvider: React.FC<{ children: React.ReactNode }> = ({
         email: currentUser.email,
       });
 
-      setRbacConfig((prev) => {
+      syncRbacCache((prev) => {
         const nextResourceMap = { ...(prev.resourcePermissions || resourcePermissions) };
         delete nextResourceMap[resourceKey];
         return {
           ...prev,
+          updatedAt: Date.now(),
+          updatedBy: currentUser.uid,
           resourcePermissions: nextResourceMap,
         };
       });
     },
-    [actualRole, currentUser?.email, currentUser?.uid, resourcePermissions]
+    [actualRole, currentUser?.email, currentUser?.uid, resourcePermissions, syncRbacCache]
   );
 
   const saveAllResourcePermissions = useCallback(
@@ -626,13 +580,22 @@ export const RBACProvider: React.FC<{ children: React.ReactNode }> = ({
         }
       );
 
-      setRbacConfig((prev) => ({
+      syncRbacCache((prev) => ({
         ...prev,
+        updatedAt: Date.now(),
+        updatedBy: currentUser.uid,
         rolePermissions: nextRolePermissions || prev.rolePermissions,
         resourcePermissions: result.data || nextResourceMap,
       }));
     },
-    [actualRole, currentUser?.email, currentUser?.uid, rbacConfig.roleLimits, rbacConfig.rolePermissions]
+    [
+      actualRole,
+      currentUser?.email,
+      currentUser?.uid,
+      rbacConfig.roleLimits,
+      rbacConfig.rolePermissions,
+      syncRbacCache,
+    ]
   );
 
   const updateUserOverrides = useCallback(
@@ -659,6 +622,7 @@ export const RBACProvider: React.FC<{ children: React.ReactNode }> = ({
         },
         { merge: true }
       );
+      void queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.adminUsers });
     },
     [actualRole, currentUser?.uid]
   );
@@ -689,6 +653,7 @@ export const RBACProvider: React.FC<{ children: React.ReactNode }> = ({
       deleteResourcePermission,
       saveAllResourcePermissions,
       updateUserOverrides,
+      refreshRBAC,
       loading,
     }),
     [
@@ -716,6 +681,7 @@ export const RBACProvider: React.FC<{ children: React.ReactNode }> = ({
       deleteResourcePermission,
       saveAllResourcePermissions,
       updateUserOverrides,
+      refreshRBAC,
       loading,
     ]
   );

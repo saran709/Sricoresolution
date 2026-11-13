@@ -61,7 +61,6 @@
 body {
   background-color: var(--bg-page);
   color: var(--text-primary);
-  transition: background-color 0.2s ease, color 0.2s ease;
   min-height: 100vh;
 }
 
@@ -69,6 +68,56 @@ body {
 .content-visibility-auto {
   content-visibility: auto;
   contain-intrinsic-size: auto 560px;
+}
+
+/* Shimmer-style loading skeleton animation (GPU-accelerated sweep, light & dark adaptive) */
+@keyframes skeleton-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+  background-color: #e2e8f0;
+}
+
+.skeleton-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.72) 50%,
+    transparent 100%
+  );
+  animation: skeleton-shimmer 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  will-change: transform;
+}
+
+.dark .skeleton-shimmer {
+  background-color: #1e293b;
+}
+
+.dark .skeleton-shimmer::after {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(148, 163, 184, 0.16) 50%,
+    transparent 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer::after {
+    animation: none;
+  }
 }
 
 /* Theme accent and brand utilities calibrated to CSRi logo */

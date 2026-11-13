@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { APP_CONFIG } from '../config';
 
@@ -217,27 +217,71 @@ export const DEFAULT_WEBSITE_SETTINGS: WebsiteSettings = {
 };
 
 const WEBSITE_SETTINGS_CACHE_KEY = 'sricore_website_settings_cache_v1';
+const WEBSITE_SETTINGS_TS_KEY = 'sricore_website_settings_ts_v1';
+const SETTINGS_CACHE_TTL_MS = 1000 * 60 * 5; // 5 minutes
 
-function readCachedSettings(): WebsiteSettings {
+function normalizeSettingsPayload(
+  parsed: Partial<WebsiteSettings>,
+  fallback: WebsiteSettings = DEFAULT_WEBSITE_SETTINGS
+): WebsiteSettings {
+  const rawTheme = (parsed.theme || {}) as Partial<ThemeColors>;
+  const isOldBlue =
+    !rawTheme.primary ||
+    rawTheme.primary === '#2563eb' ||
+    rawTheme.primary === '#1d4ed8' ||
+    rawTheme.primary === '#3b82f6';
+
+  const finalTheme = isOldBlue
+    ? { ...DEFAULT_WEBSITE_SETTINGS.theme }
+    : { ...DEFAULT_WEBSITE_SETTINGS.theme, ...rawTheme };
+
+  return {
+    ...fallback,
+    ...parsed,
+    brandName: normalizeBrandName(parsed.brandName || fallback.brandName),
+    theme: finalTheme,
+    announcement: {
+      ...DEFAULT_WEBSITE_SETTINGS.announcement,
+      ...(parsed.announcement || {}),
+      bgColor:
+        isOldBlue &&
+        (parsed.announcement?.bgColor === '#1e40af' ||
+          parsed.announcement?.bgColor === '#2563eb')
+          ? DEFAULT_WEBSITE_SETTINGS.announcement.bgColor
+          : parsed.announcement?.bgColor || DEFAULT_WEBSITE_SETTINGS.announcement.bgColor,
+    },
+    hero: { ...DEFAULT_WEBSITE_SETTINGS.hero, ...(parsed.hero || {}) },
+    metrics:
+      Array.isArray(parsed.metrics) && parsed.metrics.length > 0
+        ? parsed.metrics
+        : fallback.metrics,
+    about: { ...DEFAULT_WEBSITE_SETTINGS.about, ...(parsed.about || {}) },
+    services: { ...DEFAULT_WEBSITE_SETTINGS.services, ...(parsed.services || {}) },
+    contact: { ...DEFAULT_WEBSITE_SETTINGS.contact, ...(parsed.contact || {}) },
+    socials: { ...DEFAULT_WEBSITE_SETTINGS.socials, ...(parsed.socials || {}) },
+  };
+}
+
+function readCachedSettingsState(): {
+  settings: WebsiteSettings;
+  hasCache: boolean;
+  isStale: boolean;
+} {
   try {
     const raw = localStorage.getItem(WEBSITE_SETTINGS_CACHE_KEY);
-    if (!raw) return DEFAULT_WEBSITE_SETTINGS;
+    if (!raw) {
+      return { settings: DEFAULT_WEBSITE_SETTINGS, hasCache: false, isStale: true };
+    }
     const parsed = JSON.parse(raw) as Partial<WebsiteSettings>;
+    const tsRaw = Number(localStorage.getItem(WEBSITE_SETTINGS_TS_KEY) || 0);
+    const isStale = !tsRaw || Date.now() - tsRaw > SETTINGS_CACHE_TTL_MS;
     return {
-      ...DEFAULT_WEBSITE_SETTINGS,
-      ...parsed,
-      brandName: normalizeBrandName(parsed.brandName || DEFAULT_WEBSITE_SETTINGS.brandName),
-      theme: { ...DEFAULT_WEBSITE_SETTINGS.theme, ...(parsed.theme || {}) },
-      announcement: { ...DEFAULT_WEBSITE_SETTINGS.announcement, ...(parsed.announcement || {}) },
-      hero: { ...DEFAULT_WEBSITE_SETTINGS.hero, ...(parsed.hero || {}) },
-      metrics: Array.isArray(parsed.metrics) && parsed.metrics.length > 0 ? parsed.metrics : DEFAULT_WEBSITE_SETTINGS.metrics,
-      about: { ...DEFAULT_WEBSITE_SETTINGS.about, ...(parsed.about || {}) },
-      services: { ...DEFAULT_WEBSITE_SETTINGS.services, ...(parsed.services || {}) },
-      contact: { ...DEFAULT_WEBSITE_SETTINGS.contact, ...(parsed.contact || {}) },
-      socials: { ...DEFAULT_WEBSITE_SETTINGS.socials, ...(parsed.socials || {}) },
+      settings: normalizeSettingsPayload(parsed),
+      hasCache: true,
+      isStale,
     };
   } catch {
-    return DEFAULT_WEBSITE_SETTINGS;
+    return { settings: DEFAULT_WEBSITE_SETTINGS, hasCache: false, isStale: true };
   }
 }
 
@@ -245,6 +289,7 @@ function writeCachedSettings(next: WebsiteSettings) {
   try {
     const { updatedAt: _u, ...serializable } = next;
     localStorage.setItem(WEBSITE_SETTINGS_CACHE_KEY, JSON.stringify(serializable));
+    localStorage.setItem(WEBSITE_SETTINGS_TS_KEY, String(Date.now()));
   } catch {
     // Ignore quota/storage errors
   }
@@ -259,63 +304,58 @@ export interface WebsiteSettingsContextType {
 
 const WebsiteSettingsContext = createContext<WebsiteSettingsContextType>({
   settings: DEFAULT_WEBSITE_SETTINGS,
-  loading: true,
+  loading: false,
   saveSettings: async () => false,
   resetToDefaults: async () => false
 });
 
 export function WebsiteSettingsProvider({ children }: { children: React.ReactNode }) {
-  const [settings, setSettings] = useState<WebsiteSettings>(() => readCachedSettings());
-  const [loading, setLoading] = useState<boolean>(true);
+  const initialCacheRef = useRef(readCachedSettingsState());
+  const [settings, setSettings] = useState<WebsiteSettings>(() => initialCacheRef.current.settings);
+  const [loading, setLoading] = useState<boolean>(() => !initialCacheRef.current.hasCache);
   const settingsRef = useRef<WebsiteSettings>(settings);
   settingsRef.current = settings;
 
-  // Subscribe to real-time updates from Firestore
+  // Hydrate fresh CMS settings via one-shot getDoc only when cache is missing or expired,
+  // avoiding a persistent Firestore streaming socket on every public visitor boot.
   useEffect(() => {
-    const docRef = doc(db, 'settings', 'website_cms');
-    
-    const unsubscribe = onSnapshot(docRef, async (snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.data() as Partial<WebsiteSettings>;
-        const rawTheme = (data.theme || {}) as Partial<ThemeColors>;
-        const isOldBlue = !rawTheme.primary || 
-          rawTheme.primary === '#2563eb' || 
-          rawTheme.primary === '#1d4ed8' || 
-          rawTheme.primary === '#3b82f6';
-        
-        const finalTheme = isOldBlue 
-          ? { ...DEFAULT_WEBSITE_SETTINGS.theme } 
-          : { ...DEFAULT_WEBSITE_SETTINGS.theme, ...rawTheme };
+    let cancelled = false;
+    const { hasCache, isStale } = initialCacheRef.current;
 
-        setSettings((prev) => {
-          const next: WebsiteSettings = {
-            ...prev,
-            ...data,
-            brandName: normalizeBrandName(data.brandName || prev.brandName),
-            theme: finalTheme,
-            announcement: { 
-              ...DEFAULT_WEBSITE_SETTINGS.announcement, 
-              ...data.announcement,
-              bgColor: isOldBlue && (data.announcement?.bgColor === '#1e40af' || data.announcement?.bgColor === '#2563eb')
-                ? DEFAULT_WEBSITE_SETTINGS.announcement.bgColor 
-                : (data.announcement?.bgColor || DEFAULT_WEBSITE_SETTINGS.announcement.bgColor)
-            },
-            hero: { ...DEFAULT_WEBSITE_SETTINGS.hero, ...data.hero },
-            metrics: Array.isArray(data.metrics) && data.metrics.length > 0 ? data.metrics : DEFAULT_WEBSITE_SETTINGS.metrics,
-            about: { ...DEFAULT_WEBSITE_SETTINGS.about, ...data.about },
-            services: { ...DEFAULT_WEBSITE_SETTINGS.services, ...data.services },
-            contact: { ...DEFAULT_WEBSITE_SETTINGS.contact, ...data.contact },
-            socials: { ...DEFAULT_WEBSITE_SETTINGS.socials, ...data.socials }
-          };
-          writeCachedSettings(next);
-          return next;
-        });
-        setLoading(false);
-      } else {
-        // Fallback: check legacy doc 'settings/website_content'
+    const handleStorageSync = (e: StorageEvent) => {
+      if (e.key === WEBSITE_SETTINGS_CACHE_KEY && e.newValue) {
         try {
-          const legacyRef = doc(db, 'settings', 'website_content');
-          const legacySnap = await getDoc(legacyRef);
+          const parsed = JSON.parse(e.newValue) as Partial<WebsiteSettings>;
+          setSettings(normalizeSettingsPayload(parsed, settingsRef.current));
+        } catch {
+          // Ignore malformed external storage writes
+        }
+      }
+    };
+    window.addEventListener('storage', handleStorageSync);
+
+    if (hasCache && !isStale) {
+      setLoading(false);
+      return () => {
+        window.removeEventListener('storage', handleStorageSync);
+      };
+    }
+
+    const fetchSettingsOnce = async () => {
+      try {
+        const snapshot = await getDoc(doc(db, 'settings', 'website_cms'));
+        if (cancelled) return;
+
+        if (snapshot.exists()) {
+          const data = snapshot.data() as Partial<WebsiteSettings>;
+          setSettings((prev) => {
+            const next = normalizeSettingsPayload(data, prev);
+            writeCachedSettings(next);
+            return next;
+          });
+        } else {
+          const legacySnap = await getDoc(doc(db, 'settings', 'website_content'));
+          if (cancelled) return;
           if (legacySnap.exists()) {
             const legacyData = legacySnap.data();
             setSettings((prev) => {
@@ -332,19 +372,50 @@ export function WebsiteSettingsProvider({ children }: { children: React.ReactNod
               writeCachedSettings(next);
               return next;
             });
+          } else {
+            writeCachedSettings(settingsRef.current);
           }
-        } catch (e) {
-          console.warn('Could not read legacy website_content doc:', e);
-        } finally {
+        }
+      } catch (error) {
+        console.warn('Firestore settings fetch error (retaining cached/defaults):', error);
+      } finally {
+        if (!cancelled) {
           setLoading(false);
         }
       }
-    }, (error) => {
-      console.warn('Firestore settings listener error (falling back to cached/defaults):', error);
-      setLoading(false);
-    });
+    };
 
-    return () => unsubscribe();
+    if (!hasCache) {
+      void fetchSettingsOnce();
+      return () => {
+        cancelled = true;
+        window.removeEventListener('storage', handleStorageSync);
+      };
+    }
+
+    const ric = (window as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
+    const cancelRic = (window as { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback;
+
+    if (ric) {
+      const idleId = ric(() => {
+        void fetchSettingsOnce();
+      }, { timeout: 2500 });
+      return () => {
+        cancelled = true;
+        cancelRic?.(idleId);
+        window.removeEventListener('storage', handleStorageSync);
+      };
+    }
+
+    const timerId = window.setTimeout(() => {
+      void fetchSettingsOnce();
+    }, 1200);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timerId);
+      window.removeEventListener('storage', handleStorageSync);
+    };
   }, []);
 
   const saveSettings = useCallback(async (newSettings: Partial<WebsiteSettings>, updatedByUid?: string): Promise<boolean> => {

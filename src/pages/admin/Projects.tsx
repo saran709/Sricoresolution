@@ -52,6 +52,7 @@ import {
   MigrationSummaryReport, 
   HISTORICAL_PROJECTS_INVENTORY 
 } from '../../lib/projectMigration';
+import { ShimmerTableRows } from '../../components/ui/DashboardSuspense';
 
 const PROJECT_TYPES: { value: ProjectType; label: string }[] = [
   { value: 'software', label: 'Software' },
@@ -797,14 +798,7 @@ export default function AdminProjects() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
-                    <div className="inline-flex items-center gap-2 text-sm">
-                      <RefreshCw className="w-4 h-4 animate-spin text-blue-600" />
-                      Loading projects from Cloud Firestore...
-                    </div>
-                  </td>
-                </tr>
+                <ShimmerTableRows rows={6} cols={6} />
               ) : filteredProjects.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-slate-500">

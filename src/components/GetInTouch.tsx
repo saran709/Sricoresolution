@@ -181,7 +181,7 @@ export function GetInTouch() {
     <section
       id="get-in-touch"
       aria-labelledby="get-in-touch-heading"
-      className="py-12 md:py-16 lg:py-20 bg-slate-50 dark:bg-slate-900/60 border-t border-slate-200 dark:border-slate-800"
+      className="content-visibility-auto py-12 md:py-16 lg:py-20 bg-slate-50 dark:bg-slate-900/60 border-t border-slate-200 dark:border-slate-800"
     >
       <Container>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">

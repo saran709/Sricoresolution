@@ -8,6 +8,7 @@ import { Truck, Plus, Edit2, Trash2, Mail, Phone, Wrench, CheckCircle2, ShieldAl
 import { useAuth } from '../../contexts/AuthContext';
 import { logActivity } from '../../lib/activityLogger';
 import { ConfirmModal } from '../../components/ui/ConfirmModal';
+import { ShimmerBlock } from '../../components/ui/DashboardSuspense';
 
 export default function Vendors() {
   const { currentUser } = useAuth();
@@ -163,10 +164,29 @@ export default function Vendors() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading ? (
-          <div className="col-span-full py-12 text-center text-slate-500">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2" />
-            <div className="text-xs font-medium">Streaming vendors from Firestore...</div>
-          </div>
+          <>
+            {[...Array(3)].map((_, idx) => (
+              <div
+                key={idx}
+                aria-hidden="true"
+                className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4"
+              >
+                <div className="flex items-center justify-between">
+                  <ShimmerBlock className="w-10 h-10 rounded-lg" />
+                  <ShimmerBlock className="h-7 w-16 rounded-lg" />
+                </div>
+                <div className="space-y-2">
+                  <ShimmerBlock className="h-4 w-40 max-w-full" />
+                  <ShimmerBlock className="h-3 w-28" />
+                </div>
+                <div className="space-y-2 pt-2 border-t border-slate-100">
+                  <ShimmerBlock className="h-3 w-48 max-w-full" />
+                  <ShimmerBlock className="h-3 w-36" />
+                </div>
+              </div>
+            ))}
+            <span className="sr-only" role="status">Loading vendors...</span>
+          </>
         ) : vendors.length === 0 ? (
           <div className="col-span-full py-12 bg-white rounded-xl border border-dashed border-slate-300 text-center text-slate-500 p-8">
             <Truck className="w-12 h-12 text-slate-300 mx-auto mb-3" />

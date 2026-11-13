@@ -1,30 +1,43 @@
-import React, { Suspense } from 'react';
+import React from 'react';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRBAC } from '../../contexts/RBACContext';
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
-import { UserProfile } from '../../components/user/UserProfile';
-import { MyProjects } from '../../components/dashboard/MyProjects';
-import { ROLE_METADATA } from '../../lib/rbac';
+import { useWebsiteSettings } from '../../contexts/WebsiteSettingsContext';
+import { RoleGreetingHeader } from '../../components/dashboard/RoleGreetingHeader';
+import {
+  DashboardModuleSkeleton,
+  DashboardSuspense,
+} from '../../components/ui/DashboardSuspense';
 
-// Lazy-load role dashboards so users only download their active role chunk
+// Lazy-load role dashboards and workspace sub-modules so users only download their active chunk
 const EmployeeDashboard = React.lazy(() => import('./roles/EmployeeDashboard'));
 const MentorDashboard = React.lazy(() => import('./roles/MentorDashboard'));
 const InternDashboard = React.lazy(() => import('./roles/InternDashboard'));
 const ClientDashboard = React.lazy(() => import('./roles/ClientDashboard'));
 const CandidateDashboard = React.lazy(() => import('./roles/CandidateDashboard'));
+const UserProfile = React.lazy(() =>
+  import('../../components/user/UserProfile').then((m) => ({ default: m.UserProfile }))
+);
+const MyProjects = React.lazy(() =>
+  import('../../components/dashboard/MyProjects').then((m) => ({ default: m.MyProjects }))
+);
+const WorkspaceGuide = React.lazy(() =>
+  import('../../components/dashboard/WorkspaceGuide').then((m) => ({ default: m.WorkspaceGuide }))
+);
 
 export default function Dashboard() {
   const { userProfile, currentUser, loading } = useAuth();
   const { activeRole, actualRole, simulatedRole } = useRBAC();
+  const { settings } = useWebsiteSettings();
   const [searchParams] = useSearchParams();
   const activeTab = searchParams.get('tab');
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
+      <DashboardModuleSkeleton
+        variant="page"
+        label="Loading role dashboard..."
+      />
     );
   }
 
@@ -32,6 +45,11 @@ export default function Dashboard() {
   if (actualRole === 'ADMIN' && !simulatedRole) {
     return <Navigate to="/admin" replace />;
   }
+
+  const displayName =
+    userProfile?.firstName || userProfile?.lastName
+      ? `${userProfile?.firstName || ''} ${userProfile?.lastName || ''}`.trim()
+      : currentUser?.email || undefined;
 
   const renderRoleDashboard = () => {
     switch (activeRole) {
@@ -56,43 +74,47 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Workspace Header */}
-      <div className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-xl border border-slate-200 dark:border-slate-800">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-            Welcome back, {userProfile?.firstName || currentUser?.email}
-          </h1>
-          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-            {ROLE_METADATA[activeRole].label}
-          </span>
-        </div>
-        <p className="text-slate-500 dark:text-slate-400 text-xs md:text-sm mt-1">
-          {ROLE_METADATA[activeRole].description}
-        </p>
-      </div>
+      {/* Personalized Role Greeting Header */}
+      <RoleGreetingHeader
+        role={activeRole}
+        displayName={displayName}
+        logoUrl={settings?.logoUrl || '/logo.png'}
+        isSimulated={Boolean(simulatedRole)}
+      />
+
+      {/* Role-Specific Dismissible Quick Start Guide (visible on overview & reopenable anytime) */}
+      {(!activeTab || activeTab === 'overview') && (
+        <DashboardSuspense variant="panel" moduleName="Quick Start Guide">
+          <WorkspaceGuide role={activeRole} />
+        </DashboardSuspense>
+      )}
 
       {/* Dedicated Sidebar Views: My Profile or Project Tracker */}
       {activeTab === 'profile' ? (
-        <UserProfile />
+        <DashboardSuspense variant="panel" moduleName="User Profile">
+          <UserProfile />
+        </DashboardSuspense>
       ) : activeTab === 'portfolio' ? (
-        <MyProjects />
+        <DashboardSuspense variant="table" moduleName="Project Tracker">
+          <MyProjects />
+        </DashboardSuspense>
       ) : (
-        <Suspense
-          fallback={
-            <div className="animate-pulse h-40 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800" />
-          }
-        >
-          {/* Role-Specific Workspace Module */}
-          {renderRoleDashboard()}
+        <div className="space-y-6">
+          <DashboardSuspense variant="page" moduleName="Role Workspace">
+            {/* Role-Specific Workspace Module */}
+            {renderRoleDashboard()}
+          </DashboardSuspense>
 
           {/* Show Project Tracker summary on Overview for Clients & Employees */}
           {(!activeTab || activeTab === 'overview') &&
             (activeRole === 'CLIENT' || activeRole === 'EMPLOYEE') && (
               <div className="pt-2">
-                <MyProjects />
+                <DashboardSuspense variant="table" moduleName="Project Tracker">
+                  <MyProjects />
+                </DashboardSuspense>
               </div>
             )}
-        </Suspense>
+        </div>
       )}
     </div>
   );

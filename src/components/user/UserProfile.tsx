@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { LoadingSpinner } from '../ui/LoadingSpinner';
+import { DashboardModuleSkeleton } from '../ui/DashboardSuspense';
 import { Button } from '../ui/Button';
 import { EditProfileModal } from '../ui/EditProfileModal';
 
@@ -9,7 +9,7 @@ export function UserProfile() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   if (loading) {
-    return <LoadingSpinner size="sm" />;
+    return <DashboardModuleSkeleton variant="panel" label="Loading user profile..." />;
   }
 
   if (!userProfile) {

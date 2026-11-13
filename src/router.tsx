@@ -4,8 +4,15 @@ import { MainLayout } from './components/layout/MainLayout';
 import { PrivateRoute, AdminPrivateRoute } from './components/PrivateRoute';
 import { PagePlaceholder } from './components/ui/PagePlaceholder';
 import { ScrollToTop } from './components/layout/ScrollToTop';
-import { CookieBanner } from './components/ui/CookieBanner';
+import {
+  DashboardErrorBoundary,
+  DashboardModuleSkeleton,
+} from './components/ui/DashboardSuspense';
 import { useAdPolicyGuard } from './hooks/useAdPolicyGuard';
+
+const CookieBanner = React.lazy(() =>
+  import('./components/ui/CookieBanner').then((m) => ({ default: m.CookieBanner }))
+);
 
 // Lazy-loaded Unified Workspace Layouts
 const AdminDashboardLayout = React.lazy(() =>
@@ -64,17 +71,16 @@ const AdminAttendance = React.lazy(() => import('./pages/admin/Attendance'));
 const AdminLeaves = React.lazy(() => import('./pages/admin/Leaves'));
 const AdminVendors = React.lazy(() => import('./pages/admin/Vendors'));
 const AdminAnnouncements = React.lazy(() => import('./pages/admin/Announcements'));
+const AdminNotifications = React.lazy(() => import('./pages/admin/Notifications'));
 const AdminReports = React.lazy(() => import('./pages/admin/Reports'));
 const AdminSettings = React.lazy(() => import('./pages/admin/Settings'));
 const AdminPermissions = React.lazy(() => import('./components/PermissionConfiguration'));
 
 const PageLoader = () => (
-  <div
-    role="status"
-    aria-label="Loading page content"
-    className="min-h-[50vh] flex items-center justify-center bg-slate-50/50 dark:bg-slate-950/50"
-  >
-    <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-300 dark:border-slate-700 border-t-amber-600" />
+  <div className="min-h-[60vh] bg-slate-50/50 dark:bg-slate-950/50 p-4 sm:p-6">
+    <div className="max-w-7xl mx-auto">
+      <DashboardModuleSkeleton variant="page" label="Loading page content..." />
+    </div>
   </div>
 );
 
@@ -88,8 +94,9 @@ export function AppRouter() {
     <>
       <ScrollToTop />
       <AdPolicyWatcher />
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
+      <DashboardErrorBoundary moduleName="Application View">
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
           {/* Admin Routes protected by AdminPrivateRoute guard */}
           <Route
             path="/admin"
@@ -124,7 +131,7 @@ export function AppRouter() {
             <Route path="vendors" element={<AdminVendors />} />
             
             <Route path="announcements" element={<AdminAnnouncements />} />
-            <Route path="notifications" element={<PagePlaceholder title="Notifications" />} />
+            <Route path="notifications" element={<AdminNotifications />} />
             
             <Route path="permissions" element={<AdminPermissions />} />
             <Route path="settings" element={<AdminSettings />} />
@@ -174,8 +181,11 @@ export function AppRouter() {
             <Route path="*" element={<PagePlaceholder title="Page Not Found" />} />
           </Route>
         </Routes>
+        </Suspense>
+      </DashboardErrorBoundary>
+      <Suspense fallback={null}>
+        <CookieBanner />
       </Suspense>
-      <CookieBanner />
     </>
   );
 }

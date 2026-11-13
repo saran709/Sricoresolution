@@ -75,7 +75,7 @@ export function Newsletter() {
   return (
     <section
       aria-labelledby="newsletter-heading"
-      className="bg-slate-100 dark:bg-slate-900/95 border-t border-slate-200 dark:border-slate-800 py-10 md:py-14"
+      className="content-visibility-auto bg-slate-100 dark:bg-slate-900/95 border-t border-slate-200 dark:border-slate-800 py-10 md:py-14"
     >
       <Container>
         <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-6 sm:p-8 lg:p-10 shadow-xs">

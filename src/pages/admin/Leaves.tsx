@@ -5,6 +5,7 @@ import { LeaveRequest, User } from '../../types';
 import { Calendar, CheckCircle2, XCircle, Clock, Search, FileText, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { logActivity } from '../../lib/activityLogger';
+import { ShimmerTableRows } from '../../components/ui/DashboardSuspense';
 
 export default function Leaves() {
   const { currentUser } = useAuth();
@@ -137,12 +138,7 @@ export default function Leaves() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
-                <tr>
-                  <td colSpan={5} className="p-12 text-center text-slate-500">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2" />
-                    <span className="text-xs font-medium">Streaming leave requests from Firestore...</span>
-                  </td>
-                </tr>
+                <ShimmerTableRows rows={5} cols={5} />
               ) : filteredLeaves.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="p-8 text-center text-slate-500">

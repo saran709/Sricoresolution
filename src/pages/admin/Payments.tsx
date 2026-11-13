@@ -6,6 +6,7 @@ import { DollarSign, Search, CheckCircle, XCircle, AlertCircle, RefreshCw } from
 import { Button } from '../../components/ui/Button';
 import { logActivity } from '../../lib/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
+import { ShimmerTableRows } from '../../components/ui/DashboardSuspense';
 
 export default function AdminPayments() {
   const { userProfile } = useAuth();
@@ -241,9 +242,7 @@ export default function AdminPayments() {
             </thead>
             <tbody>
               {loading ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-slate-500">Loading payments...</td>
-                </tr>
+                <ShimmerTableRows rows={5} cols={5} />
               ) : filteredPayments.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center text-slate-500">No payment records found.</td>

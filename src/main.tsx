@@ -51,3 +51,5 @@ createRoot(document.getElementById('root')!).render(
     </AppErrorBoundary>
   </StrictMode>,
 );
+
+(window as { __SRICORE_CLEAR_BOOT_GUARD__?: () => void }).__SRICORE_CLEAR_BOOT_GUARD__?.();

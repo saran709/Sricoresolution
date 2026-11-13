@@ -148,7 +148,7 @@ export function FAQ() {
     <section
       id="faq"
       aria-labelledby="faq-heading"
-      className="py-12 md:py-16 lg:py-20 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800"
+      className="content-visibility-auto py-12 md:py-16 lg:py-20 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800"
     >
       <Container>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">

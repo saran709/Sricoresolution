@@ -41,6 +41,7 @@ import { Textarea } from '../../components/ui/Textarea';
 import { ConfirmModal } from '../../components/ui/ConfirmModal';
 import { useAuth } from '../../contexts/AuthContext';
 import { logActivity } from '../../lib/activityLogger';
+import { ShimmerBlock, ShimmerTableRows } from '../../components/ui/DashboardSuspense';
 
 interface ExtendedClient extends Client {
   companyName: string;
@@ -549,12 +550,7 @@ export default function AdminClients() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2" />
-                    <span className="text-xs font-medium">Loading client directory...</span>
-                  </td>
-                </tr>
+                <ShimmerTableRows rows={6} cols={6} />
               ) : filteredClients.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
@@ -1013,8 +1009,17 @@ export default function AdminClients() {
                   Active Commercial Engagements & Projects ({clientProjects.length})
                 </h3>
                 {loadingLinkedData ? (
-                  <div className="p-4 bg-slate-50 rounded-xl text-center text-xs text-slate-500 animate-pulse">
-                    Querying associated deliverables...
+                  <div role="status" aria-label="Loading client engagements..." className="border border-slate-200 rounded-xl divide-y divide-slate-100 overflow-hidden">
+                    {[...Array(2)].map((_, idx) => (
+                      <div key={idx} className="p-3 bg-white flex items-center justify-between gap-3">
+                        <div className="space-y-1.5 flex-1">
+                          <ShimmerBlock className="h-3.5 w-44 max-w-full" />
+                          <ShimmerBlock className="h-2.5 w-32" />
+                        </div>
+                        <ShimmerBlock className="h-5 w-16 rounded-md shrink-0" />
+                      </div>
+                    ))}
+                    <span className="sr-only">Loading associated deliverables...</span>
                   </div>
                 ) : clientProjects.length > 0 ? (
                   <ul className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden">

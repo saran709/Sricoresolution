@@ -139,7 +139,7 @@ export function ServicesSection() {
     <section
       id="services"
       aria-labelledby="services-heading"
-      className="py-12 md:py-16 lg:py-20 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800"
+      className="content-visibility-auto py-12 md:py-16 lg:py-20 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800"
     >
       <Container>
         {/* Section Header */}

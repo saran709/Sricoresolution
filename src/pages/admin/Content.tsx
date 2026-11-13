@@ -36,6 +36,7 @@ import {
   MetricItem 
 } from '../../contexts/WebsiteSettingsContext';
 import { ConfirmModal } from '../../components/ui/ConfirmModal';
+import { DashboardModuleSkeleton } from '../../components/ui/DashboardSuspense';
 
 // Preset color palettes
 const COLOR_PRESETS = [
@@ -272,12 +273,7 @@ export default function AdminContent() {
   };
 
   if (loading) {
-    return (
-      <div className="animate-pulse space-y-6">
-        <div className="h-8 w-64 bg-slate-200 rounded"></div>
-        <div className="h-96 w-full bg-slate-200 rounded-xl"></div>
-      </div>
-    );
+    return <DashboardModuleSkeleton variant="panel" label="Loading CMS content..." />;
   }
 
   const primaryColor = formData.theme.primary || '#d97706';

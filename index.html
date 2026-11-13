@@ -23,8 +23,8 @@
   <!-- Network Preconnect Hints for Core Origins -->
   <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
   <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin />
-  <link rel="preconnect" href="https://images.unsplash.com" crossorigin />
   <link rel="dns-prefetch" href="https://firestore.googleapis.com" />
+  <link rel="dns-prefetch" href="https://securetoken.googleapis.com" />
   <link rel="dns-prefetch" href="https://images.unsplash.com" />
 
   <!-- Open Graph / Facebook -->
@@ -130,7 +130,9 @@
   </div>
   <script>
     (function () {
+      var cleared = false;
       function showStartupError(message) {
+        if (cleared) return;
         var screen = document.getElementById('boot-screen');
         if (!screen) return;
         var detail = document.createElement('p');
@@ -139,12 +141,16 @@
         console.error('Application startup error:', message);
       }
 
-      window.addEventListener('error', function (event) {
+      function onError(event) {
         if (event.error || event.message) showStartupError(event.error || event.message);
-      });
-      window.addEventListener('unhandledrejection', function (event) {
-        showStartupError(event.reason || 'Unhandled promise rejection');
-      });
+      }
+
+      window.addEventListener('error', onError);
+      window.__SRICORE_CLEAR_BOOT_GUARD__ = function () {
+        if (cleared) return;
+        cleared = true;
+        window.removeEventListener('error', onError);
+      };
     })();
   </script>
   <script type="module" src="/src/main.tsx"></script>

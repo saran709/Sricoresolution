@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -24,10 +24,14 @@ import {
   LineChart as LineChartIcon,
   Layers,
 } from 'lucide-react';
-import { collection, onSnapshot, query, limit, orderBy } from 'firebase/firestore';
 import { format, subDays, startOfDay, isSameDay } from 'date-fns';
-import { db } from '../lib/firebase';
-import { User, AuditLog, Attendance, Enquiry } from '../types';
+import {
+  useAdminAttendance,
+  useAdminAuditLogs,
+  useAdminEnquiries,
+  useAdminUsers,
+} from '../hooks/useDashboardQueries';
+import { ShimmerBlock } from './ui/DashboardSuspense';
 
 export type InsightChartMode = 'composed' | 'area' | 'bar';
 export type TimeWindow = 30 | 14 | 7;
@@ -57,72 +61,15 @@ const parseFirestoreDate = (raw: any): Date | null => {
 };
 
 export const SystemInsights: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-  const [attendanceLogs, setAttendanceLogs] = useState<Attendance[]>([]);
-  const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
-  const [loading, setLoading] = useState(true);
-
   const [chartMode, setChartMode] = useState<InsightChartMode>('composed');
   const [timeWindow, setTimeWindow] = useState<TimeWindow>(30);
 
-  // Bounded real-time listeners for users, auditLogs, attendance, and enquiries
-  useEffect(() => {
-    let loaded = 0;
-    const markReady = () => {
-      loaded += 1;
-      if (loaded >= 2) setLoading(false);
-    };
-
-    const unsubUsers = onSnapshot(
-      query(collection(db, 'users'), limit(500)),
-      (snap) => {
-        setUsers(
-          snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as User[]
-        );
-        markReady();
-      },
-      () => markReady()
-    );
-
-    const unsubAudit = onSnapshot(
-      query(collection(db, 'auditLogs'), orderBy('timestamp', 'desc'), limit(500)),
-      (snap) => {
-        setAuditLogs(
-          snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as AuditLog[]
-        );
-        markReady();
-      },
-      () => markReady()
-    );
-
-    const unsubAttendance = onSnapshot(
-      query(collection(db, 'attendance'), limit(500)),
-      (snap) => {
-        setAttendanceLogs(
-          snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as Attendance[]
-        );
-      },
-      () => {}
-    );
-
-    const unsubEnquiries = onSnapshot(
-      query(collection(db, 'enquiries'), limit(500)),
-      (snap) => {
-        setEnquiries(
-          snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as Enquiry[]
-        );
-      },
-      () => {}
-    );
-
-    return () => {
-      unsubUsers();
-      unsubAudit();
-      unsubAttendance();
-      unsubEnquiries();
-    };
-  }, []);
+  // Consume shared TanStack Query cached collections (0 duplicate Firestore listeners)
+  const { data: users = [], isLoading: usersLoading } = useAdminUsers(true);
+  const { data: auditLogs = [], isLoading: auditLoading } = useAdminAuditLogs(500, true);
+  const { data: attendanceLogs = [] } = useAdminAttendance(true);
+  const { data: enquiries = [] } = useAdminEnquiries(true);
+  const loading = usersLoading && auditLoading;
 
   // Build 30-day time-series dataset combining real Firestore timestamps + deterministic baseline telemetry
   const thirtyDaySeries = useMemo<DailyInsightPoint[]>(() => {
@@ -464,11 +411,32 @@ export const SystemInsights: React.FC = () => {
       {/* Main Recharts Visualization Canvas */}
       <div className="p-6">
         {loading ? (
-          <div className="h-80 flex flex-col items-center justify-center gap-2 text-slate-400">
-            <RefreshCw className="w-6 h-6 animate-spin text-amber-500" />
-            <span className="text-xs font-medium">
-              Computing 30-day registration & engagement telemetry...
-            </span>
+          <div
+            role="status"
+            aria-label="Computing 30-day registration and engagement telemetry..."
+            className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-center"
+          >
+            <div className="xl:col-span-8 space-y-3">
+              <div className="flex items-center justify-between">
+                <ShimmerBlock className="h-3.5 w-64 max-w-full" />
+                <ShimmerBlock className="h-3 w-24" />
+              </div>
+              <div className="h-80 w-full rounded-xl bg-slate-50/70 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800/80 px-6 pb-5 pt-8 flex items-end gap-2 sm:gap-3">
+                {['h-24', 'h-36', 'h-28', 'h-48', 'h-32', 'h-56', 'h-40', 'h-36', 'h-52', 'h-44', 'h-60', 'h-48'].map((hClass, idx) => (
+                  <div key={idx} className={`flex-1 flex flex-col justify-end ${idx > 7 ? 'hidden sm:flex' : ''}`}>
+                    <ShimmerBlock className={`w-full ${hClass} rounded-t-md rounded-b-none`} />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="xl:col-span-4 space-y-4">
+              <ShimmerBlock className="h-44 w-44 rounded-full mx-auto" />
+              <div className="space-y-2.5">
+                {[...Array(4)].map((_, idx) => (
+                  <ShimmerBlock key={idx} className="h-7 w-full rounded-lg" />
+                ))}
+              </div>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-center">

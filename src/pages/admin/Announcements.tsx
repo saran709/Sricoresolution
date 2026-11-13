@@ -8,6 +8,7 @@ import { Megaphone, Plus, Trash2, Calendar, Users, Send, CheckCircle2, ShieldAle
 import { useAuth } from '../../contexts/AuthContext';
 import { logActivity } from '../../lib/activityLogger';
 import { ConfirmModal } from '../../components/ui/ConfirmModal';
+import { ShimmerBlock } from '../../components/ui/DashboardSuspense';
 
 export default function Announcements() {
   const { currentUser, userProfile } = useAuth();
@@ -135,9 +136,21 @@ export default function Announcements() {
 
       <div className="space-y-4">
         {loading ? (
-          <div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-slate-500">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2" />
-            <div className="text-xs font-medium">Streaming announcements from Firestore...</div>
+          <div role="status" aria-label="Loading announcements..." className="space-y-4">
+            {[...Array(3)].map((_, idx) => (
+              <div key={idx} className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-3">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 flex-1">
+                    <ShimmerBlock className="w-8 h-8 rounded-lg shrink-0" />
+                    <ShimmerBlock className="h-4 w-56 max-w-full" />
+                  </div>
+                  <ShimmerBlock className="h-7 w-20 rounded-lg shrink-0" />
+                </div>
+                <ShimmerBlock className="h-3 w-full max-w-2xl" />
+                <ShimmerBlock className="h-3 w-2/3" />
+              </div>
+            ))}
+            <span className="sr-only">Loading announcements...</span>
           </div>
         ) : announcements.length === 0 ? (
           <div className="bg-white rounded-xl border border-dashed border-slate-300 p-12 text-center text-slate-500">

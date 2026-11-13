@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/Button';
 import { logActivity } from '../../lib/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ShimmerTableRows } from '../../components/ui/DashboardSuspense';
 
 export default function Enquiries() {
   const { userProfile } = useAuth();
@@ -146,13 +147,7 @@ export default function Enquiries() {
             </thead>
             <tbody>
               {loading ? (
-                <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-slate-500">
-                    <div className="animate-pulse flex flex-col items-center">
-                      <div className="h-4 w-24 bg-slate-200 rounded mb-2"></div>
-                    </div>
-                  </td>
-                </tr>
+                <ShimmerTableRows rows={5} cols={4} />
               ) : filteredEnquiries.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-8 text-center text-slate-500">

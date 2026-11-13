@@ -30,6 +30,8 @@ import {
   formatTimeDisplay,
   adminChangeAttendanceState 
 } from '../../lib/attendanceService';
+import { ConfirmModal } from '../../components/ui/ConfirmModal';
+import { ShimmerTableRows } from '../../components/ui/DashboardSuspense';
 
 export default function AttendancePage() {
   const { currentUser } = useAuth();
@@ -53,6 +55,10 @@ export default function AttendancePage() {
   const [editCheckOut, setEditCheckOut] = useState('');
   const [editNotes, setEditNotes] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
+  const [pendingBulkConfirm, setPendingBulkConfirm] = useState<{
+    status: Attendance['status'];
+    count: number;
+  } | null>(null);
 
   // Live stream staff and attendance records
   useEffect(() => {
@@ -178,18 +184,22 @@ export default function AttendancePage() {
     }
   };
 
-  // Bulk action: Mark all currently unmarked staff
-  const handleBulkMarkUnmarked = async (bulkStatus: Attendance['status']) => {
+  // Bulk action: prompt confirmation via accessible UI modal
+  const handleBulkMarkUnmarked = (bulkStatus: Attendance['status']) => {
     if (!currentUser) return;
     const unmarkedUsers = filteredEmployees.filter(emp => !dateAttendanceMap.has(emp.id || ''));
     if (unmarkedUsers.length === 0) {
       setFeedback({ message: 'No unmarked staff members found for the current filter.', type: 'info' });
       return;
     }
+    setPendingBulkConfirm({ status: bulkStatus, count: unmarkedUsers.length });
+  };
 
-    if (!window.confirm(`Are you sure you want to mark ${unmarkedUsers.length} staff member(s) as ${bulkStatus.toUpperCase()} for ${selectedDate}?`)) {
-      return;
-    }
+  const executeBulkMarkUnmarked = async () => {
+    if (!currentUser || !pendingBulkConfirm) return;
+    const bulkStatus = pendingBulkConfirm.status;
+    const unmarkedUsers = filteredEmployees.filter(emp => !dateAttendanceMap.has(emp.id || ''));
+    setPendingBulkConfirm(null);
 
     setLoading(true);
     try {
@@ -520,12 +530,7 @@ export default function AttendancePage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
-                <tr>
-                  <td colSpan={6} className="p-12 text-center text-slate-500">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2" />
-                    <span className="text-xs font-medium">Streaming staff & attendance records...</span>
-                  </td>
-                </tr>
+                <ShimmerTableRows rows={6} cols={6} />
               ) : filteredEmployees.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="p-8 text-center text-slate-500">
@@ -850,6 +855,21 @@ export default function AttendancePage() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={Boolean(pendingBulkConfirm)}
+        title="Confirm Bulk Attendance Update"
+        message={
+          pendingBulkConfirm
+            ? `Mark ${pendingBulkConfirm.count} unmarked staff member(s) as ${pendingBulkConfirm.status.toUpperCase()} for ${selectedDate}?`
+            : ''
+        }
+        confirmLabel="Apply Attendance"
+        variant="primary"
+        isLoading={loading}
+        onConfirm={executeBulkMarkUnmarked}
+        onCancel={() => setPendingBulkConfirm(null)}
+      />
     </div>
   );
 }

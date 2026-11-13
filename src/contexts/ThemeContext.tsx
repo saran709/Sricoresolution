@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useWebsiteSettings } from './WebsiteSettingsContext';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
@@ -102,19 +102,33 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setThemeMode(nextMode);
   }, [resolvedTheme, setThemeMode]);
 
-  // Dynamically update CSS variables and class on document root
-  useEffect(() => {
-    const root = document.documentElement;
-    const brandTheme = settings?.theme;
+  const basePrimary = settings?.theme?.primary || '#d97706';
+  const baseHover = settings?.theme?.primaryHover || '#b45309';
+  const basePrimaryLight = settings?.theme?.primaryLight || '#fffbeb';
+  const baseAccent = settings?.theme?.accent || '#f59e0b';
+  const lastAppliedSignatureRef = useRef<string>('');
 
-    const basePrimary = brandTheme?.primary || '#d97706';
-    const baseHover = brandTheme?.primaryHover || '#b45309';
-    const baseAccent = brandTheme?.accent || '#f59e0b';
+  // Dynamically update CSS variables and class on document root only when values actually change
+  useEffect(() => {
+    const signature = `${isDark}|${basePrimary}|${baseHover}|${basePrimaryLight}|${baseAccent}`;
+    if (lastAppliedSignatureRef.current === signature) {
+      return;
+    }
+
+    const root = document.documentElement;
+    const isDefaultLight =
+      !isDark &&
+      basePrimary === '#d97706' &&
+      baseHover === '#b45309' &&
+      basePrimaryLight === '#fffbeb' &&
+      baseAccent === '#f59e0b';
+
     const rgb = hexToRgb(basePrimary) || { r: 217, g: 119, b: 6 };
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
 
     const frameId = requestAnimationFrame(() => {
-      // Apply class and attribute
+      lastAppliedSignatureRef.current = signature;
+
       if (isDark) {
         root.classList.add('dark');
         root.setAttribute('data-theme', 'dark');
@@ -125,9 +139,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         root.style.colorScheme = 'light';
       }
 
-      // Dynamic brand colors calibrated for contrast and consistency
+      if (metaThemeColor) {
+        metaThemeColor.setAttribute('content', isDark ? '#090d16' : '#d97706');
+      }
+
+      // Skip overwriting root CSS custom properties if default light CSS tokens in index.css already match
+      if (isDefaultLight && !root.style.getPropertyValue('--theme-primary')) {
+        return;
+      }
+
       if (isDark) {
-        // In dark mode: ensure vibrant high-contrast amber/brand primary
         const darkPrimary = basePrimary === '#d97706' ? '#f59e0b' : lightenHex(basePrimary, 12);
         const darkHover = basePrimary === '#d97706' ? '#fbbf24' : lightenHex(basePrimary, 20);
         const darkLightTint = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.18)`;
@@ -139,7 +160,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         root.style.setProperty('--theme-accent', darkAccent);
         root.style.setProperty('--theme-ring', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.45)`);
 
-        // Surface & Layout variables (Rich Dark Palette)
         root.style.setProperty('--bg-page', '#090d16');
         root.style.setProperty('--bg-surface', '#0f172a');
         root.style.setProperty('--bg-surface-elevated', '#1e293b');
@@ -147,25 +167,21 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         root.style.setProperty('--bg-card', '#0f172a');
         root.style.setProperty('--bg-input', '#1a2438');
 
-        // Typography variables
         root.style.setProperty('--text-primary', '#f8fafc');
         root.style.setProperty('--text-secondary', '#cbd5e1');
         root.style.setProperty('--text-muted', '#94a3b8');
         root.style.setProperty('--text-inverse', '#0f172a');
 
-        // Border variables
         root.style.setProperty('--border-subtle', '#1e293b');
         root.style.setProperty('--border-default', '#223049');
         root.style.setProperty('--border-strong', '#334155');
       } else {
-        // In light mode: clean branding
         root.style.setProperty('--theme-primary', basePrimary);
         root.style.setProperty('--theme-primary-hover', baseHover);
-        root.style.setProperty('--theme-primary-light', brandTheme?.primaryLight || '#fffbeb');
+        root.style.setProperty('--theme-primary-light', basePrimaryLight);
         root.style.setProperty('--theme-accent', baseAccent);
         root.style.setProperty('--theme-ring', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.25)`);
 
-        // Surface & Layout variables (Pure White Standard Theme)
         root.style.setProperty('--bg-page', '#ffffff');
         root.style.setProperty('--bg-surface', '#ffffff');
         root.style.setProperty('--bg-surface-elevated', '#ffffff');
@@ -173,26 +189,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         root.style.setProperty('--bg-card', '#ffffff');
         root.style.setProperty('--bg-input', '#ffffff');
 
-        // Typography variables
         root.style.setProperty('--text-primary', '#0f172a');
         root.style.setProperty('--text-secondary', '#334155');
         root.style.setProperty('--text-muted', '#64748b');
         root.style.setProperty('--text-inverse', '#ffffff');
 
-        // Border variables
         root.style.setProperty('--border-subtle', '#f1f5f9');
         root.style.setProperty('--border-default', '#e2e8f0');
         root.style.setProperty('--border-strong', '#cbd5e1');
       }
-
-      // Sync theme-color meta tag for browser mobile header
-      if (metaThemeColor) {
-        metaThemeColor.setAttribute('content', isDark ? '#090d16' : '#d97706');
-      }
     });
 
     return () => cancelAnimationFrame(frameId);
-  }, [isDark, settings?.theme]);
+  }, [isDark, basePrimary, baseHover, basePrimaryLight, baseAccent]);
 
   const value = useMemo(
     () => ({

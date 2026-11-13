@@ -7,7 +7,13 @@ import { Input } from '../../components/ui/Input';
 import { Save, Building, QrCode, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { logActivity } from '../../lib/activityLogger';
-import { PermissionConfiguration } from '../../components/PermissionConfiguration';
+import { DashboardSuspense } from '../../components/ui/DashboardSuspense';
+
+const PermissionConfiguration = React.lazy(() =>
+  import('../../components/PermissionConfiguration').then((m) => ({
+    default: m.PermissionConfiguration,
+  }))
+);
 
 export default function AdminSettings() {
   const { currentUser } = useAuth();
@@ -84,7 +90,9 @@ export default function AdminSettings() {
       </div>
 
       {/* Dynamic Five-Role & Resource-Level CRUD Permission Configuration Module */}
-      <PermissionConfiguration />
+      <DashboardSuspense variant="panel" moduleName="Permission Configuration">
+        <PermissionConfiguration />
+      </DashboardSuspense>
 
       {success && (
         <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-300 rounded-xl flex items-center gap-2 text-sm">

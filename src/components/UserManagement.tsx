@@ -23,8 +23,6 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
-  collection,
-  onSnapshot,
   doc,
   updateDoc,
   deleteDoc,
@@ -48,6 +46,8 @@ import { User, UserRole } from '../types';
 import { logActivity } from '../lib/activityLogger';
 import { useAuth } from '../contexts/AuthContext';
 import { FIVE_ROLES, ROLE_METADATA, normalizeToCanonicalRole, CanonicalRole } from '../lib/rbac';
+import { invalidateAdminCaches, useAdminUsers } from '../hooks/useDashboardQueries';
+import { ShimmerBlock } from './ui/DashboardSuspense';
 
 export interface UserManagementProps {
   /** Compact mode when embedded inside the main AdminDashboard overview */
@@ -77,8 +77,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
   maxRows = 10,
 }) => {
   const { currentUser } = useAuth();
-  const [users, setUsers] = useState<ExtendedUser[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: rawUsers = [], isLoading: loading } = useAdminUsers();
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
@@ -118,37 +117,19 @@ export const UserManagement: React.FC<UserManagementProps> = ({
     return () => clearTimeout(timer);
   }, [feedback]);
 
-  // Real-time Firestore subscription to `users` collection
-  useEffect(() => {
-    const unsubscribe = onSnapshot(
-      collection(db, 'users'),
-      (snapshot) => {
-        const usersList = snapshot.docs.map((docSnap) => ({
-          id: docSnap.id,
-          ...docSnap.data(),
-        })) as ExtendedUser[];
-
-        usersList.sort((a, b) => {
-          const getMs = (val: any) => {
-            if (!val) return 0;
-            if (typeof val.toMillis === 'function') return val.toMillis();
-            const parsed = new Date(val).getTime();
-            return Number.isNaN(parsed) ? 0 : parsed;
-          };
-          return getMs(b.createdAt) - getMs(a.createdAt);
-        });
-
-        setUsers(usersList);
-        setLoading(false);
-      },
-      (error) => {
-        console.error('Error fetching registered users:', error);
-        setLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
-  }, []);
+  const users = useMemo<ExtendedUser[]>(() => {
+    const list = (rawUsers as ExtendedUser[]).slice();
+    list.sort((a, b) => {
+      const getMs = (val: any) => {
+        if (!val) return 0;
+        if (typeof val.toMillis === 'function') return val.toMillis();
+        const parsed = new Date(val).getTime();
+        return Number.isNaN(parsed) ? 0 : parsed;
+      };
+      return getMs(b.createdAt) - getMs(a.createdAt);
+    });
+    return list;
+  }, [rawUsers]);
 
   // Filtered users list
   const filteredUsers = useMemo(() => {
@@ -207,6 +188,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
         isActive: nextStatus,
         updatedAt: serverTimestamp(),
       });
+      invalidateAdminCaches(['users', 'overview']);
 
       await logActivity(
         nextStatus ? 'USER_ACTIVATED' : 'USER_DEACTIVATED',
@@ -245,6 +227,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
         role: newRole,
         updatedAt: serverTimestamp(),
       });
+      invalidateAdminCaches(['users', 'overview']);
 
       await logActivity(
         'USER_ROLE_UPDATED',
@@ -361,6 +344,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
           type: 'success',
           message: `Registered user ${fullName || formData.email}.`,
         });
+        invalidateAdminCaches(['users', 'overview']);
       } else if (modalMode === 'edit' && selectedUser?.id) {
         const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`.trim();
         await updateDoc(doc(db, 'users', selectedUser.id), {
@@ -386,6 +370,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
           type: 'success',
           message: `Saved changes for ${fullName || selectedUser.email}.`,
         });
+        invalidateAdminCaches(['users', 'overview']);
       }
 
       setIsModalOpen(false);
@@ -431,6 +416,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
 
     try {
       await deleteDoc(doc(db, 'users', userToDelete.id));
+      invalidateAdminCaches(['users', 'overview']);
       await logActivity(
         'USER_DELETED',
         currentUser?.uid || 'admin',
@@ -725,9 +711,25 @@ export const UserManagement: React.FC<UserManagementProps> = ({
       {/* Main Users Table */}
       <div className="overflow-x-auto">
         {loading ? (
-          <div className="py-14 flex flex-col items-center justify-center gap-2 text-slate-500 dark:text-slate-400">
-            <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-            <p className="text-xs font-medium">Loading registered users...</p>
+          <div
+            role="status"
+            aria-label="Loading registered users..."
+            className="divide-y divide-slate-200 dark:divide-slate-800"
+          >
+            {[...Array(5)].map((_, idx) => (
+              <div key={idx} className="py-3.5 px-5 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <ShimmerBlock className="w-9 h-9 rounded-full shrink-0" />
+                  <div className="space-y-1.5 flex-1 max-w-xs">
+                    <ShimmerBlock className="h-3.5 w-36 max-w-full" />
+                    <ShimmerBlock className="h-2.5 w-48 max-w-full" />
+                  </div>
+                </div>
+                <ShimmerBlock className="hidden sm:block h-7 w-24 rounded-md" />
+                <ShimmerBlock className="hidden md:block h-4 w-28" />
+                <ShimmerBlock className="h-7 w-20 rounded-lg" />
+              </div>
+            ))}
           </div>
         ) : displayedUsers.length === 0 ? (
           <div className="py-12 px-6 text-center">

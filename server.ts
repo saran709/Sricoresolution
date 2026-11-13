@@ -56,6 +56,13 @@ async function startServer() {
         setHeaders(res, filePath) {
           if (filePath.endsWith(".html")) {
             res.setHeader("Cache-Control", "no-cache");
+          } else if (/\.(?:png|jpe?g|webp|svg|ico|woff2?)$/i.test(filePath)) {
+            res.setHeader(
+              "Cache-Control",
+              "public, max-age=86400, stale-while-revalidate=604800"
+            );
+          } else if (/(?:robots\.txt|sitemap\.xml|ads\.txt)$/i.test(filePath)) {
+            res.setHeader("Cache-Control", "public, max-age=3600");
           }
         },
       })

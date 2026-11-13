@@ -8,6 +8,7 @@ import { Plus, Search, Edit2, Trash2, ShieldAlert, X, Mail, CheckCircle2, Buildi
 import { logActivity } from '../../lib/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
 import { ConfirmModal } from '../../components/ui/ConfirmModal';
+import { ShimmerTableRows } from '../../components/ui/DashboardSuspense';
 
 interface EmployeeRecord extends User {
   departmentId?: string;
@@ -339,12 +340,7 @@ export default function Employees() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2" />
-                    <div className="text-xs font-medium">Streaming staff records from Firestore...</div>
-                  </td>
-                </tr>
+                <ShimmerTableRows rows={6} cols={6} />
               ) : filteredEmployees.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-slate-500">

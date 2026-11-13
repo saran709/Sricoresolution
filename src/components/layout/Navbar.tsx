@@ -6,7 +6,6 @@ import { Container } from '../ui/Container';
 import { cn } from '../../utils/cn';
 import { useAuth } from '../../contexts/AuthContext';
 import { useWebsiteSettings } from '../../contexts/WebsiteSettingsContext';
-import { ThemeToggle } from '../ui/ThemeToggle';
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -142,8 +141,6 @@ export function Navbar() {
             </nav>
 
             <div className="hidden md:flex items-center space-x-3">
-              <ThemeToggle />
-
               {currentUser ? (
                 <div className="flex items-center gap-2">
                   {userProfile?.role === 'ADMINISTRATOR' && (
@@ -183,7 +180,6 @@ export function Navbar() {
 
             {/* Mobile actions & menu button */}
             <div className="flex md:hidden items-center gap-1.5">
-              <ThemeToggle />
               <button
                 onClick={toggleMobileMenu}
                 className="inline-flex items-center justify-center p-2 rounded-md text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none"
@@ -202,12 +198,6 @@ export function Navbar() {
         {isMobileMenuOpen && (
           <div className="md:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl">
             <div className="px-3 pt-3 pb-4 space-y-1 sm:px-4 max-h-[80vh] overflow-y-auto">
-              {/* Appearance Row */}
-              <div className="flex items-center justify-between px-3 py-2 mb-2 rounded-lg bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700">
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Appearance</span>
-                <ThemeToggle variant="pill" showLabel={false} />
-              </div>
-
               {APP_CONFIG.navigation.main.map((item) => (
                 <React.Fragment key={item.name}>
                   {item.children ? (

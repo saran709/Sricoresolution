@@ -1,14 +1,26 @@
-import React, { useState, Suspense } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { collection, query, where, getCountFromServer, getDocs, limit, orderBy } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import React, { useState } from 'react';
 import { Users, Briefcase, MessageSquare, GraduationCap, Clock, AlertCircle, FileText, Database, CheckCircle2, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
-import { normalizeToCanonicalRole } from '../../lib/rbac';
+import { useRBAC } from '../../contexts/RBACContext';
+import { useWebsiteSettings } from '../../contexts/WebsiteSettingsContext';
+import { CanonicalRole, normalizeToCanonicalRole } from '../../lib/rbac';
+import { RoleGreetingHeader } from '../../components/dashboard/RoleGreetingHeader';
+import {
+  DashboardModuleSkeleton,
+  DashboardSuspense,
+} from '../../components/ui/DashboardSuspense';
+import {
+  invalidateAdminCaches,
+  prefetchSidebarTarget,
+  useAdminOverview,
+} from '../../hooks/useDashboardQueries';
 
+const WorkspaceGuide = React.lazy(() =>
+  import('../../components/dashboard/WorkspaceGuide').then((m) => ({ default: m.WorkspaceGuide }))
+);
 const RBACManagement = React.lazy(() =>
   import('../../components/admin/RBACManagement').then((m) => ({ default: m.RBACManagement }))
 );
@@ -23,90 +35,21 @@ const UserManagement = React.lazy(() =>
 );
 
 export default function AdminDashboard() {
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
+  const { activeRole, simulatedRole } = useRBAC();
+  const { settings } = useWebsiteSettings();
   const [isSeeding, setIsSeeding] = useState(false);
   const [seedResult, setSeedResult] = useState<string | null>(null);
   const [seedError, setSeedError] = useState<string | null>(null);
 
-  const { data, isLoading: loading, refetch } = useQuery({
-    queryKey: ['admin-dashboard-overview'],
-    queryFn: async () => {
-      const [
-        usersSnap,
-        projectsSnap,
-        enqSnap,
-        internAppSnap,
-        paymentSnap
-      ] = await Promise.all([
-        getDocs(collection(db, 'users')),
-        getDocs(collection(db, 'projects')),
-        getCountFromServer(query(collection(db, 'enquiries'), where('status', '==', 'NEW'))),
-        getCountFromServer(query(collection(db, 'internship_applications'), where('status', '==', 'pending'))),
-        getCountFromServer(query(collection(db, 'payments'), where('status', '==', 'pending')))
-      ]);
+  const effectiveRole: CanonicalRole =
+    activeRole || normalizeToCanonicalRole(userProfile?.role);
+  const displayName =
+    userProfile?.firstName || userProfile?.lastName
+      ? `${userProfile?.firstName || ''} ${userProfile?.lastName || ''}`.trim()
+      : currentUser?.email || undefined;
 
-      const allUsers = usersSnap.docs.map((d) => d.data());
-      const employees = allUsers.filter(
-        (u) => normalizeToCanonicalRole(u.role) === 'EMPLOYEE'
-      ).length;
-      const activeEmployees = allUsers.filter(
-        (u) => normalizeToCanonicalRole(u.role) === 'EMPLOYEE' && u.isActive !== false
-      ).length;
-      const interns = allUsers.filter(
-        (u) => normalizeToCanonicalRole(u.role) === 'INTERN_STUDENT'
-      ).length;
-      const mentors = allUsers.filter(
-        (u) => normalizeToCanonicalRole(u.role) === 'MENTOR'
-      ).length;
-      const clients = allUsers.filter(
-        (u) => normalizeToCanonicalRole(u.role) === 'CLIENT'
-      ).length;
-
-      const allProjects = projectsSnap.docs.map((d) => d.data());
-      const totalProjects = allProjects.length;
-      const activeProjects = allProjects.filter((p) =>
-        ['active', 'in_progress'].includes(p.status || p.projectStatus)
-      ).length;
-
-      const stats = {
-        employees,
-        activeEmployees,
-        interns,
-        mentors,
-        clients,
-        totalProjects,
-        activeProjects,
-        pendingEnquiries: enqSnap.data().count,
-        internApplications: internAppSnap.data().count,
-        pendingPayments: paymentSnap.data().count,
-      };
-
-      let activities: any[] = [];
-      try {
-        const activitiesQuery = query(collection(db, 'auditLogs'), orderBy('timestamp', 'desc'), limit(6));
-        const actSnap = await getDocs(activitiesQuery);
-        activities = actSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      } catch {
-        try {
-          const fallbackActSnap = await getDocs(query(collection(db, 'auditLogs'), limit(6)));
-          activities = fallbackActSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        } catch {}
-      }
-
-      let tasks: any[] = [];
-      try {
-        const taskSnap = await getDocs(query(collection(db, 'projectTasks'), limit(6)));
-        if (!taskSnap.empty) {
-          tasks = taskSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        } else {
-          const fallbackTaskSnap = await getDocs(query(collection(db, 'tasks'), limit(6)));
-          tasks = fallbackTaskSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        }
-      } catch {}
-
-      return { stats, activities, tasks };
-    },
-  });
+  const { data, isLoading: loading, refetch } = useAdminOverview(Boolean(currentUser?.uid));
 
   const stats = data?.stats || {
     employees: 0,
@@ -139,6 +82,15 @@ export default function AdminDashboard() {
           `Successfully populated demo operational data! Synced ${res.departmentsCount} Departments, ${res.usersCount} Staff & Mentors, ${res.projectsCount} Projects, ${res.tasksCount} Tasks, ${res.enquiriesCount} Enquiries, ${res.vendorsCount} Vendors, and ${res.announcementsCount} Announcements.${warningSuffix}`
         );
       }
+      invalidateAdminCaches([
+        'overview',
+        'users',
+        'projects',
+        'enquiries',
+        'auditLogs',
+        'tasks',
+        'attendance',
+      ]);
       await refetch();
     } catch (err: any) {
       console.error("Error inserting sample data:", err);
@@ -148,50 +100,81 @@ export default function AdminDashboard() {
     }
   };
 
-  const statCards = [
-    { name: 'Active Employees', value: stats.activeEmployees, total: stats.employees, icon: Users, color: 'bg-blue-500', link: '/admin/employees' },
-    { name: 'Mentors', value: stats.mentors, total: null, icon: Users, color: 'bg-indigo-500', link: '/admin/mentors' },
-    { name: 'Interns', value: stats.interns, total: null, icon: GraduationCap, color: 'bg-teal-500', link: '/admin/interns' },
-    { name: 'Clients', value: stats.clients, total: null, icon: Users, color: 'bg-cyan-500', link: '/admin/clients' },
-    { name: 'Active Projects', value: stats.activeProjects, total: stats.totalProjects, icon: Briefcase, color: 'bg-emerald-500', link: '/admin/projects' },
-    { name: 'Pending Enquiries', value: stats.pendingEnquiries, total: null, icon: MessageSquare, color: 'bg-amber-500', link: '/admin/enquiries' },
-    { name: 'Intern Applications', value: stats.internApplications, total: null, icon: GraduationCap, color: 'bg-purple-500', link: '/admin/internships' },
-    { name: 'Pending Payments', value: stats.pendingPayments, total: null, icon: FileText, color: 'bg-rose-500', link: '/admin/payments' },
-  ];
+  const statCardsByRole: Record<
+    CanonicalRole,
+    Array<{
+      name: string;
+      value: number;
+      total: number | null;
+      icon: typeof Users;
+      color: string;
+      link: string;
+    }>
+  > = {
+    ADMIN: [
+      { name: 'Active Employees', value: stats.activeEmployees, total: stats.employees, icon: Users, color: 'bg-blue-500', link: '/admin/employees' },
+      { name: 'Mentors', value: stats.mentors, total: null, icon: Users, color: 'bg-indigo-500', link: '/admin/mentors' },
+      { name: 'Interns', value: stats.interns, total: null, icon: GraduationCap, color: 'bg-teal-500', link: '/admin/interns' },
+      { name: 'Clients', value: stats.clients, total: null, icon: Users, color: 'bg-cyan-500', link: '/admin/clients' },
+      { name: 'Active Projects', value: stats.activeProjects, total: stats.totalProjects, icon: Briefcase, color: 'bg-emerald-500', link: '/admin/projects' },
+      { name: 'Pending Enquiries', value: stats.pendingEnquiries, total: null, icon: MessageSquare, color: 'bg-amber-500', link: '/admin/enquiries' },
+      { name: 'Intern Applications', value: stats.internApplications, total: null, icon: GraduationCap, color: 'bg-purple-500', link: '/admin/internships' },
+      { name: 'Pending Payments', value: stats.pendingPayments, total: null, icon: FileText, color: 'bg-rose-500', link: '/admin/payments' },
+    ],
+    MENTOR: [
+      { name: 'Assigned Cohort Interns', value: stats.interns, total: null, icon: GraduationCap, color: 'bg-teal-500', link: '/admin/interns' },
+      { name: 'Pending Applications', value: stats.internApplications, total: null, icon: Users, color: 'bg-purple-500', link: '/admin/candidates' },
+      { name: 'Active Projects', value: stats.activeProjects, total: stats.totalProjects, icon: Briefcase, color: 'bg-emerald-500', link: '/admin/projects' },
+      { name: 'Tasks Under Review', value: tasks.filter((t) => t.status === 'REVIEW').length, total: tasks.length, icon: Clock, color: 'bg-amber-500', link: '/admin/reports' },
+    ],
+    EMPLOYEE: [
+      { name: 'Active Projects', value: stats.activeProjects, total: stats.totalProjects, icon: Briefcase, color: 'bg-emerald-500', link: '/admin/projects' },
+      { name: 'Open Sprint Tasks', value: tasks.filter((t) => t.status !== 'COMPLETED').length, total: tasks.length, icon: Clock, color: 'bg-blue-500', link: '/admin/projects' },
+      { name: 'Active Team Members', value: stats.activeEmployees, total: stats.employees, icon: Users, color: 'bg-indigo-500', link: '/admin/employees' },
+      { name: 'Pending Enquiries', value: stats.pendingEnquiries, total: null, icon: MessageSquare, color: 'bg-amber-500', link: '/admin/enquiries' },
+    ],
+    CLIENT: [
+      { name: 'Active Projects', value: stats.activeProjects, total: stats.totalProjects, icon: Briefcase, color: 'bg-emerald-500', link: '/admin/projects' },
+      { name: 'Pending Enquiries', value: stats.pendingEnquiries, total: null, icon: MessageSquare, color: 'bg-amber-500', link: '/admin/enquiries' },
+      { name: 'Pending Payments', value: stats.pendingPayments, total: null, icon: FileText, color: 'bg-rose-500', link: '/admin/payments' },
+      { name: 'Delivery Engineers', value: stats.activeEmployees, total: null, icon: Users, color: 'bg-blue-500', link: '/admin/employees' },
+    ],
+    INTERN_STUDENT: [
+      { name: 'Open Internship Cohorts', value: stats.internApplications, total: null, icon: GraduationCap, color: 'bg-purple-500', link: '/admin/internships' },
+      { name: 'Available Mentors', value: stats.mentors, total: null, icon: Users, color: 'bg-indigo-500', link: '/admin/mentors' },
+      { name: 'Active Projects', value: stats.activeProjects, total: stats.totalProjects, icon: Briefcase, color: 'bg-emerald-500', link: '/admin/projects' },
+      { name: 'Active Assignments', value: tasks.length, total: null, icon: Clock, color: 'bg-amber-500', link: '/admin/reports' },
+    ],
+  };
+
+  const statCards = statCardsByRole[effectiveRole] || statCardsByRole.ADMIN;
 
   return (
     <div className="space-y-6">
-      {/* Top Header with Company Logo & Quick Action */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs transition-colors">
-        <div className="flex items-center gap-3.5">
-          <div className="bg-slate-50 dark:bg-slate-800 p-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs shrink-0">
-            <img 
-              src="/logo.png" 
-              alt="Sricore Solutions Logo" 
-              className="h-10 w-auto object-contain" 
-            />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Administrator Control Center</h1>
-              <span className="hidden sm:inline-flex text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 rounded-md">
-                Live
-              </span>
-            </div>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">Real-time organizational telemetry, workforce operations, and active delivery pipelines</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <Button 
-            onClick={handleSeedData} 
-            isLoading={isSeeding} 
-            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white shadow-md text-xs sm:text-sm font-semibold"
-          >
-            <Database className="w-4 h-4" />
-            Insert Sample Operations Data
-          </Button>
-        </div>
-      </div>
+      {/* Personalized Role-Aware Greeting & Quick Action Header */}
+      <RoleGreetingHeader
+        role={effectiveRole}
+        displayName={displayName}
+        logoUrl={settings?.logoUrl || '/logo.png'}
+        isSimulated={Boolean(simulatedRole)}
+        rightSlot={
+          effectiveRole === 'ADMIN' ? (
+            <Button
+              onClick={handleSeedData}
+              isLoading={isSeeding}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white shadow-md text-xs sm:text-sm font-semibold"
+            >
+              <Database className="w-4 h-4" />
+              Insert Sample Operations Data
+            </Button>
+          ) : undefined
+        }
+      />
+
+      {/* Dismissible Quick Start Guide tailored to Active Role */}
+      <DashboardSuspense variant="panel" moduleName="Quick Start Guide">
+        <WorkspaceGuide role={effectiveRole} />
+      </DashboardSuspense>
 
       {/* Seed Success or Error Banner */}
       {seedResult && (
@@ -247,17 +230,31 @@ export default function AdminDashboard() {
 
       {/* Metric Cards */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm animate-pulse h-28" />
-          ))}
-        </div>
+        <DashboardModuleSkeleton
+          variant="cards"
+          count={8}
+          label="Loading overview metrics..."
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {statCards.map((stat) => (
             <Link 
               key={stat.name} 
               to={stat.link}
+              onMouseEnter={() =>
+                prefetchSidebarTarget({
+                  path: stat.link,
+                  effectiveRole,
+                  userProfile: userProfile as any,
+                })
+              }
+              onFocus={() =>
+                prefetchSidebarTarget({
+                  path: stat.link,
+                  effectiveRole,
+                  userProfile: userProfile as any,
+                })
+              }
               className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4 group"
             >
               <div className={`p-4 rounded-xl ${stat.color} bg-opacity-10 group-hover:scale-105 transition-transform`}>
@@ -279,30 +276,30 @@ export default function AdminDashboard() {
 
       {/* Centralized Five-Role RBAC, Permission Engine & Dynamic Limits Management */}
       <div className="mt-8">
-        <Suspense fallback={<div className="h-64 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 animate-pulse" />}>
+        <DashboardSuspense variant="panel" moduleName="Role & Permission Engine">
           <RBACManagement />
-        </Suspense>
+        </DashboardSuspense>
       </div>
 
       {/* System Insights Widget (30-Day Registration Trends & Engagement Metrics) */}
       <div className="mt-8">
-        <Suspense fallback={<div className="h-72 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 animate-pulse" />}>
+        <DashboardSuspense variant="chart" moduleName="System Insights">
           <SystemInsights />
-        </Suspense>
+        </DashboardSuspense>
       </div>
 
       {/* User Activity Widget (30-Day Role Login Frequency & Resource Usage — Admin & Mentor Only) */}
       <div className="mt-8">
-        <Suspense fallback={<div className="h-72 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 animate-pulse" />}>
+        <DashboardSuspense variant="chart" moduleName="User Activity Analytics">
           <UserActivity />
-        </Suspense>
+        </DashboardSuspense>
       </div>
 
       {/* Embedded User Management Interface */}
       <div className="mt-8">
-        <Suspense fallback={<div className="h-64 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 animate-pulse" />}>
+        <DashboardSuspense variant="table" moduleName="User Directory">
           <UserManagement compact maxRows={8} />
-        </Suspense>
+        </DashboardSuspense>
       </div>
 
       {/* Recent Activities & Attention Tasks */}

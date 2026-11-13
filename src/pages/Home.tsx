@@ -1,14 +1,33 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Container } from '../components/ui/Container';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { Hero } from '../components/Hero';
 import { ServicesSection } from '../components/Services';
-import { FeaturedProjects } from '../components/FeaturedProjects';
-import { FAQ } from '../components/FAQ';
-import { GetInTouch } from '../components/GetInTouch';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useWebsiteSettings } from '../contexts/WebsiteSettingsContext';
+
+const FeaturedProjects = React.lazy(() => import('../components/FeaturedProjects'));
+const FAQ = React.lazy(() => import('../components/FAQ'));
+const GetInTouch = React.lazy(() => import('../components/GetInTouch'));
+
+function SectionShimmerFallback({ minHeightClass = 'min-h-[360px]' }: { minHeightClass?: string }) {
+  return (
+    <div className={`${minHeightClass} py-12 bg-slate-50/70 dark:bg-slate-900/40 border-y border-slate-200 dark:border-slate-800`}>
+      <Container>
+        <div className="space-y-4">
+          <div className="h-4 w-40 rounded skeleton-shimmer" />
+          <div className="h-8 w-72 max-w-full rounded skeleton-shimmer" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+            <div className="h-48 rounded-xl skeleton-shimmer" />
+            <div className="h-48 rounded-xl skeleton-shimmer" />
+            <div className="h-48 rounded-xl skeleton-shimmer" />
+          </div>
+        </div>
+      </Container>
+    </div>
+  );
+}
 
 export default function Home() {
   const { settings } = useWebsiteSettings();
@@ -19,6 +38,70 @@ export default function Home() {
     <div className="flex flex-col w-full">
       {/* Hero Banner */}
       <Hero />
+
+      {/* Clear 3-Path Visitor Orientation Bar */}
+      <section
+        aria-label="Choose Your Starting Path"
+        className="py-6 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 transition-colors"
+      >
+        <Container>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Link
+              to="/enquiry"
+              className="group p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 hover:border-amber-400 transition-colors flex items-center justify-between gap-3"
+            >
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                  For Businesses & Researchers
+                </p>
+                <p className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
+                  Request a Custom Project Quote
+                </p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                  No sign-in needed · Response within 24 hours
+                </p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-amber-600 shrink-0 transition-colors" />
+            </Link>
+
+            <Link
+              to="/internships"
+              className="group p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 hover:border-amber-400 transition-colors flex items-center justify-between gap-3"
+            >
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                  For Students & Graduates
+                </p>
+                <p className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
+                  Explore & Apply for Internships
+                </p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                  Software, IoT, AI/ML & Embedded cohorts
+                </p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-amber-600 shrink-0 transition-colors" />
+            </Link>
+
+            <Link
+              to="/login"
+              className="group p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 hover:border-amber-400 transition-colors flex items-center justify-between gap-3"
+            >
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                  For Existing Members & Staff
+                </p>
+                <p className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
+                  Sign In to Your Workspace
+                </p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                  Clients, Staff, Mentors, Interns & Admins
+                </p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-amber-600 shrink-0 transition-colors" />
+            </Link>
+          </div>
+        </Container>
+      </section>
 
       {/* Dynamic Key Metrics & Milestones */}
       {metrics && metrics.length > 0 && (
@@ -55,7 +138,9 @@ export default function Home() {
       <ServicesSection />
 
       {/* Featured Projects Carousel & Case Study Grid */}
-      <FeaturedProjects />
+      <Suspense fallback={<SectionShimmerFallback minHeightClass="min-h-[520px]" />}>
+        <FeaturedProjects />
+      </Suspense>
 
       {/* Why Choose Us Section */}
       <section className="content-visibility-auto py-10 md:py-14 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 transition-colors">
@@ -200,10 +285,14 @@ export default function Home() {
       </section>
 
       {/* Frequently Asked Questions (Services & Internship Programs) */}
-      <FAQ />
+      <Suspense fallback={<SectionShimmerFallback minHeightClass="min-h-[420px]" />}>
+        <FAQ />
+      </Suspense>
 
       {/* Get In Touch Contact Section */}
-      <GetInTouch />
+      <Suspense fallback={<SectionShimmerFallback minHeightClass="min-h-[460px]" />}>
+        <GetInTouch />
+      </Suspense>
     </div>
   );
 }

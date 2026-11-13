@@ -7,6 +7,7 @@ import { Search, GraduationCap, Award, BookOpen, UserPlus, CheckCircle2, ShieldA
 import { useAuth } from '../../contexts/AuthContext';
 import { logActivity } from '../../lib/activityLogger';
 import { ConfirmModal } from '../../components/ui/ConfirmModal';
+import { DashboardModuleSkeleton } from '../../components/ui/DashboardSuspense';
 
 export default function Mentors() {
   const { currentUser } = useAuth();
@@ -223,10 +224,7 @@ export default function Mentors() {
 
       <div className="overflow-x-auto bg-white border border-slate-200">
         {loading ? (
-          <div className="col-span-full py-12 text-center text-slate-500">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2" />
-            <div className="text-xs font-medium">Streaming mentors from Firestore...</div>
-          </div>
+          <DashboardModuleSkeleton variant="table" label="Loading mentors directory..." />
         ) : filteredMentors.length === 0 ? (
           <div className="py-12 border border-dashed border-slate-300 text-center text-slate-500 p-8">
             <GraduationCap className="w-12 h-12 text-slate-300 mx-auto mb-3" />

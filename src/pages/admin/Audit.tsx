@@ -1,42 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { collection, query, orderBy, getDocs, limit } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import React, { useMemo, useState } from 'react';
 import { Search, Shield } from 'lucide-react';
 import { format } from 'date-fns';
+import { useAdminAuditLogs } from '../../hooks/useDashboardQueries';
+import { ShimmerTableRows } from '../../components/ui/DashboardSuspense';
 
 export default function AdminAudit() {
-  const [logs, setLogs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: allLogs = [], isLoading: loading } = useAdminAuditLogs(500);
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    fetchLogs();
-  }, []);
+  const logs = useMemo(() => allLogs.slice(0, 100), [allLogs]);
 
-  const fetchLogs = async () => {
-    setLoading(true);
-    try {
-      // Limit to 100 recent logs for performance
-      const q = query(
-        collection(db, 'auditLogs'),
-        orderBy('timestamp', 'desc'),
-        limit(100)
-      );
-      const snapshot = await getDocs(q);
-      const items: any[] = [];
-      snapshot.forEach(doc => {
-        items.push({ id: doc.id, ...doc.data() });
-      });
-      setLogs(items);
-    } catch (error) {
-      console.error("Error fetching audit logs:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filteredLogs = logs.filter(log => 
-    `${log.action} ${log.performedBy} ${log.details}`.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredLogs = useMemo(
+    () =>
+      logs.filter((log) =>
+        `${log.action} ${log.performedBy} ${log.details}`
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())
+      ),
+    [logs, searchTerm]
   );
 
   return (
@@ -78,14 +59,7 @@ export default function AdminAudit() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
-                <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-slate-500">
-                    <div className="animate-pulse flex flex-col items-center">
-                      <div className="h-4 w-24 bg-slate-200 rounded mb-2"></div>
-                      <div className="text-xs">Loading logs...</div>
-                    </div>
-                  </td>
-                </tr>
+                <ShimmerTableRows rows={6} cols={4} />
               ) : filteredLogs.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-8 text-center text-slate-500">
@@ -96,7 +70,7 @@ export default function AdminAudit() {
                 filteredLogs.map((log) => (
                   <tr key={log.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap text-slate-500 font-mono text-xs">
-                      {log.timestamp ? format(log.timestamp.toDate(), 'yyyy-MM-dd HH:mm:ss') : 'N/A'}
+                      {log.timestamp?.toDate ? format(log.timestamp.toDate(), 'yyyy-MM-dd HH:mm:ss') : 'N/A'}
                     </td>
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-800 border border-slate-200 uppercase tracking-wider">

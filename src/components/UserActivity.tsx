@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -24,18 +24,23 @@ import {
   HardDrive,
   ShieldCheck,
 } from 'lucide-react';
-import { collection, onSnapshot, query, limit, orderBy } from 'firebase/firestore';
 import { format, isSameDay, startOfDay, subDays } from 'date-fns';
-import { db } from '../lib/firebase';
 import { useRBAC } from '../contexts/RBACContext';
 import {
   CanonicalRole,
   FIVE_ROLES,
   normalizeToCanonicalRole,
   ROLE_METADATA,
-  UserUsageMetrics,
 } from '../lib/rbac';
-import { Attendance, AuditLog, ProjectTask, User } from '../types';
+import {
+  useAdminAttendance,
+  useAdminAuditLogs,
+  useAdminDocuments,
+  useAdminQuotas,
+  useAdminTasks,
+  useAdminUsers,
+} from '../hooks/useDashboardQueries';
+import { ShimmerBlock } from './ui/DashboardSuspense';
 
 type MetricMode = 'logins' | 'resources' | 'combined';
 type TimeWindow = 7 | 14 | 30;
@@ -109,103 +114,18 @@ export const UserActivity: React.FC<UserActivityProps> = ({ compact = false }) =
   const { activeRole } = useRBAC();
   const isAuthorized = activeRole === 'ADMIN' || activeRole === 'MENTOR';
 
-  const [users, setUsers] = useState<User[]>([]);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-  const [attendanceLogs, setAttendanceLogs] = useState<Attendance[]>([]);
-  const [tasks, setTasks] = useState<ProjectTask[]>([]);
-  const [documentsList, setDocumentsList] = useState<Record<string, any>[]>([]);
-  const [quotas, setQuotas] = useState<Array<{ id: string } & Partial<UserUsageMetrics>>>([]);
-  const [loading, setLoading] = useState(true);
-
   const [metricMode, setMetricMode] = useState<MetricMode>('logins');
   const [timeWindow, setTimeWindow] = useState<TimeWindow>(30);
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('ALL');
 
-  useEffect(() => {
-    if (!isAuthorized) {
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    let resolvedStreams = 0;
-    const markResolved = () => {
-      resolvedStreams += 1;
-      if (resolvedStreams >= 2) {
-        setLoading(false);
-      }
-    };
-
-    const unsubUsers = onSnapshot(
-      query(collection(db, 'users'), limit(500)),
-      (snap) => {
-        setUsers(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as User[]);
-        markResolved();
-      },
-      () => markResolved()
-    );
-
-    const unsubAudit = onSnapshot(
-      query(collection(db, 'auditLogs'), orderBy('timestamp', 'desc'), limit(500)),
-      (snap) => {
-        setAuditLogs(
-          snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as AuditLog[]
-        );
-        markResolved();
-      },
-      () => markResolved()
-    );
-
-    const unsubAttendance = onSnapshot(
-      query(collection(db, 'attendance'), limit(500)),
-      (snap) => {
-        setAttendanceLogs(
-          snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as Attendance[]
-        );
-      },
-      () => {}
-    );
-
-    const unsubQuotas = onSnapshot(
-      query(collection(db, 'quotas'), limit(500)),
-      (snap) => {
-        setQuotas(
-          snap.docs.map((d) => ({
-            id: d.id,
-            ...(d.data() as Partial<UserUsageMetrics>),
-          }))
-        );
-      },
-      () => {}
-    );
-
-    const unsubTasks = onSnapshot(
-      query(collection(db, 'projectTasks'), limit(500)),
-      (snap) => {
-        setTasks(
-          snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as ProjectTask[]
-        );
-      },
-      () => {}
-    );
-
-    const unsubDocs = onSnapshot(
-      query(collection(db, 'documents'), limit(500)),
-      (snap) => {
-        setDocumentsList(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })));
-      },
-      () => {}
-    );
-
-    return () => {
-      unsubUsers();
-      unsubAudit();
-      unsubAttendance();
-      unsubQuotas();
-      unsubTasks();
-      unsubDocs();
-    };
-  }, [isAuthorized]);
+  // Shared TanStack Query caches (only enabled when ADMIN or MENTOR views telemetry)
+  const { data: users = [], isLoading: usersLoading } = useAdminUsers(isAuthorized);
+  const { data: auditLogs = [], isLoading: auditLoading } = useAdminAuditLogs(500, isAuthorized);
+  const { data: attendanceLogs = [] } = useAdminAttendance(isAuthorized);
+  const { data: quotas = [] } = useAdminQuotas(isAuthorized);
+  const { data: tasks = [] } = useAdminTasks(500, isAuthorized);
+  const { data: documentsList = [] } = useAdminDocuments(200, isAuthorized);
+  const loading = isAuthorized && usersLoading && auditLoading;
 
   // Lookup map: userId / email -> CanonicalRole
   const userRoleLookup = useMemo(() => {
@@ -278,7 +198,7 @@ export const UserActivity: React.FC<UserActivityProps> = ({ compact = false }) =
         const actionUpper = (log.action || '').toUpperCase();
         const role =
           resolveRoleForActor(log.performedBy, undefined, log.details) ||
-          resolveRoleForActor(log.resourceId, undefined, log.details) ||
+          resolveRoleForActor((log as any).resourceId, undefined, log.details) ||
           'CLIENT';
 
         if (LOGIN_ACTIONS.has(actionUpper) || actionUpper.includes('LOGIN')) {
@@ -293,12 +213,13 @@ export const UserActivity: React.FC<UserActivityProps> = ({ compact = false }) =
 
       // 2. Attendance check-ins -> count as authenticated login/session if not logged separately
       attendanceLogs.forEach((att) => {
-        const dt = parseFirestoreDate(att.date || att.checkIn || att.createdAt);
+        const attAny = att as any;
+        const dt = parseFirestoreDate(att.date || attAny.checkIn || attAny.createdAt);
         if (!dt || !isSameDay(dt, targetDay)) return;
         const uid = att.userId;
         if (uid && seenUserLoginOnDay.has(uid)) return;
 
-        const role = resolveRoleForActor(uid, (att as any).role);
+        const role = resolveRoleForActor(uid, attAny.role);
         if (role) {
           loginCounts[role] += 1;
           if (uid) seenUserLoginOnDay.add(uid);
@@ -318,20 +239,22 @@ export const UserActivity: React.FC<UserActivityProps> = ({ compact = false }) =
 
       // 4. Direct Task & Document resource mutations
       tasks.forEach((t) => {
-        const dt = parseFirestoreDate(t.submittedAt || t.updatedAt || t.createdAt);
+        const taskAny = t as any;
+        const dt = parseFirestoreDate(taskAny.submittedAt || taskAny.updatedAt || t.createdAt);
         if (!dt || !isSameDay(dt, targetDay)) return;
         const role =
           resolveRoleForActor(t.assignedTo) ||
-          resolveRoleForActor((t as any).createdBy) ||
+          resolveRoleForActor(taskAny.createdBy) ||
           'EMPLOYEE';
         resourceCounts[role] += 1;
       });
 
       documentsList.forEach((d) => {
-        const dt = parseFirestoreDate(d.createdAt || d.uploadedAt);
+        const docAny = d as any;
+        const dt = parseFirestoreDate(d.createdAt || docAny.uploadedAt);
         if (!dt || !isSameDay(dt, targetDay)) return;
         const role =
-          resolveRoleForActor(d.uploadedBy || d.ownerId || d.userId, d.role) ||
+          resolveRoleForActor(docAny.uploadedBy || d.ownerId || docAny.userId, docAny.role) ||
           'EMPLOYEE';
         resourceCounts[role] += 1;
       });
@@ -687,11 +610,30 @@ export const UserActivity: React.FC<UserActivityProps> = ({ compact = false }) =
       {/* Main Recharts Grid */}
       <div className="p-6">
         {loading ? (
-          <div className="h-80 flex flex-col items-center justify-center gap-2 text-slate-400">
-            <RefreshCw className="w-6 h-6 animate-spin text-indigo-500" />
-            <span className="text-xs font-medium">
-              Streaming 30-day role login and resource usage telemetry...
-            </span>
+          <div
+            role="status"
+            aria-label="Streaming 30-day role login and resource usage telemetry..."
+            className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start"
+          >
+            <div className="xl:col-span-8 space-y-3">
+              <div className="flex items-center justify-between">
+                <ShimmerBlock className="h-3.5 w-60 max-w-full" />
+                <ShimmerBlock className="h-3 w-24" />
+              </div>
+              <div className="h-80 w-full rounded-xl bg-slate-50/70 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800/80 px-6 pb-5 pt-8 flex items-end gap-2 sm:gap-3">
+                {['h-28', 'h-40', 'h-24', 'h-52', 'h-36', 'h-48', 'h-32', 'h-44', 'h-56', 'h-36', 'h-48', 'h-40'].map((hClass, idx) => (
+                  <div key={idx} className={`flex-1 flex flex-col justify-end ${idx > 7 ? 'hidden sm:flex' : ''}`}>
+                    <ShimmerBlock className={`w-full ${hClass} rounded-t-md rounded-b-none`} />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="xl:col-span-4 space-y-3">
+              <ShimmerBlock className="h-4 w-44" />
+              {[...Array(5)].map((_, idx) => (
+                <ShimmerBlock key={idx} className="h-12 w-full rounded-xl" />
+              ))}
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">

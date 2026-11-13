@@ -6,18 +6,15 @@ import {
   Briefcase,
   MessageSquare,
   X,
-  ArrowRight,
   Loader2,
   Command,
-  Mail,
-  Shield,
-  Tag,
-  CheckCircle2,
-  Clock,
+  ArrowRight,
 } from 'lucide-react';
-import { collection, onSnapshot } from 'firebase/firestore';
-import { db } from '../lib/firebase';
-import { User, Project, Enquiry } from '../types';
+import {
+  useAdminEnquiries,
+  useAdminProjects,
+  useAdminUsers,
+} from '../hooks/useDashboardQueries';
 
 export type SearchCategory = 'ALL' | 'USERS' | 'PROJECTS' | 'ENQUIRIES';
 
@@ -39,61 +36,14 @@ export const AdminGlobalSearch: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<SearchCategory>('ALL');
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  const [users, setUsers] = useState<User[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
-  const [loading, setLoading] = useState(true);
-
   const containerRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  // Subscribe to Firestore collections (`users`, `projects`, `enquiries`) when AdminDashboard is active
-  useEffect(() => {
-    let loadedCount = 0;
-    const markLoaded = () => {
-      loadedCount += 1;
-      if (loadedCount >= 3) setLoading(false);
-    };
-
-    const unsubUsers = onSnapshot(
-      collection(db, 'users'),
-      (snap) => {
-        setUsers(
-          snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as User[]
-        );
-        markLoaded();
-      },
-      () => markLoaded()
-    );
-
-    const unsubProjects = onSnapshot(
-      collection(db, 'projects'),
-      (snap) => {
-        setProjects(
-          snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as Project[]
-        );
-        markLoaded();
-      },
-      () => markLoaded()
-    );
-
-    const unsubEnquiries = onSnapshot(
-      collection(db, 'enquiries'),
-      (snap) => {
-        setEnquiries(
-          snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as Enquiry[]
-        );
-        markLoaded();
-      },
-      () => markLoaded()
-    );
-
-    return () => {
-      unsubUsers();
-      unsubProjects();
-      unsubEnquiries();
-    };
-  }, []);
+  // Read from shared TanStack Query cache (0 duplicate Firestore reads with AdminDashboard)
+  const { data: users = [], isLoading: usersLoading } = useAdminUsers(true);
+  const { data: projects = [], isLoading: projectsLoading } = useAdminProjects(true);
+  const { data: enquiries = [], isLoading: enquiriesLoading } = useAdminEnquiries(true);
+  const loading = usersLoading && projectsLoading && enquiriesLoading;
 
   // Global keyboard shortcut: Cmd+K / Ctrl+K to focus search, Escape to close
   useEffect(() => {

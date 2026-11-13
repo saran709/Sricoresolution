@@ -40,6 +40,7 @@ import { logActivity } from '../../lib/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
 import { ConfirmModal } from '../../components/ui/ConfirmModal';
 import { useSearchParams } from 'react-router-dom';
+import { ShimmerBlock, ShimmerTableRows } from '../../components/ui/DashboardSuspense';
 
 interface CsvUserCandidate {
   id: string;
@@ -910,12 +911,7 @@ GreenAgro,Enterprises,contact@greenagrotech.sample.in,+91 94440 88990,CLIENT,Cli
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
-                <tr>
-                  <td colSpan={5} className="p-12 text-center text-slate-500">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2" />
-                    <span className="text-xs font-medium">Streaming users from Firestore...</span>
-                  </td>
-                </tr>
+                <ShimmerTableRows rows={6} cols={5} />
               ) : filteredUsers.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="p-12 text-center text-slate-500">
@@ -1111,9 +1107,15 @@ GreenAgro,Enterprises,contact@greenagrotech.sample.in,+91 94440 88990,CLIENT,Cli
 
               {/* Parsing State Indicator */}
               {isParsing && (
-                <div className="p-8 text-center bg-slate-50 rounded-xl border border-slate-200 animate-pulse">
-                  <div className="inline-block animate-spin rounded-full h-7 w-7 border-b-2 border-blue-600 mb-2"></div>
-                  <p className="text-xs font-semibold text-slate-700">Reading and validating CSV rows...</p>
+                <div role="status" aria-label="Validating CSV rows..." className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+                  {[...Array(3)].map((_, idx) => (
+                    <div key={idx} className="flex items-center justify-between gap-3">
+                      <ShimmerBlock className="h-4 w-36" />
+                      <ShimmerBlock className="h-4 w-48" />
+                      <ShimmerBlock className="h-5 w-20 rounded-md" />
+                    </div>
+                  ))}
+                  <span className="sr-only">Reading and validating CSV rows...</span>
                 </div>
               )}
 

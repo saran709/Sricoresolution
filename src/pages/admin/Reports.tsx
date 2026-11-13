@@ -1,69 +1,54 @@
-import React, { useEffect, useState } from 'react';
-import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import React, { useMemo } from 'react';
 import { Button } from '../../components/ui/Button';
 import { 
   BarChart3, 
   TrendingUp, 
-  Users, 
   Briefcase, 
   CreditCard, 
-  FileText, 
   GraduationCap, 
   Download,
-  Calendar
 } from 'lucide-react';
+import {
+  useAdminEnquiries,
+  useAdminPayments,
+  useAdminProjects,
+  useAdminTasks,
+  useAdminUsers,
+} from '../../hooks/useDashboardQueries';
+import { normalizeToCanonicalRole } from '../../lib/rbac';
+import { ShimmerBlock } from '../../components/ui/DashboardSuspense';
 
 export default function Reports() {
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    totalProjects: 0,
-    totalRevenue: 0,
-    totalEnquiries: 0,
-    totalInterns: 0,
-    activeTasks: 0
-  });
+  const { data: users = [], isLoading: usersLoading } = useAdminUsers();
+  const { data: projects = [], isLoading: projectsLoading } = useAdminProjects();
+  const { data: payments = [], isLoading: paymentsLoading } = useAdminPayments();
+  const { data: enquiries = [], isLoading: enquiriesLoading } = useAdminEnquiries();
+  const { data: tasks = [], isLoading: tasksLoading } = useAdminTasks(500);
 
-  useEffect(() => {
-    fetchMetrics();
-  }, []);
+  const loading =
+    usersLoading && projectsLoading && paymentsLoading && enquiriesLoading && tasksLoading;
 
-  const fetchMetrics = async () => {
-    setLoading(true);
-    try {
-      const [userSnap, projSnap, paySnap, enqSnap, taskSnap] = await Promise.all([
-        getDocs(collection(db, 'users')),
-        getDocs(collection(db, 'projects')),
-        getDocs(collection(db, 'payments')),
-        getDocs(collection(db, 'enquiries')),
-        getDocs(collection(db, 'projectTasks'))
-      ]);
+  const stats = useMemo(() => {
+    const revenue = payments.reduce((sum, p) => {
+      if (p.status === 'SUCCESS') {
+        return sum + (Number(p.amount) || 0);
+      }
+      return sum;
+    }, 0);
 
-      let revenue = 0;
-      paySnap.docs.forEach(doc => {
-        const data = doc.data();
-        if (data.status === 'SUCCESS') {
-          revenue += Number(data.amount) || 0;
-        }
-      });
+    const internsCount = users.filter(
+      (u) => normalizeToCanonicalRole(u.role) === 'INTERN_STUDENT'
+    ).length;
 
-      const internsCount = userSnap.docs.filter(d => d.data().role === 'INTERN').length;
-
-      setStats({
-        totalUsers: userSnap.size,
-        totalProjects: projSnap.size,
-        totalRevenue: revenue,
-        totalEnquiries: enqSnap.size,
-        totalInterns: internsCount,
-        activeTasks: taskSnap.size
-      });
-    } catch (err) {
-      console.error("Failed to load reports:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    return {
+      totalUsers: users.length,
+      totalProjects: projects.length,
+      totalRevenue: revenue,
+      totalEnquiries: enquiries.length,
+      totalInterns: internsCount,
+      activeTasks: tasks.length,
+    };
+  }, [users, projects, payments, enquiries, tasks]);
 
   const handleExportCSV = () => {
     const csvContent = "data:text/csv;charset=utf-8," + 
@@ -108,7 +93,7 @@ export default function Reports() {
           </div>
           <div className="mt-3">
             <div className="text-2xl font-extrabold text-slate-900">
-              ₹{stats.totalRevenue.toLocaleString('en-IN')}
+              {loading ? <ShimmerBlock className="h-8 w-24 rounded-lg" /> : `₹${stats.totalRevenue.toLocaleString('en-IN')}`}
             </div>
             <p className="text-[11px] text-emerald-600 font-medium mt-1">UPI & Banking settlements</p>
           </div>
@@ -122,7 +107,9 @@ export default function Reports() {
             </span>
           </div>
           <div className="mt-3">
-            <div className="text-2xl font-extrabold text-slate-900">{stats.totalEnquiries}</div>
+            <div className="text-2xl font-extrabold text-slate-900">
+              {loading ? <ShimmerBlock className="h-8 w-16 rounded-lg" /> : stats.totalEnquiries}
+            </div>
             <p className="text-[11px] text-slate-500 mt-1">Inbound client & student leads</p>
           </div>
         </div>
@@ -135,7 +122,9 @@ export default function Reports() {
             </span>
           </div>
           <div className="mt-3">
-            <div className="text-2xl font-extrabold text-slate-900">{stats.totalProjects}</div>
+            <div className="text-2xl font-extrabold text-slate-900">
+              {loading ? <ShimmerBlock className="h-8 w-16 rounded-lg" /> : stats.totalProjects}
+            </div>
             <p className="text-[11px] text-slate-500 mt-1">Active client deliverables</p>
           </div>
         </div>
@@ -148,7 +137,9 @@ export default function Reports() {
             </span>
           </div>
           <div className="mt-3">
-            <div className="text-2xl font-extrabold text-slate-900">{stats.totalInterns}</div>
+            <div className="text-2xl font-extrabold text-slate-900">
+              {loading ? <ShimmerBlock className="h-8 w-16 rounded-lg" /> : stats.totalInterns}
+            </div>
             <p className="text-[11px] text-purple-600 font-medium mt-1">Guided trainees & developers</p>
           </div>
         </div>
@@ -163,7 +154,9 @@ export default function Reports() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
             <p className="text-xs text-slate-500 uppercase font-semibold">User Directory Volume</p>
-            <p className="text-3xl font-extrabold text-slate-900 mt-1">{stats.totalUsers}</p>
+            <div className="text-3xl font-extrabold text-slate-900 mt-1">
+              {loading ? <ShimmerBlock className="h-9 w-16 rounded-lg" /> : stats.totalUsers}
+            </div>
             <p className="text-xs text-slate-500 mt-1">Across all role categories</p>
           </div>
           <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
@@ -171,7 +164,9 @@ export default function Reports() {
           </div>
           <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
             <p className="text-xs text-slate-500 uppercase font-semibold">Engineered Tasks Logged</p>
-            <p className="text-3xl font-extrabold text-slate-900 mt-1">{stats.activeTasks}</p>
+            <div className="text-3xl font-extrabold text-slate-900 mt-1">
+              {loading ? <ShimmerBlock className="h-9 w-16 rounded-lg" /> : stats.activeTasks}
+            </div>
             <p className="text-xs text-slate-500 mt-1">Sprint items & milestone deliverables</p>
           </div>
         </div>

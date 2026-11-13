@@ -50,7 +50,11 @@ import {
   saveRBACConfigToFirestore,
 } from '../../lib/rbac';
 import { logActivity } from '../../lib/activityLogger';
-import { PermissionConfiguration } from '../PermissionConfiguration';
+import { DashboardSuspense } from '../ui/DashboardSuspense';
+
+const PermissionConfiguration = React.lazy(() =>
+  import('../PermissionConfiguration').then((m) => ({ default: m.PermissionConfiguration }))
+);
 
 interface ManagedUserDoc {
   id: string;
@@ -565,7 +569,11 @@ export const RBACManagement: React.FC = () => {
       )}
 
       {/* TAB 1B: RESOURCE-LEVEL CRUD PERMISSION CONFIGURATION */}
-      {activeTab === 'resource-crud' && <PermissionConfiguration compact />}
+      {activeTab === 'resource-crud' && (
+        <DashboardSuspense variant="panel" moduleName="Resource CRUD Permission Editor">
+          <PermissionConfiguration compact />
+        </DashboardSuspense>
+      )}
 
       {/* TAB 2: DYNAMIC ROLE LIMITS */}
       {activeTab === 'limits' && (

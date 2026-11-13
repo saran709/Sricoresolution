@@ -3,7 +3,7 @@ import { Project } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { useMyProjects } from '../../hooks/useDashboardQueries';
 import { Clock, Download, Search } from 'lucide-react';
-import { LoadingSpinner } from '../ui/LoadingSpinner';
+import { DashboardModuleSkeleton } from '../ui/DashboardSuspense';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 
@@ -51,7 +51,9 @@ export function MyProjects() {
     }
   };
 
-  if (isLoading) return <LoadingSpinner />;
+  if (isLoading) {
+    return <DashboardModuleSkeleton variant="table" label="Loading project tracker..." />;
+  }
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">

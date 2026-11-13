@@ -68,7 +68,7 @@ export const FeaturedProjects = React.memo(function FeaturedProjects() {
     <section
       id="featured-projects"
       aria-labelledby="featured-projects-heading"
-      className="py-12 md:py-16 lg:py-20 bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800"
+      className="content-visibility-auto py-12 md:py-16 lg:py-20 bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800"
     >
       <Container>
         {/* Section Header & Domain Filter Controls */}

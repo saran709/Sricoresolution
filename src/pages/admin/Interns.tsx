@@ -7,6 +7,7 @@ import { Search, GraduationCap, Award, BookOpen, UserCheck, ShieldAlert, CheckCi
 import { useAuth } from '../../contexts/AuthContext';
 import { logActivity } from '../../lib/activityLogger';
 import { ConfirmModal } from '../../components/ui/ConfirmModal';
+import { ShimmerBlock } from '../../components/ui/DashboardSuspense';
 
 export default function Interns() {
   const { currentUser } = useAuth();
@@ -170,10 +171,29 @@ export default function Interns() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading ? (
-          <div className="col-span-full py-12 text-center text-slate-500">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2" />
-            <div className="text-xs font-medium">Streaming active interns from Firestore...</div>
-          </div>
+          <>
+            {[...Array(3)].map((_, idx) => (
+              <div
+                key={idx}
+                aria-hidden="true"
+                className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4"
+              >
+                <div className="flex items-start justify-between">
+                  <ShimmerBlock className="w-12 h-12 rounded-xl" />
+                  <ShimmerBlock className="h-6 w-20 rounded-full" />
+                </div>
+                <div className="space-y-2">
+                  <ShimmerBlock className="h-4 w-36" />
+                  <ShimmerBlock className="h-3 w-44 max-w-full" />
+                </div>
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                  <ShimmerBlock className="h-8 w-28 rounded-lg" />
+                  <ShimmerBlock className="h-8 w-24 rounded-lg" />
+                </div>
+              </div>
+            ))}
+            <span className="sr-only" role="status">Loading interns...</span>
+          </>
         ) : filteredInterns.length === 0 ? (
           <div className="col-span-full py-12 bg-white rounded-xl border border-dashed border-slate-300 text-center text-slate-500 p-8">
             <GraduationCap className="w-12 h-12 text-slate-300 mx-auto mb-3" />

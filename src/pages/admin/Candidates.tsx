@@ -7,6 +7,7 @@ import { Search, UserCheck, CheckCircle2, Clock, XCircle, Mail, Phone, ShieldAle
 import { useAuth } from '../../contexts/AuthContext';
 import { logActivity } from '../../lib/activityLogger';
 import { ConfirmModal } from '../../components/ui/ConfirmModal';
+import { ShimmerTableRows } from '../../components/ui/DashboardSuspense';
 
 export default function Candidates() {
   const { currentUser } = useAuth();
@@ -136,12 +137,7 @@ export default function Candidates() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
-                <tr>
-                  <td colSpan={5} className="p-12 text-center text-slate-500">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2" />
-                    <span className="text-xs font-medium">Streaming candidates from Firestore...</span>
-                  </td>
-                </tr>
+                <ShimmerTableRows rows={5} cols={5} />
               ) : filteredCandidates.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="p-12 text-center text-slate-500">
