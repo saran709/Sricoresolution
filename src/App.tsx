@@ -10,6 +10,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { queryClient } from './lib/queryClient';
 import { AppRouter } from './router';
 import { Navbar } from './components/Navbar';
+import { MetadataManager } from './components/seo/MetadataManager';
 import { AuthProvider } from './contexts/AuthContext';
 import { RBACProvider } from './contexts/RBACContext';
 import { WebsiteSettingsProvider } from './contexts/WebsiteSettingsContext';
@@ -34,6 +35,7 @@ export default function App() {
             <WebsiteSettingsProvider>
               <ThemeProvider>
                 <BrowserRouter>
+                  <MetadataManager />
                   <div className="flex flex-col min-h-screen">
                     <Navbar />
                     <AppRouter />
