@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '../../utils/cn';
+import { SuspenseProgressIndicator } from './TopProgressBar';
 
 interface LoadingSpinnerProps {
   className?: string;
@@ -15,6 +16,7 @@ export function LoadingSpinner({ className, size = 'md' }: LoadingSpinnerProps) 
 
   return (
     <div className="flex items-center justify-center p-4">
+      <SuspenseProgressIndicator />
       <div
         className={cn(
           "animate-spin rounded-full border-b-2 border-blue-600",

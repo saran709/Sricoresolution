@@ -15,6 +15,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { RBACProvider } from './contexts/RBACContext';
 import { WebsiteSettingsProvider } from './contexts/WebsiteSettingsContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { TopProgressBar } from './components/ui/TopProgressBar';
 
 const Newsletter = lazy(() =>
   import('./components/Newsletter').then((m) => ({ default: m.Newsletter }))
@@ -24,6 +25,11 @@ const Footer = lazy(() =>
 );
 const ThemeToggle = lazy(() =>
   import('./components/ThemeToggle').then((m) => ({ default: m.ThemeToggle }))
+);
+const QuickContactFAB = lazy(() =>
+  import('./components/forms/QuickContactFAB').then((m) => ({
+    default: m.QuickContactFAB,
+  }))
 );
 
 export default function App() {
@@ -35,6 +41,7 @@ export default function App() {
             <WebsiteSettingsProvider>
               <ThemeProvider>
                 <BrowserRouter>
+                  <TopProgressBar />
                   <MetadataManager />
                   <div className="flex flex-col min-h-screen">
                     <Navbar />
@@ -42,6 +49,7 @@ export default function App() {
                     <Suspense fallback={null}>
                       <Newsletter />
                       <Footer />
+                      <QuickContactFAB />
                       <ThemeToggle variant="fab" />
                     </Suspense>
                   </div>

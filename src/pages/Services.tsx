@@ -2,6 +2,8 @@ import React from 'react';
 import { Container } from '../components/ui/Container';
 import { CTASection } from '../components/ui/CTASection';
 import { ServicesSection } from '../components/Services';
+import { ServiceSchema } from '../components/seo/ServiceSchema';
+import { ServiceFAQSection } from '../components/seo/FAQSchema';
 import { useWebsiteSettings } from '../contexts/WebsiteSettingsContext';
 
 export default function Services() {
@@ -12,6 +14,7 @@ export default function Services() {
 
   return (
     <div className="bg-slate-50 dark:bg-slate-950 min-h-screen">
+      <ServiceSchema serviceKey="services-hub" />
       <div className="bg-slate-900 text-white py-10 md:py-16">
         <Container>
           <div className="max-w-3xl">
@@ -32,6 +35,8 @@ export default function Services() {
       </div>
 
       <ServicesSection />
+
+      <ServiceFAQSection serviceKey="services-hub" />
 
       <CTASection 
         title="Ready to Start Your Project?"

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { FAQSchema, FAQSchemaItem } from '../seo/FAQSchema';
 
 export interface FAQItem {
   question: string;
@@ -9,13 +10,25 @@ export interface FAQItem {
 
 interface FAQProps {
   items: FAQItem[];
+  includeSchema?: boolean;
 }
 
-export function FAQ({ items }: FAQProps) {
+export function FAQ({ items, includeSchema = true }: FAQProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  const schemaItems = useMemo<FAQSchemaItem[]>(
+    () =>
+      items.map((item, idx) => ({
+        id: `faq-item-${idx + 1}`,
+        question: item.question,
+        answer: item.answer,
+      })),
+    [items]
+  );
 
   return (
     <div className="space-y-4">
+      {includeSchema && <FAQSchema items={schemaItems} />}
       {items.map((item, index) => (
         <div key={index} className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
           <button

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Container } from '../components/ui/Container';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { CTASection } from '../components/ui/CTASection';
+import { ServiceSchema } from '../components/seo/ServiceSchema';
+import { ServiceFAQSection } from '../components/seo/FAQSchema';
 import { 
   OFFICIAL_GFORM_INTERNSHIPS, 
   GFORM_CONFIG, 
@@ -44,6 +46,7 @@ export default function Internships() {
 
   return (
     <div className="bg-slate-50 min-h-screen">
+      <ServiceSchema serviceKey="internship-programs" />
       {/* Hero Header */}
       <section className="bg-slate-900 text-white py-12 md:py-18 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#f59e0b_1px,transparent_1px)] [background-size:20px_20px]"></div>
@@ -282,36 +285,8 @@ export default function Internships() {
         </Container>
       </section>
 
-      {/* Frequently Asked Questions */}
-      <section className="py-12 md:py-16 bg-slate-50 border-t border-slate-200">
-        <Container>
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-2xl font-bold text-slate-900 mb-6 text-center">Frequently Asked Questions</h2>
-            <div className="space-y-4">
-              <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-                <h3 className="text-sm font-bold text-slate-900 mb-2">How long is the internship program?</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  The standard curriculum spans 1 month (4 weeks), with options for students needing a 2-month or 3-month tenure for academic credit upon request during registration.
-                </p>
-              </div>
-
-              <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-                <h3 className="text-sm font-bold text-slate-900 mb-2">Is the certificate valid for university placement credit?</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Yes. Certificates are issued by Sricore Solutions (an ISO 9001:2015 certified technology firm) complete with unique verification serial IDs, project titles, and mentor sign-offs accepted by major colleges and engineering universities.
-                </p>
-              </div>
-
-              <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-                <h3 className="text-sm font-bold text-slate-900 mb-2">Can I register through both the website portal and Google Form?</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Both submission channels synchronize to our candidate ledger. You may either register directly via our secure web application or complete the Google Form. Offer letters are dispatched within 24 to 48 business hours.
-                </p>
-              </div>
-            </div>
-          </div>
-        </Container>
-      </section>
+      {/* Frequently Asked Questions with Schema.org FAQPage JSON-LD */}
+      <ServiceFAQSection serviceKey="internship-programs" />
 
       {/* CTA Section */}
       <CTASection 

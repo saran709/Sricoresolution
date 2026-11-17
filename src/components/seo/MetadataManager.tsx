@@ -3,6 +3,8 @@ import { Helmet } from 'react-helmet-async';
 import { useLocation } from 'react-router-dom';
 import { useWebsiteSettings } from '../../contexts/WebsiteSettingsContext';
 import { FEATURED_CASE_STUDIES } from '../../data/featuredProjectsSummary';
+import { resolveEngineeringServiceSchemaByPath } from './ServiceSchema';
+import { resolveBreadcrumbsForPath } from '../ui/Breadcrumbs';
 
 const FAQ_SCHEMA_ITEMS = [
   {
@@ -116,7 +118,7 @@ const ROUTE_METADATA_MAP: Record<string, RouteSeoMetadata> = {
       { name: 'Home', path: '/' },
       { name: 'Services', path: '/services' },
     ],
-    includeFaqSchema: true,
+    includeFaqSchema: false,
   },
   '/solutions/software': {
     title: 'Custom Enterprise Software Development | Sricore Solutions',
@@ -747,12 +749,15 @@ export function MetadataManager() {
         description: meta.description,
         isPartOf: { '@id': websiteId },
         about: { '@id': orgId },
+        ...(resolveEngineeringServiceSchemaByPath(normalizedPath)
+          ? { mainEntity: { '@id': `${canonicalUrl}#engineering-service` } }
+          : {}),
         inLanguage: 'en-IN',
       },
       {
         '@type': 'BreadcrumbList',
         '@id': `${canonicalUrl}#breadcrumb`,
-        itemListElement: meta.breadcrumbs.map((crumb, idx) => ({
+        itemListElement: resolveBreadcrumbsForPath(normalizedPath).map((crumb, idx) => ({
           '@type': 'ListItem',
           position: idx + 1,
           name: crumb.name,
@@ -761,7 +766,7 @@ export function MetadataManager() {
       },
     ];
 
-    if (meta.serviceSchema) {
+    if (meta.serviceSchema && !resolveEngineeringServiceSchemaByPath(normalizedPath)) {
       graphNodes.push({
         '@type': 'Service',
         '@id': `${canonicalUrl}#featured-service`,

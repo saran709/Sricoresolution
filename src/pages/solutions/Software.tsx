@@ -3,6 +3,8 @@ import { Container } from '../../components/ui/Container';
 import { SectionHeader } from '../../components/ui/SectionHeader';
 import { CTASection } from '../../components/ui/CTASection';
 import { AdUnit } from '../../components/ui/AdUnit';
+import { ServiceSchema } from '../../components/seo/ServiceSchema';
+import { ServiceFAQSection } from '../../components/seo/FAQSchema';
 import { 
   Monitor, 
   Server, 
@@ -82,6 +84,7 @@ export default function SoftwareSolutions() {
 
   return (
     <div className="bg-slate-50 min-h-screen">
+      <ServiceSchema serviceKey="software-solutions" />
       {/* Hero Header */}
       <div className="bg-slate-900 text-white py-12 md:py-18">
         <Container>
@@ -190,6 +193,8 @@ export default function SoftwareSolutions() {
           </div>
         </Container>
       </section>
+
+      <ServiceFAQSection serviceKey="software-solutions" />
 
       <CTASection 
         title="Ready to Build Your Next Production Platform?"

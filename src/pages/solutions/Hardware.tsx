@@ -3,6 +3,8 @@ import { Container } from '../../components/ui/Container';
 import { SectionHeader } from '../../components/ui/SectionHeader';
 import { CTASection } from '../../components/ui/CTASection';
 import { AdUnit } from '../../components/ui/AdUnit';
+import { ServiceSchema } from '../../components/seo/ServiceSchema';
+import { ServiceFAQSection } from '../../components/seo/FAQSchema';
 import { 
   Cpu, 
   Wifi, 
@@ -80,6 +82,7 @@ export default function HardwareSolutions() {
 
   return (
     <div className="bg-slate-50 min-h-screen">
+      <ServiceSchema serviceKey="hardware-solutions" />
       {/* Hero Header */}
       <div className="bg-slate-900 text-white py-12 md:py-18">
         <Container>
@@ -174,6 +177,8 @@ export default function HardwareSolutions() {
           </div>
         </Container>
       </section>
+
+      <ServiceFAQSection serviceKey="hardware-solutions" />
 
       <CTASection 
         title="Have a Hardware Concept to Prototype?"

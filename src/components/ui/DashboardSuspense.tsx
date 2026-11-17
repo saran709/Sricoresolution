@@ -1,5 +1,6 @@
 import React, { ErrorInfo, ReactNode, Suspense } from 'react';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
+import { SuspenseProgressIndicator } from './TopProgressBar';
 
 export type DashboardSkeletonVariant = 'page' | 'cards' | 'chart' | 'table' | 'panel';
 
@@ -77,6 +78,7 @@ export const DashboardModuleSkeleton: React.FC<DashboardModuleSkeletonProps> = (
         aria-label={label}
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6"
       >
+        <SuspenseProgressIndicator />
         {[...Array(count)].map((_, idx) => (
           <div
             key={idx}
@@ -104,6 +106,7 @@ export const DashboardModuleSkeleton: React.FC<DashboardModuleSkeletonProps> = (
         aria-label={label}
         className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden shadow-2xs"
       >
+        <SuspenseProgressIndicator />
         <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <ShimmerBlock className="w-10 h-10 rounded-xl shrink-0" />
@@ -152,6 +155,7 @@ export const DashboardModuleSkeleton: React.FC<DashboardModuleSkeletonProps> = (
         aria-label={label}
         className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden shadow-2xs"
       >
+        <SuspenseProgressIndicator />
         <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <ShimmerBlock className="w-9 h-9 rounded-lg shrink-0" />
@@ -189,6 +193,7 @@ export const DashboardModuleSkeleton: React.FC<DashboardModuleSkeletonProps> = (
   if (variant === 'page') {
     return (
       <div role="status" aria-label={label} className="space-y-6">
+        <SuspenseProgressIndicator />
         <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 flex flex-wrap items-center justify-between gap-4 shadow-2xs">
           <div className="flex items-center gap-4 flex-1 min-w-0">
             <ShimmerBlock className="w-12 h-12 rounded-2xl shrink-0" />
@@ -213,6 +218,7 @@ export const DashboardModuleSkeleton: React.FC<DashboardModuleSkeletonProps> = (
       aria-label={label}
       className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 space-y-5 shadow-2xs"
     >
+      <SuspenseProgressIndicator />
       <div className="flex items-center justify-between gap-4">
         <div className="space-y-2">
           <ShimmerBlock className="h-5 w-48 max-w-full" />
