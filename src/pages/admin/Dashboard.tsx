@@ -21,6 +21,11 @@ import {
 const WorkspaceGuide = React.lazy(() =>
   import('../../components/dashboard/WorkspaceGuide').then((m) => ({ default: m.WorkspaceGuide }))
 );
+const StructuredOperationsPipeline = React.lazy(() =>
+  import('../../components/dashboard/StructuredOperationsPipeline').then((m) => ({
+    default: m.StructuredOperationsPipeline,
+  }))
+);
 const RBACManagement = React.lazy(() =>
   import('../../components/admin/RBACManagement').then((m) => ({ default: m.RBACManagement }))
 );
@@ -170,6 +175,11 @@ export default function AdminDashboard() {
           ) : undefined
         }
       />
+
+      {/* Structured 5-Stage Standard Operating Procedure Pipeline */}
+      <DashboardSuspense variant="panel" moduleName="Structured Operations Pipeline">
+        <StructuredOperationsPipeline role={effectiveRole} />
+      </DashboardSuspense>
 
       {/* Dismissible Quick Start Guide tailored to Active Role */}
       <DashboardSuspense variant="panel" moduleName="Quick Start Guide">

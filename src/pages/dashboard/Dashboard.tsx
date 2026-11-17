@@ -24,6 +24,11 @@ const MyProjects = React.lazy(() =>
 const WorkspaceGuide = React.lazy(() =>
   import('../../components/dashboard/WorkspaceGuide').then((m) => ({ default: m.WorkspaceGuide }))
 );
+const StructuredOperationsPipeline = React.lazy(() =>
+  import('../../components/dashboard/StructuredOperationsPipeline').then((m) => ({
+    default: m.StructuredOperationsPipeline,
+  }))
+);
 
 export default function Dashboard() {
   const { userProfile, currentUser, loading } = useAuth();
@@ -81,6 +86,13 @@ export default function Dashboard() {
         logoUrl={settings?.logoUrl || '/logo.png'}
         isSimulated={Boolean(simulatedRole)}
       />
+
+      {/* Structured 5-Stage Standard Operating Procedure Pipeline (visible on overview) */}
+      {(!activeTab || activeTab === 'overview') && (
+        <DashboardSuspense variant="panel" moduleName="Structured Operations Pipeline">
+          <StructuredOperationsPipeline role={activeRole} />
+        </DashboardSuspense>
+      )}
 
       {/* Role-Specific Dismissible Quick Start Guide (visible on overview & reopenable anytime) */}
       {(!activeTab || activeTab === 'overview') && (

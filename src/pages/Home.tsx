@@ -8,6 +8,9 @@ import { Link } from 'react-router-dom';
 import { useWebsiteSettings } from '../contexts/WebsiteSettingsContext';
 
 const FeaturedProjects = React.lazy(() => import('../components/FeaturedProjects'));
+const EnterpriseOperationsSection = React.lazy(
+  () => import('../components/EnterpriseOperationsSection')
+);
 const FAQ = React.lazy(() => import('../components/FAQ'));
 const GetInTouch = React.lazy(() => import('../components/GetInTouch'));
 
@@ -283,6 +286,11 @@ export default function Home() {
           </div>
         </Container>
       </section>
+
+      {/* Structured Corporate Operations & Organizational Member Portals */}
+      <Suspense fallback={<SectionShimmerFallback minHeightClass="min-h-[420px]" />}>
+        <EnterpriseOperationsSection />
+      </Suspense>
 
       {/* Frequently Asked Questions (Services & Internship Programs) */}
       <Suspense fallback={<SectionShimmerFallback minHeightClass="min-h-[420px]" />}>

@@ -323,7 +323,6 @@ amp-ad.amp-unfilled,
 amp-ad[data-ad-status="unfilled"],
 amp-ad:not(:defined),
 ins.adsbygoogle[data-ad-status="unfilled"],
-ins.adsbygoogle:empty,
 ins.adsbygoogle[style*="display: none"],
 .google-auto-placed:empty,
 .adsbygoogle-noablate:empty,
@@ -346,4 +345,143 @@ amp-ad {
   max-width: 100vw;
   margin-left: auto;
   margin-right: auto;
+}
+
+/* Quick Contact Modal Subtle Success Animations */
+@keyframes qcBadgePop {
+  0% {
+    opacity: 0;
+    transform: scale(0.65);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes qcRingRipple {
+  0% {
+    opacity: 0.65;
+    transform: scale(0.85);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.55);
+  }
+}
+
+@keyframes qcDrawCircle {
+  0% {
+    stroke-dashoffset: 166;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes qcDrawCheck {
+  0% {
+    stroke-dashoffset: 48;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes qcFadeSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes qcSparkleFloat {
+  0% {
+    opacity: 0;
+    transform: scale(0.4) rotate(-15deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.1) rotate(5deg);
+  }
+  100% {
+    opacity: 0.85;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.qc-success-badge {
+  animation: qcBadgePop 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.qc-success-ring {
+  animation: qcRingRipple 1.1s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards;
+}
+
+.qc-draw-circle {
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  animation: qcDrawCircle 0.55s cubic-bezier(0.65, 0, 0.45, 1) 0.05s forwards;
+}
+
+.qc-draw-check {
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: qcDrawCheck 0.4s cubic-bezier(0.65, 0, 0.45, 1) 0.35s forwards;
+}
+
+.qc-sparkle-1 {
+  opacity: 0;
+  animation: qcSparkleFloat 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.32s forwards;
+}
+
+.qc-sparkle-2 {
+  opacity: 0;
+  animation: qcSparkleFloat 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.45s forwards;
+}
+
+.qc-stagger-1 {
+  opacity: 0;
+  animation: qcFadeSlideUp 0.42s cubic-bezier(0.22, 1, 0.36, 1) 0.12s forwards;
+}
+
+.qc-stagger-2 {
+  opacity: 0;
+  animation: qcFadeSlideUp 0.42s cubic-bezier(0.22, 1, 0.36, 1) 0.22s forwards;
+}
+
+.qc-stagger-3 {
+  opacity: 0;
+  animation: qcFadeSlideUp 0.42s cubic-bezier(0.22, 1, 0.36, 1) 0.32s forwards;
+}
+
+.qc-stagger-4 {
+  opacity: 0;
+  animation: qcFadeSlideUp 0.42s cubic-bezier(0.22, 1, 0.36, 1) 0.4s forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qc-success-badge,
+  .qc-success-ring,
+  .qc-draw-circle,
+  .qc-draw-check,
+  .qc-sparkle-1,
+  .qc-sparkle-2,
+  .qc-stagger-1,
+  .qc-stagger-2,
+  .qc-stagger-3,
+  .qc-stagger-4 {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    stroke-dashoffset: 0 !important;
+  }
 }

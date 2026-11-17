@@ -34,6 +34,51 @@ export const PRIMARY_NAV_LINKS: NavItem[] = [
   { name: 'Contact', href: '/contact' },
 ];
 
+const preloadedPublicRoutes = new Set<string>();
+
+export function preloadPublicRoute(href: string) {
+  if (!href || preloadedPublicRoutes.has(href)) return;
+  preloadedPublicRoutes.add(href);
+
+  const warm = (loader: () => Promise<unknown>) => {
+    void loader().catch(() => {
+      preloadedPublicRoutes.delete(href);
+    });
+  };
+
+  switch (href) {
+    case '/':
+      return warm(() => import('../pages/Home'));
+    case '/services':
+      return warm(() => import('../pages/Services'));
+    case '/about':
+      return warm(() => import('../pages/About'));
+    case '/solutions/software':
+      return warm(() => import('../pages/solutions/Software'));
+    case '/solutions/hardware':
+      return warm(() => import('../pages/solutions/Hardware'));
+    case '/solutions/ai-ml':
+      return warm(() => import('../pages/solutions/AI'));
+    case '/services/research':
+      return warm(() => import('../pages/services/Research'));
+    case '/projects':
+      return warm(() => import('../pages/Projects'));
+    case '/internships':
+      return warm(() => import('../pages/Internships'));
+    case '/internships/apply':
+      return warm(() => import('../pages/InternshipRegistration'));
+    case '/careers':
+    case '/career':
+      return warm(() => import('../pages/Careers'));
+    case '/contact':
+      return warm(() => import('../pages/Contact'));
+    case '/enquiry':
+      return warm(() => import('../pages/Enquiry'));
+    case '/login':
+      return warm(() => import('../pages/auth/Login'));
+  }
+}
+
 export const Navbar = React.memo(function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
@@ -78,6 +123,7 @@ export const Navbar = React.memo(function Navbar() {
               {announcement.linkText && (
                 <Link
                   to={announcement.linkUrl || '/careers'}
+                  onMouseEnter={() => preloadPublicRoute(announcement.linkUrl || '/careers')}
                   className="underline underline-offset-4 font-bold inline-flex items-center gap-1 hover:opacity-90 transition-opacity ml-1"
                 >
                   {announcement.linkText}
@@ -96,6 +142,7 @@ export const Navbar = React.memo(function Navbar() {
             <div className="flex items-center shrink-0">
               <Link
                 to="/"
+                onMouseEnter={() => preloadPublicRoute('/')}
                 className="flex items-center gap-2.5 focus:outline-none"
                 onClick={closeMobileMenu}
               >
@@ -135,7 +182,13 @@ export const Navbar = React.memo(function Navbar() {
                     (child) => location.pathname === child.href
                   );
                   return (
-                    <div key={item.name} className="relative group">
+                    <div
+                      key={item.name}
+                      className="relative group"
+                      onMouseEnter={() =>
+                        item.children?.forEach((c) => preloadPublicRoute(c.href))
+                      }
+                    >
                       <button
                         type="button"
                         className={cn(
@@ -159,6 +212,8 @@ export const Navbar = React.memo(function Navbar() {
                               <Link
                                 key={child.name}
                                 to={child.href}
+                                onMouseEnter={() => preloadPublicRoute(child.href)}
+                                onFocus={() => preloadPublicRoute(child.href)}
                                 className={cn(
                                   'block px-4 py-2 text-sm transition-colors',
                                   active
@@ -184,6 +239,8 @@ export const Navbar = React.memo(function Navbar() {
                   <Link
                     key={item.name}
                     to={item.href}
+                    onMouseEnter={() => preloadPublicRoute(item.href)}
+                    onFocus={() => preloadPublicRoute(item.href)}
                     className={cn(
                       'px-3 py-2 text-sm font-medium rounded-md transition-colors',
                       isActive

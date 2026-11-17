@@ -16,6 +16,8 @@ import {
   Mail,
   Phone,
   ArrowRight,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../../lib/firebase';
@@ -101,6 +103,7 @@ export function QuickContactFAB() {
     referenceId: string;
     trackLabel: string;
   } | null>(null);
+  const [copiedRef, setCopiedRef] = useState(false);
 
   const modalRef = useRef<HTMLDivElement | null>(null);
   const firstInputRef = useRef<HTMLInputElement | null>(null);
@@ -175,8 +178,20 @@ export function QuickContactFAB() {
 
   const handleReset = () => {
     setSubmittedRef(null);
+    setCopiedRef(false);
     setMessage('');
     setErrorMessage(null);
+  };
+
+  const handleCopyReferenceId = async () => {
+    if (!submittedRef?.referenceId) return;
+    try {
+      await navigator.clipboard.writeText(submittedRef.referenceId);
+      setCopiedRef(true);
+      window.setTimeout(() => setCopiedRef(false), 2000);
+    } catch {
+      // Ignore clipboard permission errors
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -369,26 +384,102 @@ export function QuickContactFAB() {
             {/* Modal Body */}
             <div className="p-6 overflow-y-auto">
               {submittedRef ? (
-                <div className="text-center py-2">
-                  <div className="w-14 h-14 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle2 className="w-8 h-8" />
+                <div className="text-center py-2" role="status" aria-live="polite">
+                  {/* Animated Checkmark Badge with Subtle Expanding Ring & Sparkles */}
+                  <div className="relative w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    <span
+                      aria-hidden="true"
+                      className="qc-success-ring absolute inset-0 rounded-full border-2 border-emerald-400/50 dark:border-emerald-500/40 pointer-events-none"
+                    />
+                    <span
+                      aria-hidden="true"
+                      className="qc-sparkle-1 absolute -top-1 -right-1 text-amber-500 dark:text-amber-400 pointer-events-none"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      className="qc-sparkle-2 absolute -bottom-0.5 -left-1 text-emerald-500 dark:text-emerald-400 pointer-events-none"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    </span>
+
+                    <div className="qc-success-badge w-16 h-16 rounded-full bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200 dark:border-emerald-800/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-sm">
+                      <svg
+                        className="w-9 h-9"
+                        viewBox="0 0 52 52"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        aria-hidden="true"
+                      >
+                        <circle
+                          className="qc-draw-circle"
+                          cx="26"
+                          cy="26"
+                          r="23"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                        />
+                        <path
+                          className="qc-draw-check"
+                          d="M15.5 26.5L22.5 33.5L36.5 19.5"
+                          stroke="currentColor"
+                          strokeWidth="3.2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </div>
                   </div>
 
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1.5">
-                    Inquiry Received!
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-5">
-                    Our <span className="font-semibold text-slate-900 dark:text-white">{submittedRef.trackLabel}</span> lead will review your brief and respond within 24 business hours.
-                  </p>
+                  {/* Stagger 1: Confirmation Title & Subtitle */}
+                  <div className="qc-stagger-1">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800 mb-2">
+                      Transmission Confirmed
+                    </span>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1.5">
+                      Inquiry Received!
+                    </h3>
+                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-5">
+                      Our{' '}
+                      <span className="font-semibold text-slate-900 dark:text-white">
+                        {submittedRef.trackLabel}
+                      </span>{' '}
+                      lead will review your brief and respond within 24 business hours.
+                    </p>
+                  </div>
 
-                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 text-left mb-6 space-y-2 text-xs">
-                    <div className="flex items-center justify-between">
+                  {/* Stagger 2: Reference ID & SLA Card with Copy Action */}
+                  <div className="qc-stagger-2 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 text-left mb-4 space-y-2.5 text-xs">
+                    <div className="flex items-center justify-between gap-2">
                       <span className="text-slate-500 dark:text-slate-400 font-medium">
                         Reference ID
                       </span>
-                      <span className="font-mono font-bold px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                        {submittedRef.referenceId}
-                      </span>
+                      <div className="inline-flex items-center gap-1.5">
+                        <span className="font-mono font-bold px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                          {submittedRef.referenceId}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleCopyReferenceId}
+                          title="Copy Reference ID"
+                          aria-label="Copy Reference ID"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                        >
+                          {copiedRef ? (
+                            <>
+                              <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                              <span className="text-emerald-600 dark:text-emerald-400">Copied</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3 h-3" />
+                              <span>Copy</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-slate-500 dark:text-slate-400 font-medium">
@@ -400,7 +491,46 @@ export function QuickContactFAB() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5">
+                  {/* Stagger 3: Subtle Engineering Triage Progress Steps */}
+                  <div className="qc-stagger-3 grid grid-cols-3 gap-2 text-left mb-6">
+                    {[
+                      { step: '01', label: 'Brief Logged', state: 'Done' },
+                      { step: '02', label: 'Lead Assigned', state: 'Active' },
+                      { step: '03', label: 'Tech Response', state: '< 24h' },
+                    ].map((item, idx) => (
+                      <div
+                        key={item.step}
+                        className={`p-2.5 rounded-lg border text-[11px] ${
+                          idx === 0
+                            ? 'border-emerald-200 dark:border-emerald-800/70 bg-emerald-50/50 dark:bg-emerald-950/30'
+                            : idx === 1
+                              ? 'border-amber-200 dark:border-amber-800/70 bg-amber-50/50 dark:bg-amber-950/30'
+                              : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between font-mono text-[10px] text-slate-400 mb-0.5">
+                          <span>{item.step}</span>
+                          <span
+                            className={`font-sans font-bold ${
+                              idx === 0
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : idx === 1
+                                  ? 'text-amber-600 dark:text-amber-400'
+                                  : 'text-slate-500 dark:text-slate-400'
+                            }`}
+                          >
+                            {item.state}
+                          </span>
+                        </div>
+                        <div className="font-bold text-slate-800 dark:text-slate-200 truncate">
+                          {item.label}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Stagger 4: Modal Actions */}
+                  <div className="qc-stagger-4 flex flex-col sm:flex-row items-center justify-center gap-2.5">
                     <button
                       type="button"
                       onClick={handleReset}

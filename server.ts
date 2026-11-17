@@ -1,7 +1,6 @@
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
-import cors from "cors";
 import dotenv from "dotenv";
 import { registerApiRoutes } from "./src/server/apiRoutes";
 import { gzipCompressionMiddleware } from "./src/server/apiMiddleware";
@@ -15,15 +14,19 @@ async function startServer() {
   app.disable("x-powered-by");
   app.set("trust proxy", 1);
 
-  // Global security & baseline proxy headers
-  app.use((_req, res, next) => {
+  // Global security & baseline proxy headers (iframe-compatible for AI Studio preview)
+  app.use((req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("X-Frame-Options", "SAMEORIGIN");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    if (req.method === "OPTIONS") {
+      return res.status(204).end();
+    }
     next();
   });
 
-  app.use(cors());
   app.use(gzipCompressionMiddleware);
   app.use(express.json({ limit: "1mb" }));
 

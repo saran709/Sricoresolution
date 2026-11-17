@@ -15,6 +15,7 @@ import {
   FileText 
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { EnterpriseOperationsSection } from '../components/EnterpriseOperationsSection';
 
 export default function About() {
   const { settings } = useWebsiteSettings();
@@ -149,6 +150,9 @@ export default function About() {
           </div>
         </Container>
       </section>
+
+      {/* Structured Corporate Operations & Role Workspaces */}
+      <EnterpriseOperationsSection />
 
       {/* Transparency & Physical Coordinates */}
       <section className="py-12 bg-white border-t border-slate-200">

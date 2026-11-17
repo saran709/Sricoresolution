@@ -38,28 +38,79 @@ export function AdUnit({
   const [isUnfilled, setIsUnfilled] = useState(false);
 
   useEffect(() => {
-    if (!isEligible) return;
+    setIsUnfilled(false);
+    setAdLoaded(false);
+
+    if (!isEligible || typeof window === 'undefined') return;
 
     let isMounted = true;
+    let rafId: number | null = null;
+    let resizeObserver: ResizeObserver | null = null;
 
-    try {
-      if (typeof window !== 'undefined') {
-        const scriptId = 'google-adsense-script';
-        if (!document.getElementById(scriptId)) {
-          const script = document.createElement('script');
-          script.id = scriptId;
-          script.async = true;
-          script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5684687588450520';
-          script.crossOrigin = 'anonymous';
-          document.head.appendChild(script);
-        }
+    const ensureAdSenseScript = () => {
+      const scriptId = 'google-adsense-script';
+      if (!document.getElementById(scriptId)) {
+        const script = document.createElement('script');
+        script.id = scriptId;
+        script.async = true;
+        script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5684687588450520';
+        script.crossOrigin = 'anonymous';
+        document.head.appendChild(script);
+      }
+    };
+
+    const tryPushAd = (): boolean => {
+      if (!isMounted) return false;
+      const adEl = adRef.current;
+      const containerEl = containerRef.current;
+      if (!adEl || !containerEl || !adEl.isConnected) return false;
+
+      // Never push if this <ins> element has already been initialized or queued
+      if (
+        adEl.getAttribute('data-ad-pushed') === 'true' ||
+        adEl.getAttribute('data-adsbygoogle-status') ||
+        adEl.getAttribute('data-ad-status') ||
+        adEl.children.length > 0
+      ) {
+        return true;
+      }
+
+      // Ensure the slot has a positive available width before calling adsbygoogle.push({})
+      const availableWidth = Math.max(
+        adEl.offsetWidth,
+        Math.floor(adEl.getBoundingClientRect().width),
+        Math.floor(containerEl.getBoundingClientRect().width)
+      );
+
+      if (availableWidth <= 0) {
+        return false;
+      }
+
+      adEl.setAttribute('data-ad-pushed', 'true');
+      try {
+        ensureAdSenseScript();
         window.adsbygoogle = window.adsbygoogle || [];
         window.adsbygoogle.push({});
+      } catch (e) {
+        console.debug('AdSense unit push note:', e);
       }
-    } catch (e) {
-      // Graceful fallback if ad blocker or network error
-      console.debug('AdSense unit push note:', e);
-    }
+      return true;
+    };
+
+    // Defer push until after layout frame (also prevents duplicate push in React StrictMode)
+    rafId = window.requestAnimationFrame(() => {
+      if (!isMounted) return;
+      const pushed = tryPushAd();
+      if (!pushed && typeof ResizeObserver !== 'undefined' && containerRef.current) {
+        resizeObserver = new ResizeObserver(() => {
+          if (tryPushAd() && resizeObserver) {
+            resizeObserver.disconnect();
+            resizeObserver = null;
+          }
+        });
+        resizeObserver.observe(containerRef.current);
+      }
+    });
 
     // Monitor ad element status
     const checkStatus = () => {
@@ -84,6 +135,12 @@ export function AdUnit({
 
     return () => {
       isMounted = false;
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId);
+      }
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
       clearTimeout(timer);
       observer.disconnect();
     };
@@ -104,6 +161,7 @@ export function AdUnit({
       ref={containerRef}
       className={`my-8 w-full flex flex-col items-center justify-center overflow-hidden transition-all duration-300 ${className}`}
       aria-label="Sponsored Content"
+      data-ad-loaded={adLoaded ? 'true' : 'false'}
     >
       {/* Explicit Advertisement Header per Google AdSense Policy */}
       <div className="w-full max-w-4xl flex items-center justify-between pb-1.5 mb-2 border-b border-slate-100 text-[10px] tracking-widest text-slate-400 uppercase font-semibold select-none">
@@ -113,9 +171,10 @@ export function AdUnit({
 
       <div className="w-full max-w-4xl flex justify-center min-h-[90px] bg-slate-50/50 rounded-lg p-2 border border-slate-100">
         <ins
+          key={location.pathname}
           ref={adRef}
           className="adsbygoogle"
-          style={{ display: 'block', width: '100%' }}
+          style={{ display: 'block', width: '100%', minWidth: '250px', minHeight: '90px' }}
           data-ad-client="ca-pub-5684687588450520"
           data-ad-slot={adSlot}
           data-ad-format={adFormat}
