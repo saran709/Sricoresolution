@@ -65,6 +65,25 @@ export function validateShareableLink(rawInput: string): ValidatedLinkResult {
   };
 }
 
+/**
+ * Sanitizes an external link URL so javascript:, data:, or vbscript: payloads
+ * injected into stored records can never execute when rendered inside anchor tags.
+ */
+export function sanitizeSafeHttpUrl(rawUrl?: string | null): string | undefined {
+  if (!rawUrl || typeof rawUrl !== 'string') return undefined;
+  const trimmed = rawUrl.trim();
+  if (!trimmed) return undefined;
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+      return parsed.toString();
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 interface DriveLinkInputProps {
   label?: string;
   value: string;

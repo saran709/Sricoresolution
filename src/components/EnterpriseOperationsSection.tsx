@@ -1,23 +1,16 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import {
-  ShieldCheck,
-  Code2,
-  Users,
-  GraduationCap,
-  Briefcase,
   ArrowRight,
   CheckCircle2,
   Layers,
-  Zap,
+  ShieldCheck,
   ClipboardCheck,
   Lock,
 } from 'lucide-react';
 import { Container } from './ui/Container';
 import { useAuth } from '../contexts/AuthContext';
 import { useWebsiteSettings } from '../contexts/WebsiteSettingsContext';
-import { prefetchDashboardForRole } from '../hooks/useDashboardQueries';
-import { CanonicalRole } from '../lib/rbac';
 
 interface CorporateSOPStage {
   stage: string;
@@ -41,7 +34,7 @@ const CORPORATE_SOP_STAGES: CorporateSOPStage[] = [
     code: 'SOP-ARCH',
     title: 'System Architecture & Resource Allocation',
     summary:
-      'Cross-functional software, PCB/IoT, and AI engineers define the technical blueprint, milestone schedule, and RBAC workspace scope.',
+      'Cross-functional software, PCB/IoT, and AI engineers define the technical blueprint, milestone schedule, and project workspace scope.',
     deliverable: 'Architecture Spec & Sprint Roadmap',
   },
   {
@@ -49,7 +42,7 @@ const CORPORATE_SOP_STAGES: CorporateSOPStage[] = [
     code: 'SOP-EXECUTION',
     title: 'Agile Sprint & Hardware Lab Execution',
     summary:
-      'Engineers execute tracked sprint tasks across code repositories, STM32/ESP32 test benches, and GPU training clusters with real-time telemetry.',
+      'Engineers execute tracked sprint tasks across code repositories, STM32/ESP32 test benches, and GPU training clusters with continuous QA tracking.',
     deliverable: 'Versioned Builds & Lab Prototypes',
   },
   {
@@ -70,86 +63,8 @@ const CORPORATE_SOP_STAGES: CorporateSOPStage[] = [
   },
 ];
 
-interface MemberRoleCard {
-  role: CanonicalRole;
-  badge: string;
-  title: string;
-  responsibilities: string[];
-  primaryHref: string;
-  actionLabel: string;
-  icon: React.ComponentType<{ className?: string }>;
-}
-
-const MEMBER_ROLE_CARDS: MemberRoleCard[] = [
-  {
-    role: 'ADMIN',
-    badge: 'Executive Governance',
-    title: 'Administrator Console',
-    responsibilities: [
-      'Convert client RFPs into tracked engineering projects',
-      'Manage 5-role RBAC permissions, quotas & audit trails',
-      'Oversee departments, payroll invoices & cohort admissions',
-    ],
-    primaryHref: '/admin',
-    actionLabel: 'Open Admin Console',
-    icon: ShieldCheck,
-  },
-  {
-    role: 'EMPLOYEE',
-    badge: 'Engineering Delivery',
-    title: 'Staff Engineer Workspace',
-    responsibilities: [
-      'One-click daily attendance & shift readiness logging',
-      'Real-time Kanban task transitions (To Do → Review → Done)',
-      'Update commercial & R&D project milestone deliverables',
-    ],
-    primaryHref: '/dashboard?tab=tasks',
-    actionLabel: 'Open Engineer Portal',
-    icon: Code2,
-  },
-  {
-    role: 'MENTOR',
-    badge: 'Technical Mentorship',
-    title: 'Senior Mentor Desk',
-    responsibilities: [
-      'Supervise assigned Software, IoT & AI internship cohorts',
-      'Dispatch weekly practical engineering milestones',
-      'Review code submissions & issue evaluation feedback',
-    ],
-    primaryHref: '/dashboard?tab=interns',
-    actionLabel: 'Open Mentor Desk',
-    icon: Users,
-  },
-  {
-    role: 'INTERN_STUDENT',
-    badge: 'Industrial Training',
-    title: 'Intern & Cohort Portal',
-    responsibilities: [
-      'Access structured syllabus modules & mentor guidance',
-      'Submit GitHub repositories, PCB layouts & lab reports',
-      'Track mentor evaluations & ISO certificate verification',
-    ],
-    primaryHref: '/dashboard?tab=assignments',
-    actionLabel: 'Open Intern Workspace',
-    icon: GraduationCap,
-  },
-  {
-    role: 'CLIENT',
-    badge: 'Commercial & R&D',
-    title: 'Client Delivery Portal',
-    responsibilities: [
-      'Track live project stages, sprint velocity & milestones',
-      'Exchange NDAs, technical specs & release artifacts',
-      'Complete verified milestone billing & instant receipts',
-    ],
-    primaryHref: '/dashboard?tab=projects',
-    actionLabel: 'Open Client Portal',
-    icon: Briefcase,
-  },
-];
-
 export function EnterpriseOperationsSection() {
-  const { currentUser, userProfile } = useAuth();
+  const { currentUser } = useAuth();
   const { settings } = useWebsiteSettings();
   const primaryColor = settings?.theme?.primary || '#d97706';
   const brandName = settings?.brandName || 'Sricore Solutions';
@@ -173,17 +88,17 @@ export function EnterpriseOperationsSection() {
               </span>
               <span className="text-slate-400 dark:text-slate-600">·</span>
               <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                <Zap className="w-3.5 h-3.5" /> Zero-Lag Organizational Portal
+                <ShieldCheck className="w-3.5 h-3.5" /> Unified Client &amp; Cohort Delivery
               </span>
             </div>
             <h2
               id="enterprise-operations-heading"
               className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight"
             >
-              Structured Engineering & Organizational Operations
+              Structured Engineering &amp; Delivery Operations
             </h2>
             <p className="text-xs sm:text-sm md:text-base text-slate-600 dark:text-slate-300 mt-2.5 leading-relaxed">
-              {brandName} operates on a unified, role-governed workflow engine. Every client engagement, R&amp;D simulation, and industrial cohort follows a five-stage Standard Operating Procedure (SOP) with real-time state synchronization across all organizational members.
+              {brandName} operates on a structured engineering delivery workflow. Every client engagement, R&amp;D simulation, and industrial cohort follows a five-stage Standard Operating Procedure (SOP) with clear milestone verification from intake to final handover.
             </p>
           </div>
 
@@ -206,8 +121,8 @@ export function EnterpriseOperationsSection() {
           </div>
         </div>
 
-        {/* Part 1: 5-Stage Corporate Standard Operating Procedure (SOP) */}
-        <div className="mb-10">
+        {/* 5-Stage Corporate Standard Operating Procedure (SOP) */}
+        <div>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
               <Layers className="w-4 h-4 text-amber-600 dark:text-amber-400" />
@@ -256,80 +171,6 @@ export function EnterpriseOperationsSection() {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-
-        {/* Part 2: Organizational Member Operations Portals (5 Canonical Roles) */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-              <span>Organizational Member Workspaces &amp; Role Operations</span>
-            </h3>
-            <span className="text-xs text-slate-500 dark:text-slate-400 hidden sm:inline">
-              Pre-warmed TanStack Query caches &amp; instant chunk loading
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            {MEMBER_ROLE_CARDS.map((card) => {
-              const Icon = card.icon;
-              const targetUrl = currentUser ? card.primaryHref : '/login';
-
-              return (
-                <div
-                  key={card.role}
-                  onMouseEnter={() => {
-                    if (currentUser) {
-                      void prefetchDashboardForRole({
-                        role: card.role,
-                        actualRole: card.role,
-                        userProfile: userProfile as any,
-                      });
-                    }
-                  }}
-                  className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xs flex flex-col justify-between hover:shadow-md transition-all"
-                >
-                  <div>
-                    <div className="flex items-center justify-between gap-2 mb-3">
-                      <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-200">
-                        <Icon className="w-4 h-4" />
-                      </div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                        {card.badge}
-                      </span>
-                    </div>
-
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-2">
-                      {card.title}
-                    </h4>
-
-                    <ul className="space-y-1.5 mb-4">
-                      {card.responsibilities.map((line, i) => (
-                        <li
-                          key={i}
-                          className="text-xs text-slate-600 dark:text-slate-400 flex items-start gap-1.5 leading-snug"
-                        >
-                          <CheckCircle2
-                            className="w-3.5 h-3.5 shrink-0 mt-0.5"
-                            style={{ color: primaryColor }}
-                          />
-                          <span>{line}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <Link
-                    to={targetUrl}
-                    className="w-full py-2 px-3 rounded-lg bg-slate-50 dark:bg-slate-800/80 hover:bg-amber-50 dark:hover:bg-amber-950/40 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between transition-colors"
-                  >
-                    <span>{card.actionLabel}</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                  </Link>
-                </div>
-              );
-            })}
           </div>
         </div>
       </Container>

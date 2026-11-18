@@ -248,9 +248,13 @@ export default function Users() {
       setFeedback({ message: `Password reset email sent to ${resetTargetEmail}!`, type: 'success' });
     } catch (err: any) {
       try {
+        const idToken = auth.currentUser ? await auth.currentUser.getIdToken() : '';
         await fetch('/api/email/send', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+          },
           body: JSON.stringify({
             to: resetTargetEmail,
             subject: "Password Reset Request - Sricore Solutions",

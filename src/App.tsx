@@ -15,7 +15,6 @@ import { RBACProvider } from './contexts/RBACContext';
 import { WebsiteSettingsProvider } from './contexts/WebsiteSettingsContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { TopProgressBar } from './components/ui/TopProgressBar';
-import { Newsletter } from './components/Newsletter';
 import { Footer } from './components/Footer';
 import { ThemeToggle } from './components/ThemeToggle';
 import { QuickContactFAB } from './components/forms/QuickContactFAB';
@@ -34,7 +33,6 @@ export default function App() {
                   <div className="flex flex-col min-h-screen w-full max-w-[100vw] overflow-x-clip">
                     <Navbar />
                     <AppRouter />
-                    <Newsletter />
                     <Footer />
                     <QuickContactFAB />
                     <ThemeToggle variant="fab" />

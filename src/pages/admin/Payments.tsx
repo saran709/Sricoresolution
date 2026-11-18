@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/Button';
 import { logActivity } from '../../lib/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
 import { ShimmerTableRows } from '../../components/ui/DashboardSuspense';
+import { sanitizeSafeHttpUrl } from '../../components/ui/DriveLinkInput';
 
 export default function AdminPayments() {
   const { userProfile } = useAuth();
@@ -261,8 +262,8 @@ export default function AdminPayments() {
                       {payment.notes && (
                         <div className="text-xs text-slate-500 italic mt-0.5">Note: {payment.notes}</div>
                       )}
-                      {payment.proofUrl && (
-                        <a href={payment.proofUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline mt-1 inline-block">
+                      {sanitizeSafeHttpUrl(payment.proofUrl) && (
+                        <a href={sanitizeSafeHttpUrl(payment.proofUrl)} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 inline-block">
                           View uploaded payment proof{payment.proofFileName ? ` (${payment.proofFileName})` : ''}
                         </a>
                       )}

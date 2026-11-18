@@ -2,6 +2,9 @@ import { Component, StrictMode, type ErrorInfo, type ReactNode } from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+import { initBrowserIntegrityGuard } from './lib/securityGuard';
+
+initBrowserIntegrityGuard();
 
 interface AppErrorBoundaryState {
   hasError: boolean;

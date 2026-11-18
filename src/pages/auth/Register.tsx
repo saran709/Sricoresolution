@@ -81,8 +81,7 @@ export default function Register() {
       const userCredential = await createUserWithEmailAndPassword(auth, trimmedEmail, password);
       const user = userCredential.user;
 
-      const isAdminEmail = trimmedEmail.toLowerCase() === 'saranramesh709@gmail.com';
-      const assignedRole = isAdminEmail ? 'ADMIN' : role;
+      const assignedRole: PublicSignupRole = role;
 
       await setDoc(doc(db, 'users', user.uid), {
         uid: user.uid,
@@ -90,12 +89,14 @@ export default function Register() {
         firstName: trimmedFirst,
         lastName: trimmedLast,
         role: assignedRole,
+        canonicalRole: assignedRole,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         isActive: true,
+        status: 'active',
       });
 
-      navigate(isAdminEmail ? '/admin' : '/dashboard');
+      navigate('/dashboard');
     } catch (err: any) {
       console.error('Registration error:', err);
       setError(formatAuthError(err));
@@ -211,7 +212,9 @@ export default function Register() {
 
                 const names = (user.displayName || '').split(' ');
                 const userEmail = (user.email || '').toLowerCase().trim();
-                const isAdminEmail = userEmail === 'saranramesh709@gmail.com';
+                const isAdminEmail = Boolean(
+                  user.emailVerified && userEmail === 'saranramesh709@gmail.com'
+                );
                 const assignedRole = isAdminEmail ? 'ADMIN' : role;
 
                 await setDoc(
@@ -222,9 +225,11 @@ export default function Register() {
                     firstName: names[0] || 'User',
                     lastName: names.slice(1).join(' ') || '',
                     role: assignedRole,
+                    canonicalRole: assignedRole,
                     createdAt: serverTimestamp(),
                     updatedAt: serverTimestamp(),
                     isActive: true,
+                    status: 'active',
                   },
                   { merge: true }
                 );

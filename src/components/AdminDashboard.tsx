@@ -179,6 +179,25 @@ export function UnifiedSidebarLayout({ children }: AdminDashboardProps) {
 
   const handleLogout = async () => {
     queryClient.clear();
+    try {
+      const keysToClear: string[] = [];
+      for (let i = 0; i < sessionStorage.length; i += 1) {
+        const key = sessionStorage.key(i);
+        if (
+          key &&
+          (key.startsWith('sricore_last_login_') ||
+            key.startsWith('sricore_login_logged_') ||
+            key.startsWith('sricore_att_checked_') ||
+            key.startsWith('attendance_') ||
+            key.startsWith('sricore_profile_'))
+        ) {
+          keysToClear.push(key);
+        }
+      }
+      keysToClear.forEach((key) => sessionStorage.removeItem(key));
+    } catch {
+      // Ignore storage access errors
+    }
     await signOut(auth);
     navigate('/login');
   };
@@ -209,12 +228,28 @@ export function UnifiedSidebarLayout({ children }: AdminDashboardProps) {
 
   const roleCategories = cachedSidebar?.categories || getRoleSidebarCategories(effectiveRole);
 
+  const userEmail = (currentUser?.email || '').toLowerCase().trim();
+  const isGoogleOrVerified =
+    Boolean(currentUser?.emailVerified) ||
+    Boolean(currentUser?.providerData?.some((p) => p.providerId === 'google.com'));
+  const isVerifiedSiteOwner = Boolean(
+    currentUser &&
+      !currentUser.isAnonymous &&
+      isGoogleOrVerified &&
+      userEmail === 'saranramesh709@gmail.com' &&
+      actualRole === 'ADMIN' &&
+      !simulatedRole
+  );
+
   const filteredCategories = roleCategories
     .map((category) => ({
       ...category,
-      items: category.items.filter((item) =>
-        item.name.toLowerCase().includes(navFilter.trim().toLowerCase())
-      ),
+      items: category.items.filter((item) => {
+        if (item.path === '/admin/content' && !isVerifiedSiteOwner) {
+          return false;
+        }
+        return item.name.toLowerCase().includes(navFilter.trim().toLowerCase());
+      }),
     }))
     .filter((category) => category.items.length > 0);
 

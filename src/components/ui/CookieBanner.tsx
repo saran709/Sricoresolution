@@ -54,7 +54,7 @@ export function CookieBanner() {
               <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full font-medium">Compliance</span>
             </h4>
             <p className="text-xs text-slate-300 leading-relaxed">
-              We use essential cookies to maintain secure sessions and analyze site telemetry. Third-party partners, including Google LLC, may use cookies to serve personalized or non-personalized advertisements on eligible public pages. You can manage your preferences or read our full disclosures in our{' '}
+              We use essential cookies to maintain secure sessions and support site preferences. Third-party partners, including Google LLC, may use cookies to serve personalized or non-personalized advertisements on eligible public pages. You can manage your preferences or read our full disclosures in our{' '}
               <Link to="/privacy" className="text-amber-400 hover:underline font-semibold">
                 Privacy Policy
               </Link>{' '}

@@ -275,6 +275,19 @@ export function QuickContactFAB() {
           }
           void queryClient.invalidateQueries({ queryKey: ['admin', 'enquiries'] });
 
+          const escapeHtmlField = (val: string) =>
+            val
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/"/g, '&quot;')
+              .replace(/'/g, '&#39;');
+          const safeName = escapeHtmlField(trimmedName);
+          const safeEmail = escapeHtmlField(trimmedEmail);
+          const safePhone = escapeHtmlField(trimmedPhone);
+          const safeMessage = escapeHtmlField(trimmedMessage);
+          const safePath = escapeHtmlField(location.pathname);
+
           // Non-blocking email notification
           const recipientEmail =
             settings?.contact?.primaryEmail || APP_CONFIG.company.contact.email;
@@ -288,16 +301,16 @@ export function QuickContactFAB() {
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;">
                   <div style="background-color: #0f172a; color: #ffffff; padding: 20px; border-bottom: 3px solid #d97706;">
                     <p style="margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #fbbf24; font-weight: bold;">Quick Contact Inquiry</p>
-                    <h2 style="margin: 6px 0 0; font-size: 18px;">${activeTrack.label}</h2>
-                    <p style="margin: 4px 0 0; font-size: 12px; color: #94a3b8;">Reference ID: ${referenceId}</p>
+                    <h2 style="margin: 6px 0 0; font-size: 18px;">${escapeHtmlField(activeTrack.label)}</h2>
+                    <p style="margin: 4px 0 0; font-size: 12px; color: #94a3b8;">Reference ID: ${escapeHtmlField(referenceId)}</p>
                   </div>
                   <div style="padding: 20px; background: #ffffff;">
-                    <p style="margin: 0 0 8px; font-size: 13px; color: #334155;"><strong>Name:</strong> ${trimmedName}</p>
-                    <p style="margin: 0 0 8px; font-size: 13px; color: #334155;"><strong>Email:</strong> ${trimmedEmail}</p>
-                    ${trimmedPhone ? `<p style="margin: 0 0 8px; font-size: 13px; color: #334155;"><strong>Phone:</strong> ${trimmedPhone}</p>` : ''}
-                    <p style="margin: 0 0 12px; font-size: 13px; color: #334155;"><strong>Page Path:</strong> ${location.pathname}</p>
+                    <p style="margin: 0 0 8px; font-size: 13px; color: #334155;"><strong>Name:</strong> ${safeName}</p>
+                    <p style="margin: 0 0 8px; font-size: 13px; color: #334155;"><strong>Email:</strong> ${safeEmail}</p>
+                    ${safePhone ? `<p style="margin: 0 0 8px; font-size: 13px; color: #334155;"><strong>Phone:</strong> ${safePhone}</p>` : ''}
+                    <p style="margin: 0 0 12px; font-size: 13px; color: #334155;"><strong>Page Path:</strong> ${safePath}</p>
                     <div style="background-color: #f8fafc; border-left: 4px solid #d97706; padding: 14px; border-radius: 4px;">
-                      <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #0f172a; white-space: pre-wrap;">${trimmedMessage}</p>
+                      <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #0f172a; white-space: pre-wrap;">${safeMessage}</p>
                     </div>
                   </div>
                 </div>

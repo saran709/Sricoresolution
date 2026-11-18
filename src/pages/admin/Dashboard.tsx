@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
-import { Users, Briefcase, MessageSquare, GraduationCap, Clock, AlertCircle, FileText, Database, CheckCircle2, Sparkles } from 'lucide-react';
+import React from 'react';
+import { Users, Briefcase, MessageSquare, GraduationCap, Clock, AlertCircle, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRBAC } from '../../contexts/RBACContext';
 import { useWebsiteSettings } from '../../contexts/WebsiteSettingsContext';
@@ -13,7 +12,6 @@ import {
   DashboardSuspense,
 } from '../../components/ui/DashboardSuspense';
 import {
-  invalidateAdminCaches,
   prefetchSidebarTarget,
   useAdminOverview,
 } from '../../hooks/useDashboardQueries';
@@ -46,9 +44,6 @@ export default function AdminDashboard() {
   const { currentUser, userProfile } = useAuth();
   const { activeRole, simulatedRole } = useRBAC();
   const { settings } = useWebsiteSettings();
-  const [isSeeding, setIsSeeding] = useState(false);
-  const [seedResult, setSeedResult] = useState<string | null>(null);
-  const [seedError, setSeedError] = useState<string | null>(null);
 
   const effectiveRole: CanonicalRole =
     activeRole || normalizeToCanonicalRole(userProfile?.role);
@@ -57,7 +52,7 @@ export default function AdminDashboard() {
       ? `${userProfile?.firstName || ''} ${userProfile?.lastName || ''}`.trim()
       : currentUser?.email || undefined;
 
-  const { data, isLoading: loading, refetch } = useAdminOverview(Boolean(currentUser?.uid));
+  const { data, isLoading: loading } = useAdminOverview(Boolean(currentUser?.uid));
 
   const stats = data?.stats || {
     employees: 0,
@@ -73,40 +68,6 @@ export default function AdminDashboard() {
   };
   const activities = data?.activities || [];
   const tasks = data?.tasks || [];
-
-  const handleSeedData = async () => {
-    setIsSeeding(true);
-    setSeedResult(null);
-    setSeedError(null);
-
-    try {
-      const { seedAdminDashboardData } = await import('../../lib/dataSeeder');
-      const res = await seedAdminDashboardData(currentUser?.uid);
-      if (res.errors && res.errors.length > 0 && res.departmentsCount === 0 && res.usersCount === 0) {
-        setSeedError(`Failed to insert sample data: ${res.errors.join('; ')}`);
-      } else {
-        const warningSuffix = res.errors && res.errors.length > 0 ? ` (Note: ${res.errors.length} notices: ${res.errors.slice(0, 2).join(', ')})` : '';
-        setSeedResult(
-          `Successfully populated demo operational data! Synced ${res.departmentsCount} Departments, ${res.usersCount} Staff & Mentors, ${res.projectsCount} Projects, ${res.tasksCount} Tasks, ${res.enquiriesCount} Enquiries, ${res.vendorsCount} Vendors, and ${res.announcementsCount} Announcements.${warningSuffix}`
-        );
-      }
-      invalidateAdminCaches([
-        'overview',
-        'users',
-        'projects',
-        'enquiries',
-        'auditLogs',
-        'tasks',
-        'attendance',
-      ]);
-      await refetch();
-    } catch (err: any) {
-      console.error("Error inserting sample data:", err);
-      setSeedError(err?.message || "Failed to insert sample data. Please verify Firestore permissions.");
-    } finally {
-      setIsSeeding(false);
-    }
-  };
 
   const statCardsByRole: Record<
     CanonicalRole,
@@ -165,18 +126,6 @@ export default function AdminDashboard() {
         displayName={displayName}
         logoUrl={settings?.logoUrl || '/logo.png'}
         isSimulated={Boolean(simulatedRole)}
-        rightSlot={
-          effectiveRole === 'ADMIN' ? (
-            <Button
-              onClick={handleSeedData}
-              isLoading={isSeeding}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white shadow-md text-xs sm:text-sm font-semibold"
-            >
-              <Database className="w-4 h-4" />
-              Insert Sample Operations Data
-            </Button>
-          ) : undefined
-        }
       />
 
       {/* Structured 5-Stage Standard Operating Procedure Pipeline */}
@@ -188,58 +137,6 @@ export default function AdminDashboard() {
       <DashboardSuspense variant="panel" moduleName="Quick Start Guide">
         <WorkspaceGuide role={effectiveRole} />
       </DashboardSuspense>
-
-      {/* Seed Success or Error Banner */}
-      {seedResult && (
-        <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-300 rounded-2xl flex items-start gap-3 text-sm shadow-sm">
-          <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <h4 className="font-bold text-emerald-900 dark:text-emerald-200">Operational Data Inserted</h4>
-            <p className="mt-0.5 leading-relaxed">{seedResult}</p>
-          </div>
-          <button onClick={() => setSeedResult(null)} className="text-emerald-700 dark:text-emerald-300 hover:underline text-xs font-bold">
-            Dismiss
-          </button>
-        </div>
-      )}
-
-      {seedError && (
-        <div className="p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 text-red-800 dark:text-red-300 rounded-2xl flex items-start gap-3 text-sm shadow-sm">
-          <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <h4 className="font-bold text-red-900 dark:text-red-200">Insertion Failed</h4>
-            <p className="mt-0.5">{seedError}</p>
-          </div>
-          <button onClick={() => setSeedError(null)} className="text-red-700 dark:text-red-300 hover:underline text-xs font-bold">
-            Dismiss
-          </button>
-        </div>
-      )}
-
-      {/* Empty State Banner if no employees yet */}
-      {!loading && stats.employees === 0 && !seedResult && (
-        <div className="p-6 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 border border-blue-200 dark:border-slate-700 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md">
-              <Sparkles className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="font-bold text-lg text-slate-900 dark:text-white">Populate Initial Admin Dashboard Data</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                Your database is ready. With one click, you can insert realistic operational records for Sricore Solutions: 5 engineering departments, staff engineers, designated mentors, active interns, ongoing commercial and research projects, tasks, customer enquiries, and attendance logs.
-              </p>
-            </div>
-          </div>
-          <Button 
-            onClick={handleSeedData} 
-            isLoading={isSeeding}
-            className="shrink-0 bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-md flex items-center gap-2"
-          >
-            <Database className="w-4 h-4" />
-            Populate Sample Data Now
-          </Button>
-        </div>
-      )}
 
       {/* Metric Cards */}
       {loading ? (

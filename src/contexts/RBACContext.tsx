@@ -294,15 +294,17 @@ export const RBACProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const can = useCallback(
     (action: PermissionAction): boolean => {
+      if (!currentUser?.uid || userProfile?.uid !== currentUser.uid) return false;
       if (suspended || expired) return false;
       if (activeRole === 'ADMIN') return true;
       return Boolean(permissions[action]);
     },
-    [activeRole, permissions, suspended, expired]
+    [currentUser?.uid, userProfile?.uid, activeRole, permissions, suspended, expired]
   );
 
   const canAccessResource = useCallback(
     (resourceKey: string, action: ResourceCRUDAction): boolean => {
+      if (!currentUser?.uid || userProfile?.uid !== currentUser.uid) return false;
       if (suspended || expired) return false;
       if (activeRole === 'ADMIN') return true;
       const entry = resourcePermissions[resourceKey];
@@ -314,17 +316,18 @@ export const RBACProvider: React.FC<{ children: React.ReactNode }> = ({
       if (!roleEntry || roleEntry.scope === 'none') return false;
       return Boolean(roleEntry[action]);
     },
-    [activeRole, expired, rbacConfig, resourcePermissions, suspended]
+    [currentUser?.uid, userProfile?.uid, activeRole, expired, rbacConfig, resourcePermissions, suspended]
   );
 
   const getResourceScope = useCallback(
     (resourceKey: string): ResourceAccessScope => {
+      if (!currentUser?.uid || userProfile?.uid !== currentUser.uid) return 'none';
       if (suspended || expired) return 'none';
       if (activeRole === 'ADMIN') return 'all';
       const entry = resourcePermissions[resourceKey];
       return entry?.roleAccess?.[activeRole]?.scope || 'none';
     },
-    [activeRole, expired, resourcePermissions, suspended]
+    [currentUser?.uid, userProfile?.uid, activeRole, expired, resourcePermissions, suspended]
   );
 
   const verifyActionWithServer = useCallback(
@@ -332,6 +335,12 @@ export const RBACProvider: React.FC<{ children: React.ReactNode }> = ({
       action: PermissionAction,
       options?: { fileSizeMB?: number }
     ): Promise<{ allowed: boolean; reason?: string }> => {
+      if (!currentUser?.uid) {
+        return {
+          allowed: false,
+          reason: 'Authentication required to verify this operation.',
+        };
+      }
       if (suspended) {
         return {
           allowed: false,
@@ -352,27 +361,24 @@ export const RBACProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       try {
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-        };
-        if (currentUser) {
-          try {
-            const idToken = await currentUser.getIdToken();
-            if (idToken) headers.Authorization = `Bearer ${idToken}`;
-          } catch {}
+        const idToken = await currentUser.getIdToken();
+        if (!idToken) {
+          return {
+            allowed: false,
+            reason: 'Missing Firebase Authentication token.',
+          };
         }
         const res = await fetch('/api/rbac/validate-action', {
           method: 'POST',
-          headers,
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${idToken}`,
+          },
           signal: AbortSignal.timeout(8000),
           body: JSON.stringify({
-            userId: currentUser?.uid || 'anonymous',
-            role: activeRole,
+            userId: currentUser.uid,
             action,
-            effectivePermissions: permissions,
             fileSizeMB: options?.fileSizeMB,
-            maxFileUploadSizeMB: limits.maxFileUploadSizeMB,
-            accessExpirationDate: limits.accessExpirationDate,
           }),
         });
         if (res.ok) {
@@ -384,7 +390,10 @@ export const RBACProvider: React.FC<{ children: React.ReactNode }> = ({
           reason: errData.reason || 'Action denied by server policy.',
         };
       } catch {
-        return { allowed: can(action) };
+        return {
+          allowed: false,
+          reason: 'Security validation service could not be reached. Request denied (fail-closed).',
+        };
       }
     },
     [
@@ -393,8 +402,6 @@ export const RBACProvider: React.FC<{ children: React.ReactNode }> = ({
       currentUser,
       expired,
       limits.accessExpirationDate,
-      limits.maxFileUploadSizeMB,
-      permissions,
       suspended,
     ]
   );

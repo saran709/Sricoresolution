@@ -11,10 +11,17 @@ service cloud.firestore {
     }
 
     // =========================================================================
-    // Core Authentication & Document Helpers
+    // Core Authentication, Validation & Document Helpers
     // =========================================================================
     function isAuthenticated() {
-      return request.auth != null;
+      return request.auth != null &&
+        request.auth.token.firebase.sign_in_provider != 'anonymous';
+    }
+
+    function isVerifiedEmail() {
+      return isAuthenticated() &&
+        request.auth.token.email != null &&
+        request.auth.token.email_verified == true;
     }
 
     function isOwner(userId) {
@@ -27,6 +34,20 @@ service cloud.firestore {
 
     function existing() {
       return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string &&
+        id.size() >= 1 &&
+        id.size() <= 128 &&
+        id.matches('^[a-zA-Z0-9_\\-.]+$');
+    }
+
+    function isSafeHttpUrl(url) {
+      return url is string &&
+        url.size() >= 8 &&
+        url.size() <= 2048 &&
+        url.matches('^https?://.*');
     }
 
     function hasUserDoc() {
@@ -50,9 +71,7 @@ service cloud.firestore {
 
     // =========================================================================
     // Five-Role RBAC Claim & Profile Validators
-    // Validates Firebase Auth Token Custom Claims (`request.auth.token.role`
-    // and `request.auth.token.admin`) with synchronized Firestore role lookup.
-    // Permitted Roles:
+    // Permitted Canonical Roles:
     //   1. ADMIN
     //   2. CLIENT
     //   3. EMPLOYEE
@@ -72,13 +91,17 @@ service cloud.firestore {
       );
     }
 
-    // 1. ADMIN Role Validator
+    function isVerifiedBootstrapAdmin() {
+      return isVerifiedEmail() &&
+        request.auth.token.email.lower() == 'saranramesh709@gmail.com';
+    }
+
+    // 1. ADMIN Role Validator (requires verified email for bootstrap admin)
     function isAdmin() {
       return isAuthenticated() && (
         request.auth.token.get('admin', false) == true ||
         hasTokenRole(['ADMIN', 'ADMINISTRATOR', 'admin', 'administrator']) ||
-        (request.auth.token.email != null &&
-          request.auth.token.email.lower() == 'saranramesh709@gmail.com') ||
+        isVerifiedBootstrapAdmin() ||
         hasProfileRole(['ADMIN', 'ADMINISTRATOR', 'admin', 'administrator'])
       );
     }
@@ -156,35 +179,58 @@ service cloud.firestore {
 
     // =========================================================================
     // 1. Users Collection (`/users/{userId}`)
+    // PII Isolation & Anti-Privilege-Escalation Guards
     // =========================================================================
+    function isAssignedMentorProfileRead(userId) {
+      return hasUserDoc() && (
+        getUserData().get('mentorId', '') == userId ||
+        getUserData().get('assignedMentorId', '') == userId
+      );
+    }
+
     match /users/{userId} {
-      // Authenticated members with a valid role can read user profiles needed
-      // for project/mentorship collaboration; unauthenticated access is blocked.
-      allow read: if isOwner(userId) || isAdmin() || isEmployee() || isMentor() || isClient() || isInternStudent();
+      // Strictly isolate user PII: owners, ADMIN/EMPLOYEE/MENTOR staff, the intern's
+      // assigned mentor doc, or a verified-email pre-provisioned profile matching token email.
+      allow read: if isOwner(userId) ||
+        isAdmin() ||
+        isEmployee() ||
+        isMentor() ||
+        isAssignedMentorProfileRead(userId) ||
+        (isVerifiedEmail() && existing().get('email', '') == request.auth.token.email);
 
       // Self-registration is strictly limited to non-privileged roles (CLIENT or INTERN_STUDENT)
-      // and cannot inject custom permissionOverrides or limitOverrides.
+      // for BOTH `role` and `canonicalRole`, and forbids permission/limit override injection.
       allow create: if isAdmin() || (
+        isValidId(userId) &&
         isOwner(userId) &&
         incoming().get('uid', userId) == request.auth.uid &&
         incoming().get('role', 'INTERN_STUDENT') in [
           'CLIENT', 'INTERN_STUDENT', 'INTERN', 'CANDIDATE', 'EMPLOYER'
         ] &&
+        incoming().get('canonicalRole', 'INTERN_STUDENT') in [
+          'CLIENT', 'INTERN_STUDENT'
+        ] &&
+        incoming().get('isActive', true) == true &&
+        incoming().get('status', 'active') == 'active' &&
         !('permissionOverrides' in incoming()) &&
-        !('limitOverrides' in incoming())
+        !('limitOverrides' in incoming()) &&
+        !('accessExpirationDate' in incoming()) &&
+        !('mentorId' in incoming()) &&
+        !('assignedMentorId' in incoming()) &&
+        !('salary' in incoming()) &&
+        !('stipend' in incoming())
       );
 
-      // Non-admin users can update their own profile details but are strictly
-      // forbidden from modifying their role, canonicalRole, permissions, limits, or active status.
+      // Non-admin users may only edit safe personal profile metadata and login timestamp.
       allow update: if isAdmin() || (
+        isValidId(userId) &&
         isOwner(userId) &&
         isAccountActive() &&
-        incoming().get('role', existing().get('role', '')) == existing().get('role', '') &&
-        incoming().get('canonicalRole', existing().get('canonicalRole', '')) == existing().get('canonicalRole', '') &&
-        incoming().get('permissionOverrides', null) == existing().get('permissionOverrides', null) &&
-        incoming().get('limitOverrides', null) == existing().get('limitOverrides', null) &&
-        incoming().get('isActive', true) == existing().get('isActive', true) &&
-        incoming().get('status', 'active') == existing().get('status', 'active')
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'firstName', 'lastName', 'phone', 'photoUrl',
+          'lastLoginAt', 'updatedAt', 'bio', 'skills',
+          'githubUrl', 'linkedinUrl', 'portfolioUrl', 'company', 'address'
+        ])
       );
 
       // Only ADMIN can delete user accounts.
@@ -195,29 +241,42 @@ service cloud.firestore {
     // 2. Projects Collection (`/projects/{projectId}`)
     // =========================================================================
     match /projects/{projectId} {
-      // Public portfolio showcase projects are readable on the public site;
-      // internal/client projects require one of the 5 roles.
-      allow read: if existing().get('portfolioVisibility', true) == true ||
+      // Public portfolio showcase projects (portfolioVisibility == true) are readable on public site;
+      // internal & client projects are isolated by role and assignment.
+      allow read: if existing().get('portfolioVisibility', false) == true ||
         isAdmin() ||
         isEmployee() ||
         isMentor() ||
-        (isClient() && (isAssignedToProject(existing()) || existing().get('clientId', null) != null)) ||
-        isInternStudent();
+        isInternStudent() ||
+        (isClient() && isAssignedToProject(existing()));
 
-      // ADMIN and EMPLOYEE can create new projects; CLIENT can submit proposed project requests.
-      allow create: if isAdmin() || isEmployee() || (
-        isClient() && incoming().get('clientId', request.auth.uid) == request.auth.uid
+      // ADMIN and EMPLOYEE can create any project; CLIENT can submit their own non-showcase request.
+      allow create: if isValidId(projectId) && (
+        isAdmin() ||
+        isEmployee() ||
+        (
+          isClient() &&
+          incoming().get('clientId', request.auth.uid) == request.auth.uid &&
+          incoming().get('portfolioVisibility', false) == false
+        )
       );
 
-      // ADMIN and EMPLOYEE can manage projects; MENTOR can update review notes;
-      // CLIENT can update feedback/approval on their own assigned projects.
-      allow update: if isAdmin() ||
+      // ADMIN, EMPLOYEE, and MENTOR can manage projects;
+      // CLIENT may only update specific feedback/description fields on their own assigned project.
+      allow update: if isValidId(projectId) && (
+        isAdmin() ||
         isEmployee() ||
         isMentor() ||
-        (isClient() && isAssignedToProject(existing()) &&
-          !incoming().diff(existing()).affectedKeys().hasAny(['budget', 'projectManagerId', 'createdBy']));
+        (
+          isClient() &&
+          isAssignedToProject(existing()) &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'name', 'description', 'projectDescription', 'requirements',
+            'repositoryUrl', 'updatedAt', 'clientFeedback', 'approvalStatus'
+          ])
+        )
+      );
 
-      // Only ADMIN can delete projects.
       allow delete: if isAdmin();
     }
 
@@ -227,47 +286,49 @@ service cloud.firestore {
     match /tasks/{taskId} {
       allow read: if hasValidRole();
 
-      // Only ADMIN, EMPLOYEE, and MENTOR can create and assign tasks.
-      allow create: if isAdmin() || isEmployee() || isMentor();
+      allow create: if isValidId(taskId) && (isAdmin() || isEmployee() || isMentor());
 
-      // ADMIN, EMPLOYEE, and MENTOR can update any task;
-      // INTERN_STUDENT can update status/submission fields on tasks assigned to them.
-      allow update: if isAdmin() ||
+      // INTERN_STUDENT must BOTH be the assignee AND only touch the allowed submission fields.
+      allow update: if isValidId(taskId) && (
+        isAdmin() ||
         isEmployee() ||
         isMentor() ||
-        (isInternStudent() && (
-          isTaskAssignee(existing()) ||
+        (
+          isInternStudent() &&
+          isTaskAssignee(existing()) &&
           incoming().diff(existing()).affectedKeys().hasOnly([
             'status', 'submissionNote', 'submittedAt', 'updatedAt', 'progressPercentage'
           ])
-        ));
+        )
+      );
 
-      // Only ADMIN, EMPLOYEE, or MENTOR can delete tasks.
       allow delete: if isAdmin() || isEmployee() || isMentor();
     }
 
     match /projectTasks/{taskId} {
       allow read: if hasValidRole();
 
-      allow create: if isAdmin() || isEmployee() || isMentor();
+      allow create: if isValidId(taskId) && (isAdmin() || isEmployee() || isMentor());
 
-      allow update: if isAdmin() ||
+      // INTERN_STUDENT must BOTH be the assignee AND only touch the allowed submission fields.
+      allow update: if isValidId(taskId) && (
+        isAdmin() ||
         isEmployee() ||
         isMentor() ||
-        (isInternStudent() && (
-          isTaskAssignee(existing()) ||
+        (
+          isInternStudent() &&
+          isTaskAssignee(existing()) &&
           incoming().diff(existing()).affectedKeys().hasOnly([
             'status', 'submissionNote', 'submittedAt', 'updatedAt', 'progressPercentage'
           ])
-        ));
+        )
+      );
 
       allow delete: if isAdmin() || isEmployee() || isMentor();
     }
 
     // =========================================================================
     // 4. Settings & Resource Permissions Collections
-    //    (`/settings/{docId}` and `/permissions/{permissionId}`)
-    // Enforces strict protection of administrative & RBAC configuration.
     // =========================================================================
     function isValidPermissionId(id) {
       return id is string &&
@@ -344,10 +405,8 @@ service cloud.firestore {
     }
 
     match /permissions/{permissionId} {
-      // Authenticated users may read resource permission policies to evaluate UI capabilities.
-      allow read: if isAuthenticated();
+      allow read: if hasValidRole();
 
-      // Strictly only ADMIN can create, update, or delete permission rules with full schema validation.
       allow create: if isAdmin() &&
         isValidPermissionId(permissionId) &&
         isValidPermissionDoc(incoming(), permissionId) &&
@@ -364,20 +423,60 @@ service cloud.firestore {
     }
 
     match /settings/{docId} {
-      // `rbac_config` requires authentication to read; public branding/website
-      // settings (`website`, `company`, `general`) can be read by the public site.
-      allow read: if docId != 'rbac_config' || isAuthenticated();
-
-      // Strictly only ADMIN can create, update, or delete any settings or RBAC rules.
-      allow write: if isAdmin();
+      allow read: if (docId in ['website_cms', 'website_content']) || hasValidRole();
+      allow write: if (
+        (docId in ['website_cms', 'website_content']) && isVerifiedBootstrapAdmin()
+      ) || (
+        !(docId in ['website_cms', 'website_content']) && isVerifiedEmail() && isAdmin()
+      );
     }
 
     // =========================================================================
     // 5. Dynamic Quotas & Resource Consumption (`/quotas/{userId}`)
+    // Monotonic Counter Guard Prevents Client-Side Usage Resets via DevTools
     // =========================================================================
+    function isValidQuotaPayload(data) {
+      return data.keys().hasOnly([
+          'projectsCount', 'assignedTasksCount', 'aiRequestsToday',
+          'aiRequestsDate', 'storageUsedMB', 'reportsGeneratedCount',
+          'assignedMenteesCount', 'activeClientProjectsCount', 'lastUpdated'
+        ]) &&
+        data.get('projectsCount', 0) is number && data.get('projectsCount', 0) >= 0 &&
+        data.get('assignedTasksCount', 0) is number && data.get('assignedTasksCount', 0) >= 0 &&
+        data.get('aiRequestsToday', 0) is number && data.get('aiRequestsToday', 0) >= 0 &&
+        data.get('storageUsedMB', 0) is number && data.get('storageUsedMB', 0) >= 0 &&
+        data.get('reportsGeneratedCount', 0) is number && data.get('reportsGeneratedCount', 0) >= 0 &&
+        data.get('assignedMenteesCount', 0) is number && data.get('assignedMenteesCount', 0) >= 0 &&
+        data.get('activeClientProjectsCount', 0) is number && data.get('activeClientProjectsCount', 0) >= 0 &&
+        (!('aiRequestsDate' in data) || (data.aiRequestsDate is string && data.aiRequestsDate.size() <= 20));
+    }
+
     match /quotas/{userId} {
       allow read: if isOwner(userId) || isAdmin() || isMentor();
-      allow create, update: if isAdmin() || (isOwner(userId) && isAccountActive());
+
+      allow create: if isValidId(userId) && (
+        isAdmin() ||
+        (isOwner(userId) && isAccountActive() && isValidQuotaPayload(incoming()))
+      );
+
+      allow update: if isValidId(userId) && (
+        isAdmin() ||
+        (
+          isOwner(userId) &&
+          isAccountActive() &&
+          isValidQuotaPayload(incoming()) &&
+          incoming().get('projectsCount', 0) >= existing().get('projectsCount', 0) &&
+          incoming().get('assignedTasksCount', 0) >= existing().get('assignedTasksCount', 0) &&
+          incoming().get('storageUsedMB', 0) >= existing().get('storageUsedMB', 0) &&
+          incoming().get('reportsGeneratedCount', 0) >= existing().get('reportsGeneratedCount', 0) &&
+          incoming().get('activeClientProjectsCount', 0) >= existing().get('activeClientProjectsCount', 0) &&
+          (
+            incoming().get('aiRequestsDate', '') != existing().get('aiRequestsDate', '') ||
+            incoming().get('aiRequestsToday', 0) >= existing().get('aiRequestsToday', 0)
+          )
+        )
+      );
+
       allow delete: if isAdmin();
     }
 
@@ -385,11 +484,9 @@ service cloud.firestore {
     // 6. Administrative & Organization Collections
     // =========================================================================
     match /system/{docId} {
-      allow read: if true;
-      allow create: if isAuthenticated() &&
+      allow read: if isAuthenticated();
+      allow create: if isVerifiedBootstrapAdmin() &&
         docId == 'setup' &&
-        request.auth.token.email != null &&
-        request.auth.token.email.lower() == 'saranramesh709@gmail.com' &&
         !exists(/databases/$(database)/documents/system/setup);
       allow update, delete: if isAdmin();
     }
@@ -401,32 +498,64 @@ service cloud.firestore {
 
     match /employees/{docId} {
       allow read: if isAdmin() || isEmployee() || isMentor() || isOwner(docId);
-      allow update: if isAdmin() || (isEmployee() && isOwner(docId));
+      allow update: if isAdmin() || (
+        isEmployee() &&
+        isOwner(docId) &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'firstName', 'lastName', 'phone', 'photoUrl', 'skills', 'bio', 'updatedAt'
+        ])
+      );
       allow create, delete: if isAdmin();
     }
 
     match /mentors/{docId} {
       allow read: if hasValidRole();
-      allow update: if isAdmin() || (isMentor() && isOwner(docId));
+      allow update: if isAdmin() || (
+        isMentor() &&
+        isOwner(docId) &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'firstName', 'lastName', 'phone', 'photoUrl', 'bio', 'expertise', 'updatedAt'
+        ])
+      );
       allow create, delete: if isAdmin();
     }
 
     match /interns/{docId} {
       allow read: if isAdmin() || isMentor() || isEmployee() || isOwner(docId);
-      allow update: if isAdmin() || isMentor() || (isInternStudent() && isOwner(docId));
+      allow update: if isAdmin() || isMentor() || (
+        isInternStudent() &&
+        isOwner(docId) &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'firstName', 'lastName', 'phone', 'photoUrl', 'skills', 'githubUrl', 'linkedinUrl', 'updatedAt'
+        ])
+      );
       allow create, delete: if isAdmin();
     }
 
     match /clients/{docId} {
       allow read: if isAdmin() || isEmployee() || isOwner(docId);
-      allow update: if isAdmin() || (isClient() && isOwner(docId));
+      allow update: if isAdmin() || (
+        isClient() &&
+        isOwner(docId) &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'firstName', 'lastName', 'phone', 'photoUrl', 'company', 'website', 'address', 'updatedAt'
+        ])
+      );
       allow create, delete: if isAdmin();
     }
 
     match /candidates/{docId} {
       allow read: if isAdmin() || isEmployee() || isMentor() || isOwner(docId);
-      allow create: if isAuthenticated();
-      allow update: if isAdmin() || isOwner(docId);
+      allow create: if isValidId(docId) && (
+        isAdmin() ||
+        (isAuthenticated() && docId == request.auth.uid && incoming().get('uid', request.auth.uid) == request.auth.uid)
+      );
+      allow update: if isValidId(docId) && (
+        isAdmin() ||
+        (isOwner(docId) && incoming().diff(existing()).affectedKeys().hasOnly([
+          'firstName', 'lastName', 'phone', 'resumeUrl', 'portfolioUrl', 'skills', 'updatedAt'
+        ]))
+      );
       allow delete: if isAdmin();
     }
 
@@ -436,15 +565,29 @@ service cloud.firestore {
     }
 
     // =========================================================================
-    // 7. Audit Logs (`/auditLogs/{logId}`) — Administrative & Mentor Read + Targeted Evaluations
+    // 7. Audit Logs (`/auditLogs/{logId}`) — Caller-Identity Enforced
     // =========================================================================
     match /auditLogs/{logId} {
-      // ADMIN and MENTOR can read activity logs for UserActivity telemetry;
-      // users/interns can read evaluation logs explicitly targeting their own UID.
       allow read: if isAdmin() ||
         isMentor() ||
         (isAuthenticated() && existing().get('resourceId', '') == request.auth.uid);
-      allow create: if isAuthenticated();
+
+      allow create: if isValidId(logId) &&
+        hasValidRole() &&
+        incoming().keys().hasAll(['action', 'performedBy', 'resourceId', 'resourceType', 'details']) &&
+        incoming().keys().hasOnly(['action', 'performedBy', 'resourceId', 'resourceType', 'details', 'timestamp']) &&
+        incoming().performedBy == request.auth.uid &&
+        incoming().action is string &&
+        incoming().action.size() >= 2 &&
+        incoming().action.size() <= 100 &&
+        incoming().resourceId is string &&
+        incoming().resourceId.size() <= 128 &&
+        incoming().resourceType is string &&
+        incoming().resourceType.size() <= 64 &&
+        incoming().details is string &&
+        incoming().details.size() <= 2000 &&
+        (isAdmin() || !incoming().action.matches('^(RBAC_|ADMIN_|ROLE_|PERMISSION_|SECURITY_).*'));
+
       allow update, delete: if false;
     }
 
@@ -452,12 +595,40 @@ service cloud.firestore {
     // 8. Operations, Documents, Payments & Communications
     // =========================================================================
     match /documents/{docId} {
-      allow read: if hasValidRole();
-      allow create: if hasValidRole();
-      allow update: if isAdmin() || isEmployee() || isMentor() ||
-        (isAuthenticated() && existing().get('ownerId', '') == request.auth.uid);
+      allow read: if isAdmin() ||
+        isEmployee() ||
+        isMentor() ||
+        (hasValidRole() && (
+          existing().get('ownerId', '') == request.auth.uid ||
+          existing().get('accessLevel', '') in ['public', 'all']
+        ));
+
+      allow create: if isValidId(docId) && hasValidRole() && (
+        isAdmin() ||
+        (
+          incoming().get('ownerId', '') == request.auth.uid &&
+          incoming().get('title', '') is string &&
+          incoming().get('title', '').size() >= 1 &&
+          incoming().get('title', '').size() <= 200 &&
+          isSafeHttpUrl(incoming().get('fileUrl', '')) &&
+          incoming().get('accessLevel', 'own') in ['own', 'client', 'private']
+        )
+      );
+
+      allow update: if isValidId(docId) && (
+        isAdmin() ||
+        isEmployee() ||
+        isMentor() ||
+        (
+          hasValidRole() &&
+          existing().get('ownerId', '') == request.auth.uid &&
+          incoming().get('ownerId', '') == request.auth.uid &&
+          isSafeHttpUrl(incoming().get('fileUrl', existing().get('fileUrl', '')))
+        )
+      );
+
       allow delete: if isAdmin() ||
-        (isAuthenticated() && existing().get('ownerId', '') == request.auth.uid);
+        (hasValidRole() && existing().get('ownerId', '') == request.auth.uid);
     }
 
     match /payments/{paymentId} {
@@ -466,13 +637,38 @@ service cloud.firestore {
           existing().get('clientId', '') == request.auth.uid ||
           existing().get('userId', '') == request.auth.uid
         ));
-      allow create: if hasValidRole();
+
+      allow create: if isValidId(paymentId) && hasValidRole() && (
+        isAdmin() ||
+        isEmployee() ||
+        (
+          (incoming().get('clientId', '') == request.auth.uid ||
+            incoming().get('userId', '') == request.auth.uid) &&
+          incoming().get('status', '') in ['PENDING', 'pending'] &&
+          incoming().get('verificationStatus', 'pending') == 'pending' &&
+          incoming().get('amount', 0) is number &&
+          incoming().get('amount', 0) > 0 &&
+          (!('proofUrl' in incoming()) || isSafeHttpUrl(incoming().proofUrl))
+        )
+      );
+
       allow update, delete: if isAdmin();
     }
 
     match /enquiries/{enquiryId} {
-      // Public website contact / enquiry form submissions allowed
-      allow create: if true;
+      allow create: if isValidId(enquiryId) && (
+        isAdmin() ||
+        (
+          incoming().get('status', 'NEW') == 'NEW' &&
+          incoming().get('name', '') is string &&
+          incoming().get('name', '').size() <= 200 &&
+          incoming().get('email', '') is string &&
+          incoming().get('email', '').size() <= 254 &&
+          incoming().get('message', '') is string &&
+          incoming().get('message', '').size() <= 5000 &&
+          (!('clientId' in incoming()) || (isAuthenticated() && incoming().clientId == request.auth.uid))
+        )
+      );
       allow read: if isAdmin() || isEmployee() ||
         (isClient() && existing().get('clientId', '') == request.auth.uid);
       allow update: if isAdmin() || isEmployee();
@@ -480,62 +676,130 @@ service cloud.firestore {
     }
 
     match /internship_applications/{applicationId} {
-      allow create: if true;
+      allow create: if isValidId(applicationId) && (
+        isAdmin() ||
+        (
+          incoming().get('status', 'pending') == 'pending' &&
+          (!('candidateId' in incoming()) || (isAuthenticated() && incoming().candidateId == request.auth.uid)) &&
+          (!('resumeUrl' in incoming()) || isSafeHttpUrl(incoming().resumeUrl))
+        )
+      );
       allow read: if isAdmin() || isEmployee() || isMentor() ||
         (isAuthenticated() && existing().get('candidateId', '') == request.auth.uid);
-      allow update: if isAdmin() || isEmployee() || isMentor() ||
-        (isAuthenticated() && existing().get('candidateId', '') == request.auth.uid);
+      allow update: if isValidId(applicationId) && (
+        isAdmin() ||
+        isEmployee() ||
+        isMentor() ||
+        (
+          isAuthenticated() &&
+          existing().get('candidateId', '') == request.auth.uid &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'resumeUrl', 'portfolioUrl', 'coverNote', 'updatedAt'
+          ])
+        )
+      );
       allow delete: if isAdmin();
     }
 
     match /job_applications/{applicationId} {
-      allow create: if true;
+      allow create: if isValidId(applicationId) && (
+        isAdmin() ||
+        (
+          incoming().get('status', 'pending') in ['pending', 'NEW', 'SUBMITTED'] &&
+          incoming().get('name', '') is string &&
+          incoming().get('name', '').size() <= 200 &&
+          incoming().get('email', '') is string &&
+          incoming().get('email', '').size() <= 254 &&
+          (!('resumeUrl' in incoming()) || isSafeHttpUrl(incoming().resumeUrl))
+        )
+      );
       allow read, update, delete: if isAdmin();
     }
 
     match /internship_programs/{programId} {
-      allow read: if true;
+      allow read: if hasValidRole();
       allow write: if isAdmin();
     }
 
     match /internshipPrograms/{programId} {
-      allow read: if true;
+      allow read: if hasValidRole();
       allow write: if isAdmin();
     }
 
     match /attendance/{attId} {
       allow read: if isAdmin() || isEmployee() || isMentor() ||
         (isAuthenticated() && existing().get('userId', '') == request.auth.uid);
-      allow create, update: if isAdmin() || isEmployee() || isMentor() ||
-        (isInternStudent() && incoming().get('userId', '') == request.auth.uid);
+      allow create: if isValidId(attId) && (
+        isAdmin() ||
+        isMentor() ||
+        ((isEmployee() || isInternStudent()) && incoming().get('userId', '') == request.auth.uid)
+      );
+      allow update: if isValidId(attId) && (
+        isAdmin() ||
+        isMentor() ||
+        ((isEmployee() || isInternStudent()) &&
+          existing().get('userId', '') == request.auth.uid &&
+          incoming().get('userId', '') == request.auth.uid)
+      );
       allow delete: if isAdmin();
     }
 
     match /leaveRequests/{leaveId} {
       allow read: if isAdmin() || isEmployee() || isMentor() ||
         (isAuthenticated() && existing().get('userId', '') == request.auth.uid);
-      allow create: if hasValidRole();
-      allow update: if isAdmin() || isEmployee() || isMentor() ||
-        (isAuthenticated() && existing().get('userId', '') == request.auth.uid);
+      allow create: if isValidId(leaveId) && hasValidRole() && (
+        isAdmin() ||
+        (
+          incoming().get('userId', '') == request.auth.uid &&
+          incoming().get('status', 'pending') == 'pending' &&
+          incoming().get('reason', '') is string &&
+          incoming().get('reason', '').size() <= 1000
+        )
+      );
+      allow update: if isValidId(leaveId) && (
+        isAdmin() ||
+        isMentor() ||
+        (
+          isAuthenticated() &&
+          existing().get('userId', '') == request.auth.uid &&
+          existing().get('status', 'pending') == 'pending' &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'reason', 'startDate', 'endDate', 'updatedAt'
+          ])
+        )
+      );
       allow delete: if isAdmin();
     }
 
     match /announcements/{annId} {
-      allow read: if true;
+      allow read: if hasValidRole();
       allow write: if isAdmin();
     }
 
     match /notifications/{notifId} {
       allow read: if isAdmin() ||
         (isAuthenticated() && existing().get('userId', '') == request.auth.uid);
-      allow create: if hasValidRole();
-      allow update, delete: if isAdmin() ||
+      allow create: if isValidId(notifId) && (
+        isAdmin() ||
+        isEmployee() ||
+        isMentor() ||
+        (hasValidRole() && incoming().get('userId', '') == request.auth.uid)
+      );
+      allow update: if isValidId(notifId) && (
+        isAdmin() ||
+        (
+          isAuthenticated() &&
+          existing().get('userId', '') == request.auth.uid &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['read', 'readAt', 'updatedAt'])
+        )
+      );
+      allow delete: if isAdmin() ||
         (isAuthenticated() && existing().get('userId', '') == request.auth.uid);
     }
 
     match /websiteContent/{docId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow read: if hasValidRole();
+      allow write: if isVerifiedBootstrapAdmin();
     }
   }
 }

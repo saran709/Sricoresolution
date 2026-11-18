@@ -1,7 +1,24 @@
+import { auth } from './firebase';
+
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const user = auth.currentUser;
+  if (user) {
+    try {
+      const token = await user.getIdToken();
+      if (token) headers.Authorization = `Bearer ${token}`;
+    } catch {
+      // Leave unauthenticated header if token unavailable
+    }
+  }
+  return headers;
+}
+
 export const createRazorpayOrder = async (amount: number, currency: string = 'INR', receipt: string, notes: any = {}) => {
+  const headers = await getAuthHeaders();
   const response = await fetch('/api/payments/create-order', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     signal: AbortSignal.timeout(15000),
     body: JSON.stringify({ amount, currency, receipt, notes }),
   });
@@ -20,9 +37,10 @@ export const verifyRazorpayPayment = async (
   razorpay_signature: string,
   email?: string
 ) => {
+  const headers = await getAuthHeaders();
   const response = await fetch('/api/payments/verify', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     signal: AbortSignal.timeout(15000),
     body: JSON.stringify({
       razorpay_order_id,

@@ -58,7 +58,7 @@ export const PrivateRoute: React.FC<PrivateRouteProps> = ({
     );
   }
 
-  if (!currentUser) {
+  if (!currentUser || currentUser.isAnonymous) {
     return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 
@@ -87,7 +87,21 @@ export const PrivateRoute: React.FC<PrivateRouteProps> = ({
     const allowedCanonicalSet = new Set(
       effectiveRoles.map((r) => normalizeToCanonicalRole(r))
     );
-    if (!userProfile || !allowedCanonicalSet.has(userCanonical)) {
+    const resolvedCanonical = normalizeToCanonicalRole(
+      userProfile?.canonicalRole || userProfile?.role
+    );
+    const isGoogleOrVerified =
+      Boolean(currentUser.emailVerified) ||
+      Boolean(currentUser.providerData?.some((p) => p.providerId === 'google.com'));
+
+    if (
+      !userProfile ||
+      userProfile.uid !== currentUser.uid ||
+      userProfile.isActive === false ||
+      !allowedCanonicalSet.has(userCanonical) ||
+      !allowedCanonicalSet.has(resolvedCanonical) ||
+      (requireAdmin && !isGoogleOrVerified)
+    ) {
       return <Navigate to="/unauthorized" state={{ from: location }} replace />;
     }
   }

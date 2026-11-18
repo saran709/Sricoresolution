@@ -4,7 +4,7 @@ import { db } from '../../lib/firebase';
 import { Document as AppDocument } from '../../types';
 import { Search, Link2, FileText, ExternalLink, Trash2, AlertCircle, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
-import { DriveLinkInput, validateShareableLink } from '../../components/ui/DriveLinkInput';
+import { DriveLinkInput, sanitizeSafeHttpUrl, validateShareableLink } from '../../components/ui/DriveLinkInput';
 import { logActivity } from '../../lib/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
 import { queryClient } from '../../lib/queryClient';
@@ -337,16 +337,20 @@ export default function AdminDocuments() {
                         : 'N/A'}
                     </td>
                     <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
-                      <a
-                        href={docItem.fileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 rounded-md transition-colors border border-blue-200"
-                        title="Open Shared Link"
-                      >
-                        <span>Open Link</span>
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
+                      {sanitizeSafeHttpUrl(docItem.fileUrl) ? (
+                        <a
+                          href={sanitizeSafeHttpUrl(docItem.fileUrl)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 rounded-md transition-colors border border-blue-200"
+                          title="Open Shared Link"
+                        >
+                          <span>Open Link</span>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      ) : (
+                        <span className="text-xs text-slate-400">Invalid link</span>
+                      )}
                       {pendingDeleteId === docItem.id ? (
                         <div className="inline-flex items-center gap-1">
                           <button

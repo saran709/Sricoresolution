@@ -65,7 +65,7 @@ export const QuotaAndPermissionsBar: React.FC = () => {
           <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 dark:bg-slate-800/90 p-1.5 rounded-xl border border-indigo-200 dark:border-indigo-800/60">
             <span className="flex items-center gap-1 px-2 text-[11px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
               <Eye className="w-3.5 h-3.5" />
-              Test Role View:
+              Preview Role:
             </span>
             {FIVE_ROLES.map((r: CanonicalRole) => {
               const active = activeRole === r;
@@ -99,7 +99,7 @@ export const QuotaAndPermissionsBar: React.FC = () => {
         )}
       </div>
 
-      {/* Middle Row: Real-Time Dynamic Limits & Resource Quota Telemetry */}
+      {/* Middle Row: Real-Time Dynamic Limits & Resource Quotas */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
         <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60">
           <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">

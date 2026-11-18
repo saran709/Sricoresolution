@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { auth, db } from '../lib/firebase';
 import { APP_CONFIG } from '../config';
+import { purgeUntrustedClientStorage } from '../lib/securityGuard';
 
 export interface ThemeColors {
   primary: string;           // e.g. '#2563eb'
@@ -168,9 +169,9 @@ export const DEFAULT_WEBSITE_SETTINGS: WebsiteSettings = {
     primaryCtaLink: '/enquiry',
     secondaryCtaText: 'Apply for Internship',
     secondaryCtaLink: '/internships',
-    monitorLabel: 'Live Monitoring Interface',
+    monitorLabel: 'Core Engineering Divisions',
     uptime: '99.9%',
-    cpuLoad: '74%',
+    cpuLoad: '100%',
     statsBadges: ['ISO Standards', 'Industrial IoT', 'AI Certified']
   },
   metrics: [
@@ -216,9 +217,66 @@ export const DEFAULT_WEBSITE_SETTINGS: WebsiteSettings = {
   footerCopyright: '© ' + new Date().getFullYear() + ' Sricore Solutions Pvt Ltd. All rights reserved.'
 };
 
-const WEBSITE_SETTINGS_CACHE_KEY = 'sricore_website_settings_cache_v1';
-const WEBSITE_SETTINGS_TS_KEY = 'sricore_website_settings_ts_v1';
-const SETTINGS_CACHE_TTL_MS = 1000 * 60 * 5; // 5 minutes
+const AUTHORIZED_SITE_OWNER_EMAILS = ['saranramesh709@gmail.com'];
+
+function sanitizeSafeLink(raw: string | undefined, fallback: string): string {
+  if (!raw || typeof raw !== 'string') return fallback;
+  const trimmed = raw.trim();
+  if (!trimmed) return fallback;
+  if (trimmed.startsWith('/') && !trimmed.startsWith('//')) {
+    return trimmed;
+  }
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+      return parsed.toString();
+    }
+  } catch {
+    return fallback;
+  }
+  return fallback;
+}
+
+function sanitizeSafeHex(raw: string | undefined, fallback: string): string {
+  if (!raw || typeof raw !== 'string') return fallback;
+  const trimmed = raw.trim();
+  return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(trimmed) ? trimmed : fallback;
+}
+
+function isVerifiedSiteOwnerClient(): { ok: boolean; email: string; uid: string } {
+  const user = auth.currentUser;
+  if (!user || user.isAnonymous) {
+    return { ok: false, email: '', uid: '' };
+  }
+  const email = (user.email || '').toLowerCase().trim();
+  const isGoogleProvider = user.providerData?.some((p) => p.providerId === 'google.com');
+  const isVerified = Boolean(user.emailVerified || isGoogleProvider);
+  if (!email || !isVerified || !AUTHORIZED_SITE_OWNER_EMAILS.includes(email)) {
+    return { ok: false, email, uid: user.uid };
+  }
+  return { ok: true, email, uid: user.uid };
+}
+
+async function verifyWebsiteWriteWithServer(): Promise<boolean> {
+  const user = auth.currentUser;
+  if (!user || user.isAnonymous) return false;
+  try {
+    const idToken = await user.getIdToken();
+    const res = await fetch('/api/rbac/validate-action', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({ action: 'manage' }),
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    return Boolean(data?.allowed);
+  } catch {
+    return false;
+  }
+}
 
 function normalizeSettingsPayload(
   parsed: Partial<WebsiteSettings>,
@@ -233,66 +291,68 @@ function normalizeSettingsPayload(
 
   const finalTheme = isOldBlue
     ? { ...DEFAULT_WEBSITE_SETTINGS.theme }
-    : { ...DEFAULT_WEBSITE_SETTINGS.theme, ...rawTheme };
+    : {
+        ...DEFAULT_WEBSITE_SETTINGS.theme,
+        ...rawTheme,
+        primary: sanitizeSafeHex(rawTheme.primary, DEFAULT_WEBSITE_SETTINGS.theme.primary),
+        primaryHover: sanitizeSafeHex(rawTheme.primaryHover, DEFAULT_WEBSITE_SETTINGS.theme.primaryHover),
+        primaryLight: sanitizeSafeHex(rawTheme.primaryLight, DEFAULT_WEBSITE_SETTINGS.theme.primaryLight),
+        accent: sanitizeSafeHex(rawTheme.accent, DEFAULT_WEBSITE_SETTINGS.theme.accent),
+      };
+
+  const mergedHero = { ...DEFAULT_WEBSITE_SETTINGS.hero, ...(parsed.hero || {}) };
+  if (mergedHero.monitorLabel === 'Live Monitoring Interface') {
+    mergedHero.monitorLabel = DEFAULT_WEBSITE_SETTINGS.hero.monitorLabel;
+  }
+  if (mergedHero.cpuLoad === '74%') {
+    mergedHero.cpuLoad = DEFAULT_WEBSITE_SETTINGS.hero.cpuLoad;
+  }
+  const mergedContact = { ...DEFAULT_WEBSITE_SETTINGS.contact, ...(parsed.contact || {}) };
+  const mergedSocials = { ...DEFAULT_WEBSITE_SETTINGS.socials, ...(parsed.socials || {}) };
 
   return {
     ...fallback,
     ...parsed,
     brandName: normalizeBrandName(parsed.brandName || fallback.brandName),
+    logoUrl: sanitizeSafeLink(parsed.logoUrl, DEFAULT_WEBSITE_SETTINGS.logoUrl || '/logo.png'),
     theme: finalTheme,
     announcement: {
       ...DEFAULT_WEBSITE_SETTINGS.announcement,
       ...(parsed.announcement || {}),
-      bgColor:
+      linkUrl: sanitizeSafeLink(parsed.announcement?.linkUrl, DEFAULT_WEBSITE_SETTINGS.announcement.linkUrl),
+      bgColor: sanitizeSafeHex(
         isOldBlue &&
-        (parsed.announcement?.bgColor === '#1e40af' ||
-          parsed.announcement?.bgColor === '#2563eb')
+          (parsed.announcement?.bgColor === '#1e40af' ||
+            parsed.announcement?.bgColor === '#2563eb')
           ? DEFAULT_WEBSITE_SETTINGS.announcement.bgColor
-          : parsed.announcement?.bgColor || DEFAULT_WEBSITE_SETTINGS.announcement.bgColor,
+          : parsed.announcement?.bgColor,
+        DEFAULT_WEBSITE_SETTINGS.announcement.bgColor
+      ),
+      textColor: sanitizeSafeHex(parsed.announcement?.textColor, DEFAULT_WEBSITE_SETTINGS.announcement.textColor),
     },
-    hero: { ...DEFAULT_WEBSITE_SETTINGS.hero, ...(parsed.hero || {}) },
+    hero: {
+      ...mergedHero,
+      primaryCtaLink: sanitizeSafeLink(mergedHero.primaryCtaLink, DEFAULT_WEBSITE_SETTINGS.hero.primaryCtaLink),
+      secondaryCtaLink: sanitizeSafeLink(mergedHero.secondaryCtaLink, DEFAULT_WEBSITE_SETTINGS.hero.secondaryCtaLink),
+    },
     metrics:
       Array.isArray(parsed.metrics) && parsed.metrics.length > 0
         ? parsed.metrics
         : fallback.metrics,
     about: { ...DEFAULT_WEBSITE_SETTINGS.about, ...(parsed.about || {}) },
     services: { ...DEFAULT_WEBSITE_SETTINGS.services, ...(parsed.services || {}) },
-    contact: { ...DEFAULT_WEBSITE_SETTINGS.contact, ...(parsed.contact || {}) },
-    socials: { ...DEFAULT_WEBSITE_SETTINGS.socials, ...(parsed.socials || {}) },
+    contact: {
+      ...mergedContact,
+      mapEmbedUrl: sanitizeSafeLink(mergedContact.mapEmbedUrl, DEFAULT_WEBSITE_SETTINGS.contact.mapEmbedUrl),
+    },
+    socials: {
+      linkedin: sanitizeSafeLink(mergedSocials.linkedin, DEFAULT_WEBSITE_SETTINGS.socials.linkedin),
+      twitter: sanitizeSafeLink(mergedSocials.twitter, DEFAULT_WEBSITE_SETTINGS.socials.twitter),
+      github: sanitizeSafeLink(mergedSocials.github, DEFAULT_WEBSITE_SETTINGS.socials.github),
+      instagram: sanitizeSafeLink(mergedSocials.instagram, DEFAULT_WEBSITE_SETTINGS.socials.instagram),
+      youtube: sanitizeSafeLink(mergedSocials.youtube, DEFAULT_WEBSITE_SETTINGS.socials.youtube),
+    },
   };
-}
-
-function readCachedSettingsState(): {
-  settings: WebsiteSettings;
-  hasCache: boolean;
-  isStale: boolean;
-} {
-  try {
-    const raw = localStorage.getItem(WEBSITE_SETTINGS_CACHE_KEY);
-    if (!raw) {
-      return { settings: DEFAULT_WEBSITE_SETTINGS, hasCache: false, isStale: true };
-    }
-    const parsed = JSON.parse(raw) as Partial<WebsiteSettings>;
-    const tsRaw = Number(localStorage.getItem(WEBSITE_SETTINGS_TS_KEY) || 0);
-    const isStale = !tsRaw || Date.now() - tsRaw > SETTINGS_CACHE_TTL_MS;
-    return {
-      settings: normalizeSettingsPayload(parsed),
-      hasCache: true,
-      isStale,
-    };
-  } catch {
-    return { settings: DEFAULT_WEBSITE_SETTINGS, hasCache: false, isStale: true };
-  }
-}
-
-function writeCachedSettings(next: WebsiteSettings) {
-  try {
-    const { updatedAt: _u, ...serializable } = next;
-    localStorage.setItem(WEBSITE_SETTINGS_CACHE_KEY, JSON.stringify(serializable));
-    localStorage.setItem(WEBSITE_SETTINGS_TS_KEY, String(Date.now()));
-  } catch {
-    // Ignore quota/storage errors
-  }
 }
 
 export interface WebsiteSettingsContextType {
@@ -310,36 +370,15 @@ const WebsiteSettingsContext = createContext<WebsiteSettingsContextType>({
 });
 
 export function WebsiteSettingsProvider({ children }: { children: React.ReactNode }) {
-  const initialCacheRef = useRef(readCachedSettingsState());
-  const [settings, setSettings] = useState<WebsiteSettings>(() => initialCacheRef.current.settings);
-  const [loading, setLoading] = useState<boolean>(() => !initialCacheRef.current.hasCache);
+  // Never hydrate or cache website CMS settings in localStorage where DevTools can alter them.
+  const [settings, setSettings] = useState<WebsiteSettings>(DEFAULT_WEBSITE_SETTINGS);
+  const [loading, setLoading] = useState<boolean>(true);
   const settingsRef = useRef<WebsiteSettings>(settings);
   settingsRef.current = settings;
 
-  // Hydrate fresh CMS settings via one-shot getDoc only when cache is missing or expired,
-  // avoiding a persistent Firestore streaming socket on every public visitor boot.
   useEffect(() => {
     let cancelled = false;
-    const { hasCache, isStale } = initialCacheRef.current;
-
-    const handleStorageSync = (e: StorageEvent) => {
-      if (e.key === WEBSITE_SETTINGS_CACHE_KEY && e.newValue) {
-        try {
-          const parsed = JSON.parse(e.newValue) as Partial<WebsiteSettings>;
-          setSettings(normalizeSettingsPayload(parsed, settingsRef.current));
-        } catch {
-          // Ignore malformed external storage writes
-        }
-      }
-    };
-    window.addEventListener('storage', handleStorageSync);
-
-    if (hasCache && !isStale) {
-      setLoading(false);
-      return () => {
-        window.removeEventListener('storage', handleStorageSync);
-      };
-    }
+    purgeUntrustedClientStorage();
 
     const fetchSettingsOnce = async () => {
       try {
@@ -348,36 +387,26 @@ export function WebsiteSettingsProvider({ children }: { children: React.ReactNod
 
         if (snapshot.exists()) {
           const data = snapshot.data() as Partial<WebsiteSettings>;
-          setSettings((prev) => {
-            const next = normalizeSettingsPayload(data, prev);
-            writeCachedSettings(next);
-            return next;
-          });
+          setSettings((prev) => normalizeSettingsPayload(data, prev));
         } else {
           const legacySnap = await getDoc(doc(db, 'settings', 'website_content'));
           if (cancelled) return;
           if (legacySnap.exists()) {
             const legacyData = legacySnap.data();
-            setSettings((prev) => {
-              const next: WebsiteSettings = {
-                ...prev,
-                brandDescription: legacyData.companyDescription || prev.brandDescription,
-                contact: {
-                  ...prev.contact,
-                  primaryEmail: legacyData.contactEmail || prev.contact.primaryEmail,
-                  primaryPhone: legacyData.contactPhone || prev.contact.primaryPhone,
-                  address: legacyData.contactAddress || prev.contact.address
-                }
-              };
-              writeCachedSettings(next);
-              return next;
-            });
-          } else {
-            writeCachedSettings(settingsRef.current);
+            setSettings((prev) => ({
+              ...prev,
+              brandDescription: legacyData.companyDescription || prev.brandDescription,
+              contact: {
+                ...prev.contact,
+                primaryEmail: legacyData.contactEmail || prev.contact.primaryEmail,
+                primaryPhone: legacyData.contactPhone || prev.contact.primaryPhone,
+                address: legacyData.contactAddress || prev.contact.address,
+              },
+            }));
           }
         }
       } catch (error) {
-        console.warn('Firestore settings fetch error (retaining cached/defaults):', error);
+        console.warn('Firestore settings fetch error (retaining official defaults):', error);
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -385,46 +414,32 @@ export function WebsiteSettingsProvider({ children }: { children: React.ReactNod
       }
     };
 
-    if (!hasCache) {
-      void fetchSettingsOnce();
-      return () => {
-        cancelled = true;
-        window.removeEventListener('storage', handleStorageSync);
-      };
-    }
-
-    const ric = (window as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
-    const cancelRic = (window as { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback;
-
-    if (ric) {
-      const idleId = ric(() => {
-        void fetchSettingsOnce();
-      }, { timeout: 2500 });
-      return () => {
-        cancelled = true;
-        cancelRic?.(idleId);
-        window.removeEventListener('storage', handleStorageSync);
-      };
-    }
-
-    const timerId = window.setTimeout(() => {
-      void fetchSettingsOnce();
-    }, 1200);
-
+    void fetchSettingsOnce();
     return () => {
       cancelled = true;
-      window.clearTimeout(timerId);
-      window.removeEventListener('storage', handleStorageSync);
     };
   }, []);
 
   const saveSettings = useCallback(async (newSettings: Partial<WebsiteSettings>, updatedByUid?: string): Promise<boolean> => {
+    const ownerCheck = isVerifiedSiteOwnerClient();
+    if (!ownerCheck.ok) {
+      return false;
+    }
+
+    const serverAllowed = await verifyWebsiteWriteWithServer();
+    if (!serverAllowed) {
+      return false;
+    }
+
     try {
-      const merged: WebsiteSettings = {
+      const sanitizedNext = normalizeSettingsPayload({
         ...settingsRef.current,
         ...newSettings,
+      });
+      const merged: WebsiteSettings = {
+        ...sanitizedNext,
         updatedAt: serverTimestamp(),
-        updatedBy: updatedByUid || 'admin'
+        updatedBy: updatedByUid || ownerCheck.uid,
       };
 
       await Promise.all([
@@ -435,12 +450,12 @@ export function WebsiteSettingsProvider({ children }: { children: React.ReactNod
           contactPhone: merged.contact.primaryPhone,
           contactAddress: merged.contact.address,
           updatedAt: serverTimestamp(),
-          updatedBy: updatedByUid || 'admin'
-        }, { merge: true })
+          updatedBy: updatedByUid || ownerCheck.uid,
+        }, { merge: true }),
       ]);
 
-      writeCachedSettings(merged);
-      setSettings(merged);
+      purgeUntrustedClientStorage();
+      setSettings(sanitizedNext);
       return true;
     } catch (err) {
       console.error('Failed to save website settings:', err);
@@ -449,14 +464,24 @@ export function WebsiteSettingsProvider({ children }: { children: React.ReactNod
   }, []);
 
   const resetToDefaults = useCallback(async (updatedByUid?: string): Promise<boolean> => {
+    const ownerCheck = isVerifiedSiteOwnerClient();
+    if (!ownerCheck.ok) {
+      return false;
+    }
+
+    const serverAllowed = await verifyWebsiteWriteWithServer();
+    if (!serverAllowed) {
+      return false;
+    }
+
     try {
       const defaults = {
         ...DEFAULT_WEBSITE_SETTINGS,
         updatedAt: serverTimestamp(),
-        updatedBy: updatedByUid || 'admin'
+        updatedBy: updatedByUid || ownerCheck.uid,
       };
       await setDoc(doc(db, 'settings', 'website_cms'), defaults);
-      writeCachedSettings(DEFAULT_WEBSITE_SETTINGS);
+      purgeUntrustedClientStorage();
       setSettings(DEFAULT_WEBSITE_SETTINGS);
       return true;
     } catch (err) {

@@ -2,88 +2,68 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    
+
     function isAuthenticated() {
-      return request.auth != null;
+      return request.auth != null &&
+        request.auth.token.firebase.sign_in_provider != 'anonymous';
     }
-    
+
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
     function isAdmin() {
       return isAuthenticated() && (
-        request.auth.token.email == 'saranramesh709@gmail.com' ||
-        request.auth.token.role == 'ADMINISTRATOR'
+        request.auth.token.get('admin', false) == true ||
+        request.auth.token.get('role', '') in ['ADMIN', 'ADMINISTRATOR', 'admin', 'administrator'] ||
+        (request.auth.token.email != null &&
+          request.auth.token.email_verified == true &&
+          request.auth.token.email.lower() == 'saranramesh709@gmail.com')
       );
     }
 
     function isSafeFileSize() {
-      return request.resource.size < 15 * 1024 * 1024; // 15MB limit
+      return request.resource != null && request.resource.size < 15 * 1024 * 1024;
     }
 
-    // =========================================================================
-    // Employee Documents (Private to owner & Admin)
-    // =========================================================================
     match /employees/{userId}/{document=**} {
       allow read: if isOwner(userId) || isAdmin();
       allow write: if (isOwner(userId) || isAdmin()) && isSafeFileSize();
     }
 
-    // =========================================================================
-    // Intern Documents (Private to owner & Admin)
-    // =========================================================================
     match /interns/{userId}/{document=**} {
       allow read: if isOwner(userId) || isAdmin();
       allow write: if (isOwner(userId) || isAdmin()) && isSafeFileSize();
     }
-    
-    // =========================================================================
-    // Client Documents (Private to owner & Admin)
-    // =========================================================================
+
     match /clients/{userId}/{document=**} {
       allow read: if isOwner(userId) || isAdmin();
-      allow write: if (isOwner(userId) || isAdmin()) && isSafeFileSize();
+      allow write: if isAdmin() && isSafeFileSize();
     }
 
-    // =========================================================================
-    // Project Files (Protected)
-    // =========================================================================
     match /projects/{projectId}/{document=**} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && isSafeFileSize();
+      allow write: if isAdmin() && isSafeFileSize();
     }
 
-    // =========================================================================
-    // Invoices (Protected)
-    // =========================================================================
     match /invoices/{userId}/{document=**} {
       allow read: if isOwner(userId) || isAdmin();
       allow write: if isAdmin() && isSafeFileSize();
     }
 
-    // =========================================================================
-    // Certificates (Publicly readable, admin created)
-    // =========================================================================
     match /certificates/{userId}/{document=**} {
       allow read: if true;
       allow write: if isAdmin() && isSafeFileSize();
     }
 
-    // =========================================================================
-    // Research Documents (Protected)
-    // =========================================================================
     match /research/{document=**} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && isSafeFileSize();
+      allow write: if isAdmin() && isSafeFileSize();
     }
 
-    // =========================================================================
-    // Company Assets (Public Read, Admin Write)
-    // =========================================================================
     match /assets/{document=**} {
       allow read: if true;
-      allow write: if isAdmin() && isSafeFileSize(); 
+      allow write: if isAdmin() && isSafeFileSize();
     }
 
     match /admin_documents/{document=**} {
@@ -93,16 +73,15 @@ service firebase.storage {
 
     match /payment-proofs/{userId}/{document=**} {
       allow read: if isOwner(userId) || isAdmin();
-      allow write: if isOwner(userId) && isSafeFileSize();
+      allow write: if isAdmin() && isSafeFileSize();
     }
 
-    // Resumes (Candidates can upload their own resume)
     match /resumes/{userId}/{fileName} {
       allow read: if isOwner(userId) || isAdmin();
-      allow write: if (isOwner(userId) || isAdmin()) && isSafeFileSize();
+      allow write: if isAdmin() && isSafeFileSize();
     }
 
-    // Default deny
+    // Default deny catch-all
     match /{allPaths=**} {
       allow read, write: if false;
     }

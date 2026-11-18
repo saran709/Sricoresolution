@@ -4,9 +4,68 @@ import crypto from "crypto";
 import nodemailer, { type Transporter } from "nodemailer";
 import { z } from "zod";
 import dotenv from "dotenv";
+import { initializeApp, getApps, getApp } from "firebase-admin/app";
+import { getAuth, type DecodedIdToken } from "firebase-admin/auth";
+import appletConfig from "../../firebase-applet-config.json";
 import { applyApiSecurityHeaders, escapeHtml } from "./apiMiddleware";
 
 dotenv.config();
+
+const FIREBASE_PROJECT_ID =
+  process.env.FIREBASE_PROJECT_ID || appletConfig.projectId || "sri-core-solutions";
+const BOOTSTRAP_ADMIN_EMAILS = new Set(["saranramesh709@gmail.com"]);
+
+const PUBLIC_COMPANY_INBOXES = new Set(
+  [
+    "sricoresolutions@gmail.com",
+    "careers@sricoresolutions.com",
+    "info@sricoresolutions.com",
+    "contact@sricoresolutions.com",
+    ...(process.env.SMTP_USER ? [process.env.SMTP_USER.trim().toLowerCase()] : []),
+  ].filter(Boolean)
+);
+
+function getFirebaseAdminApp() {
+  return getApps().length > 0
+    ? getApp()
+    : initializeApp({ projectId: FIREBASE_PROJECT_ID });
+}
+
+async function verifyRequestToken(req: Request): Promise<DecodedIdToken | null> {
+  const authHeader = req.headers.authorization || "";
+  if (!authHeader.startsWith("Bearer ")) return null;
+  const idToken = authHeader.slice("Bearer ".length).trim();
+  if (!idToken) return null;
+
+  try {
+    const decoded = await getAuth(getFirebaseAdminApp()).verifyIdToken(idToken);
+    if (decoded.firebase?.sign_in_provider === "anonymous") {
+      return null;
+    }
+    return decoded;
+  } catch {
+    return null;
+  }
+}
+
+function isTokenPrivilegedStaff(decoded: DecodedIdToken | null): boolean {
+  if (!decoded) return false;
+  const role = typeof decoded.role === "string" ? decoded.role.toUpperCase() : "";
+  const email = typeof decoded.email === "string" ? decoded.email.toLowerCase() : "";
+  if (decoded.admin === true || role === "ADMIN" || role === "ADMINISTRATOR" || role === "EMPLOYEE") {
+    return true;
+  }
+  return Boolean(email && decoded.email_verified && BOOTSTRAP_ADMIN_EMAILS.has(email));
+}
+
+function sanitizeEmailHtml(rawHtml: string): string {
+  return rawHtml
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
+    .replace(/<(?:iframe|object|embed|form|meta|link|base)[^>]*>[\s\S]*?<\/(?:iframe|object|embed|form)>/gi, "")
+    .replace(/<(?:iframe|object|embed|form|meta|link|base)[^>]*\/?>/gi, "")
+    .replace(/\son[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+    .replace(/(?:href|src)\s*=\s*(['"])\s*(?:javascript|vbscript|data:text\/html)[\s\S]*?\1/gi, "$1#$1");
+}
 
 let cachedTransporter: Transporter | null = null;
 let cachedRazorpayClient: Razorpay | null = null;
@@ -95,6 +154,13 @@ export function healthHandler(_req: Request, res: Response) {
 export async function createOrderHandler(req: Request, res: Response) {
   applyApiSecurityHeaders(res);
   try {
+    const decoded = await verifyRequestToken(req);
+    if (!decoded) {
+      return res.status(401).json({
+        error: "Authentication required to create a payment order.",
+      });
+    }
+
     const razorpay = getRazorpayClient();
     if (!razorpay) {
       return res.status(503).json({
@@ -112,9 +178,12 @@ export async function createOrderHandler(req: Request, res: Response) {
     }
 
     const { amount, currency, receipt, notes } = parsed.data;
-    const normalizedNotes: Record<string, string | number> = {};
+    const normalizedNotes: Record<string, string | number> = {
+      uid: decoded.uid,
+    };
     if (notes) {
       for (const [k, v] of Object.entries(notes)) {
+        if (k === "uid") continue;
         normalizedNotes[k] = typeof v === "boolean" ? String(v) : v;
       }
     }
@@ -137,6 +206,13 @@ export async function createOrderHandler(req: Request, res: Response) {
 export async function verifyPaymentHandler(req: Request, res: Response) {
   applyApiSecurityHeaders(res);
   try {
+    const decoded = await verifyRequestToken(req);
+    if (!decoded) {
+      return res.status(401).json({
+        error: "Authentication required to verify payment.",
+      });
+    }
+
     const parsed = VERIFY_PAYMENT_SCHEMA.safeParse(req.body || {});
     if (!parsed.success) {
       return res.status(400).json({
@@ -191,12 +267,17 @@ export async function verifyPaymentHandler(req: Request, res: Response) {
       </div>
     `;
 
+    // Prevent emailing arbitrary third-party addresses; only email the verified token holder or admin-specified recipient
+    const receiptRecipient = isTokenPrivilegedStaff(decoded)
+      ? email || decoded.email || process.env.SMTP_USER
+      : decoded.email || process.env.SMTP_USER;
+
     const transporter = getMailTransporter();
-    if (transporter && process.env.SMTP_USER) {
+    if (transporter && process.env.SMTP_USER && receiptRecipient) {
       transporter
         .sendMail({
           from: `"Sricore Solutions Finance" <${process.env.SMTP_USER}>`,
-          to: email || process.env.SMTP_USER,
+          to: receiptRecipient,
           subject: "Payment Confirmation - Sricore Solutions",
           html: emailHtml,
         })
@@ -228,14 +309,28 @@ export async function sendEmailHandler(req: Request, res: Response) {
     }
 
     const { to, subject, html, body, text } = parsed.data;
+    const normalizedTo = to.trim().toLowerCase();
+
+    // Prevent open SMTP relay attacks: external arbitrary recipients require verified ADMIN/EMPLOYEE token
+    const decoded = await verifyRequestToken(req);
+    const isStaff = isTokenPrivilegedStaff(decoded);
+    const isPublicCompanyInbox = PUBLIC_COMPANY_INBOXES.has(normalizedTo);
+
+    if (!isStaff && !isPublicCompanyInbox) {
+      return res.status(403).json({
+        error:
+          "Forbidden: External email recipients require an authorized administrator session.",
+      });
+    }
+
     const rawText = body || text || "";
-    const resolvedHtml =
-      html ||
-      (rawText
+    const resolvedHtml = html
+      ? sanitizeEmailHtml(html)
+      : rawText
         ? `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #0f172a; white-space: pre-wrap;">${escapeHtml(
             rawText
           )}</div>`
-        : "");
+        : "";
 
     if (!resolvedHtml) {
       return res.status(400).json({ error: "Email content (html or body) is required" });
@@ -253,7 +348,7 @@ export async function sendEmailHandler(req: Request, res: Response) {
 
     const info = await transporter.sendMail({
       from: `"Sricore Solutions" <${process.env.SMTP_USER}>`,
-      to,
+      to: normalizedTo,
       subject: sanitizedSubject,
       html: resolvedHtml,
       text: rawText || undefined,

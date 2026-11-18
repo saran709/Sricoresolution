@@ -1159,39 +1159,49 @@ export async function checkAndConsumeQuota(params: {
   const limitKey = METRIC_TO_LIMIT_KEY[metric];
   const maxAllowed = Number(effectiveLimits[limitKey] ?? 0);
 
-  // 1. Validate with trusted backend endpoint first
+  // 1. Mandatory validation with authoritative backend endpoint (fail-closed)
+  if (!auth.currentUser) {
+    return {
+      allowed: false,
+      reason: 'Authentication required to verify usage quota.',
+    };
+  }
+
   try {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (auth.currentUser) {
-      try {
-        const idToken = await auth.currentUser.getIdToken();
-        if (idToken) headers.Authorization = `Bearer ${idToken}`;
-      } catch {}
+    const idToken = await auth.currentUser.getIdToken();
+    if (!idToken) {
+      return {
+        allowed: false,
+        reason: 'Missing Firebase Authentication token.',
+      };
     }
+
     const resp = await fetch('/api/rbac/validate-quota', {
       method: 'POST',
-      headers,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${idToken}`,
+      },
       signal: AbortSignal.timeout(8000),
       body: JSON.stringify({
         userId,
-        role,
         metric,
         incrementBy,
-        maxAllowed,
-        accessExpirationDate: effectiveLimits.accessExpirationDate,
       }),
     });
-    if (resp.ok) {
-      const validation = await resp.json();
-      if (validation && validation.allowed === false) {
-        return {
-          allowed: false,
-          reason: validation.reason || 'Quota limit exceeded on server validation.',
-        };
-      }
+
+    const validation = await resp.json().catch(() => ({}));
+    if (!resp.ok || validation?.allowed === false) {
+      return {
+        allowed: false,
+        reason: validation?.reason || 'Quota limit exceeded or denied on server validation.',
+      };
     }
   } catch {
-    // Proceed to atomic Firestore transaction if offline
+    return {
+      allowed: false,
+      reason: 'Unable to verify quota with security server. Operation blocked.',
+    };
   }
 
   // 2. Atomic Firestore Transaction on `quotas/{userId}`

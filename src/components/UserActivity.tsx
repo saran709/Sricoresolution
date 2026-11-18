@@ -118,7 +118,7 @@ export const UserActivity: React.FC<UserActivityProps> = ({ compact = false }) =
   const [timeWindow, setTimeWindow] = useState<TimeWindow>(30);
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('ALL');
 
-  // Shared TanStack Query caches (only enabled when ADMIN or MENTOR views telemetry)
+  // Shared TanStack Query caches (only enabled when ADMIN or MENTOR views activity analytics)
   const { data: users = [], isLoading: usersLoading } = useAdminUsers(isAuthorized);
   const { data: auditLogs = [], isLoading: auditLoading } = useAdminAuditLogs(500, isAuthorized);
   const { data: attendanceLogs = [] } = useAdminAttendance(isAuthorized);
@@ -141,7 +141,7 @@ export const UserActivity: React.FC<UserActivityProps> = ({ compact = false }) =
     return map;
   }, [users]);
 
-  // Build 30-day real telemetry series per role from Firestore collections
+  // Build 30-day activity series per role from Firestore collections
   const thirtyDaySeries = useMemo<DailyRoleActivityPoint[]>(() => {
     const today = startOfDay(new Date());
     const windowStart = subDays(today, 29);
@@ -392,7 +392,7 @@ export const UserActivity: React.FC<UserActivityProps> = ({ compact = false }) =
       >
         <Lock className="w-5 h-5 shrink-0" />
         <span>
-          Access Restricted: The <strong>User Activity</strong> telemetry widget is exclusively accessible to{' '}
+          Access Restricted: The <strong>User Activity</strong> analytics widget is exclusively accessible to{' '}
           <strong>ADMIN</strong> and <strong>MENTOR</strong> roles.
         </span>
       </section>
@@ -612,7 +612,7 @@ export const UserActivity: React.FC<UserActivityProps> = ({ compact = false }) =
         {loading ? (
           <div
             role="status"
-            aria-label="Streaming 30-day role login and resource usage telemetry..."
+            aria-label="Loading 30-day role login and resource usage analytics..."
             className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start"
           >
             <div className="xl:col-span-8 space-y-3">

@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Button } from '../../../components/ui/Button';
-import { DriveLinkInput, validateShareableLink } from '../../../components/ui/DriveLinkInput';
+import { DriveLinkInput, sanitizeSafeHttpUrl, validateShareableLink } from '../../../components/ui/DriveLinkInput';
 import { useCandidateDashboard } from '../../../hooks/useDashboardQueries';
 import { queryClient } from '../../../lib/queryClient';
 import { logActivity } from '../../../lib/activityLogger';
@@ -399,9 +399,9 @@ export default function CandidateDashboard() {
                         </p>
                       </div>
                     </div>
-                    {docItem.fileUrl ? (
+                    {sanitizeSafeHttpUrl(docItem.fileUrl) ? (
                       <a
-                        href={docItem.fileUrl}
+                        href={sanitizeSafeHttpUrl(docItem.fileUrl)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-md border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"

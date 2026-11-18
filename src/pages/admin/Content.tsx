@@ -24,10 +24,14 @@ import {
   Smartphone,
   Info,
   HelpCircle,
-  Copy
+  Copy,
+  Lock,
+  Unlock,
+  ShieldAlert
 } from 'lucide-react';
 import { logActivity } from '../../lib/activityLogger';
 import { useAuth } from '../../contexts/AuthContext';
+import { useRBAC } from '../../contexts/RBACContext';
 import { 
   useWebsiteSettings, 
   WebsiteSettings, 
@@ -117,12 +121,15 @@ const COLOR_PRESETS = [
 type ActiveTab = 'theme' | 'announcement' | 'branding' | 'home' | 'about' | 'contact' | 'preview';
 
 export default function AdminContent() {
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
+  const { actualRole, isAdmin, simulatedRole } = useRBAC();
   const { settings, loading, saveSettings, resetToDefaults } = useWebsiteSettings();
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('theme');
   const [formData, setFormData] = useState<WebsiteSettings>(DEFAULT_WEBSITE_SETTINGS);
   const [saving, setSaving] = useState(false);
+  const [unlocking, setUnlocking] = useState(false);
+  const [isEditorUnlocked, setIsEditorUnlocked] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   
@@ -132,6 +139,29 @@ export default function AdminContent() {
   const [jsonText, setJsonText] = useState('');
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
 
+  const userEmail = (currentUser?.email || '').toLowerCase().trim();
+  const isGoogleOrVerified =
+    Boolean(currentUser?.emailVerified) ||
+    Boolean(currentUser?.providerData?.some((p) => p.providerId === 'google.com'));
+  const isAuthorizedSiteOwner = Boolean(
+    currentUser &&
+      !currentUser.isAnonymous &&
+      isGoogleOrVerified &&
+      userEmail === 'saranramesh709@gmail.com' &&
+      userProfile?.uid === currentUser.uid &&
+      userProfile?.isActive !== false &&
+      isAdmin &&
+      actualRole === 'ADMIN' &&
+      !simulatedRole
+  );
+
+  // Lock editor immediately whenever verified Site Owner status is absent or lost
+  useEffect(() => {
+    if (!isAuthorizedSiteOwner) {
+      setIsEditorUnlocked(false);
+    }
+  }, [isAuthorizedSiteOwner]);
+
   // Load from context into form state
   useEffect(() => {
     if (settings) {
@@ -139,7 +169,42 @@ export default function AdminContent() {
     }
   }, [settings]);
 
+  const handleUnlockEditor = async () => {
+    if (!isAuthorizedSiteOwner || !currentUser) {
+      setErrorMessage('Only the verified Site Owner may unlock the website editor.');
+      return;
+    }
+    setUnlocking(true);
+    setErrorMessage('');
+    try {
+      const idToken = await currentUser.getIdToken();
+      const res = await fetch('/api/rbac/validate-action', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ action: 'manage' }),
+      });
+      const data = res.ok ? await res.json() : null;
+      if (!res.ok || !data?.allowed) {
+        setIsEditorUnlocked(false);
+        setErrorMessage('Server authorization rejected editor unlock request.');
+        return;
+      }
+      setIsEditorUnlocked(true);
+      setSuccessMessage('Website Editor unlocked for this session. Remember to re-lock after publishing.');
+      setTimeout(() => setSuccessMessage(''), 4000);
+    } catch {
+      setIsEditorUnlocked(false);
+      setErrorMessage('Could not verify server authorization to unlock website editing.');
+    } finally {
+      setUnlocking(false);
+    }
+  };
+
   const handlePresetSelect = (preset: typeof COLOR_PRESETS[0]) => {
+    if (!isAuthorizedSiteOwner || !isEditorUnlocked) return;
     setFormData((prev) => ({
       ...prev,
       theme: {
@@ -154,6 +219,10 @@ export default function AdminContent() {
 
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (!isAuthorizedSiteOwner || !isEditorUnlocked) {
+      setErrorMessage('Unlock Website Editor with verified Site Owner credentials before saving.');
+      return;
+    }
     setSaving(true);
     setSuccessMessage('');
     setErrorMessage('');
@@ -173,7 +242,7 @@ export default function AdminContent() {
         setSuccessMessage('Website theme, colors & content saved and published across the entire site successfully!');
         setTimeout(() => setSuccessMessage(''), 5000);
       } else {
-        setErrorMessage('Failed to save website content. Please check permissions.');
+        setErrorMessage('Failed to save website content. Server or owner authorization denied.');
       }
     } catch (err: any) {
       console.error('Error saving content:', err);
@@ -184,6 +253,11 @@ export default function AdminContent() {
   };
 
   const handleResetConfirm = async () => {
+    if (!isAuthorizedSiteOwner || !isEditorUnlocked) {
+      setIsResetModalOpen(false);
+      setErrorMessage('Unlock Website Editor before resetting website configuration.');
+      return;
+    }
     setSaving(true);
     try {
       const ok = await resetToDefaults(currentUser?.uid);
@@ -192,7 +266,7 @@ export default function AdminContent() {
         setSuccessMessage('Successfully reset all website themes and content to official defaults.');
         setTimeout(() => setSuccessMessage(''), 4000);
       } else {
-        setErrorMessage('Failed to reset settings.');
+        setErrorMessage('Failed to reset settings. Owner authorization denied.');
       }
     } catch (err: any) {
       setErrorMessage(err?.message || 'Error resetting.');
@@ -203,11 +277,19 @@ export default function AdminContent() {
   };
 
   const handleExportJson = () => {
+    if (!isAuthorizedSiteOwner || !isEditorUnlocked) {
+      setErrorMessage('Unlock Website Editor to export or import configuration JSON.');
+      return;
+    }
     setJsonText(JSON.stringify(formData, null, 2));
     setIsJsonModalOpen(true);
   };
 
   const handleImportJson = () => {
+    if (!isAuthorizedSiteOwner || !isEditorUnlocked) {
+      setErrorMessage('Unlock Website Editor before importing configuration JSON.');
+      return;
+    }
     try {
       const parsed = JSON.parse(jsonText);
       setFormData({
@@ -224,12 +306,13 @@ export default function AdminContent() {
       setSuccessMessage('Configuration imported into editor. Click "Save & Publish" to push changes live.');
       setTimeout(() => setSuccessMessage(''), 4000);
     } catch (e: any) {
-      alert('Invalid JSON format: ' + e.message);
+      setErrorMessage('Invalid JSON format: ' + e.message);
     }
   };
 
   // Helpers for Core Values array
   const handleAddCoreValue = () => {
+    if (!isAuthorizedSiteOwner || !isEditorUnlocked) return;
     const newItem: CoreValueItem = {
       id: Date.now().toString(),
       title: 'New Core Value',
@@ -245,6 +328,7 @@ export default function AdminContent() {
   };
 
   const handleRemoveCoreValue = (id: string) => {
+    if (!isAuthorizedSiteOwner || !isEditorUnlocked) return;
     setFormData((prev) => ({
       ...prev,
       about: {
@@ -255,6 +339,7 @@ export default function AdminContent() {
   };
 
   const handleUpdateCoreValue = (id: string, field: 'title' | 'description', value: string) => {
+    if (!isAuthorizedSiteOwner || !isEditorUnlocked) return;
     setFormData((prev) => ({
       ...prev,
       about: {
@@ -266,6 +351,7 @@ export default function AdminContent() {
 
   // Helpers for Metrics array
   const handleUpdateMetric = (id: string, field: keyof MetricItem, value: string) => {
+    if (!isAuthorizedSiteOwner || !isEditorUnlocked) return;
     setFormData((prev) => ({
       ...prev,
       metrics: prev.metrics.map((m) => (m.id === id ? { ...m, [field]: value } : m))
@@ -274,6 +360,23 @@ export default function AdminContent() {
 
   if (loading) {
     return <DashboardModuleSkeleton variant="panel" label="Loading CMS content..." />;
+  }
+
+  if (!isAuthorizedSiteOwner) {
+    return (
+      <div className="max-w-2xl mx-auto py-16 px-4">
+        <div className="bg-white border border-rose-200 rounded-2xl p-8 shadow-sm text-center space-y-4">
+          <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+            <ShieldAlert className="w-6 h-6" />
+          </div>
+          <h1 className="text-xl font-bold text-slate-900">Website Content Access Restricted</h1>
+          <p className="text-sm text-slate-600 leading-relaxed">
+            Modifying public branding, theme colors, announcement banners, and page copy is restricted
+            exclusively to the verified Site Owner account.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   const primaryColor = formData.theme.primary || '#d97706';
@@ -300,9 +403,31 @@ export default function AdminContent() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {!isEditorUnlocked ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleUnlockEditor}
+              disabled={unlocking}
+              leftIcon={<Lock className="w-4 h-4 text-amber-600" />}
+            >
+              {unlocking ? 'Verifying Owner...' : 'Unlock Website Editor'}
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditorUnlocked(false)}
+              leftIcon={<Unlock className="w-4 h-4 text-emerald-600" />}
+            >
+              Lock Editor
+            </Button>
+          )}
+
           <Button
             variant="outline"
             size="sm"
+            disabled={!isEditorUnlocked}
             onClick={handleExportJson}
             leftIcon={<Download className="w-4 h-4" />}
           >
@@ -312,6 +437,7 @@ export default function AdminContent() {
           <Button
             variant="outline"
             size="sm"
+            disabled={!isEditorUnlocked}
             onClick={() => setIsResetModalOpen(true)}
             leftIcon={<RotateCcw className="w-4 h-4 text-slate-400" />}
           >
@@ -321,7 +447,7 @@ export default function AdminContent() {
           <Button
             size="sm"
             onClick={() => handleSave()}
-            disabled={saving}
+            disabled={saving || !isEditorUnlocked}
             className="flex items-center gap-2 text-white"
             style={{ backgroundColor: primaryColor }}
           >
@@ -330,6 +456,26 @@ export default function AdminContent() {
           </Button>
         </div>
       </div>
+
+      {/* Read-Only Protection Banner */}
+      {!isEditorUnlocked && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-900 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-center gap-3">
+            <Lock className="w-5 h-5 text-amber-600 shrink-0" />
+            <div className="text-sm">
+              <span className="font-bold">Read-Only Mode Active:</span> Website editing controls are locked by default. Verify Site Owner permissions with the server to make changes.
+            </div>
+          </div>
+          <Button
+            size="sm"
+            onClick={handleUnlockEditor}
+            disabled={unlocking}
+            leftIcon={<Unlock className="w-4 h-4" />}
+          >
+            {unlocking ? 'Verifying...' : 'Unlock Website Editor'}
+          </Button>
+        </div>
+      )}
 
       {/* Status Notifications */}
       {successMessage && (
@@ -445,6 +591,7 @@ export default function AdminContent() {
 
       {/* Main Tab Panels */}
       <div className="bg-white rounded-b-2xl border border-slate-200 shadow-sm p-6 sm:p-8">
+        <fieldset disabled={!isEditorUnlocked && activeTab !== 'preview'} className="border-0 p-0 m-0 min-w-0 disabled:opacity-75">
         
         {/* TAB 1: THEME & COLORS */}
         {activeTab === 'theme' && (
@@ -1023,32 +1170,32 @@ export default function AdminContent() {
               </div>
             </div>
 
-            {/* Live Monitoring Interface Settings */}
+            {/* Hero Division Matrix Metrics */}
             <div className="border-t border-slate-100 pt-8">
-              <h3 className="text-lg font-bold text-slate-900 mb-4">Hero Interactive Mock Values</h3>
+              <h3 className="text-lg font-bold text-slate-900 mb-4">Hero Division Matrix Metrics</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Input
-                  label="Monitor Interface Label"
+                  label="Division Matrix Label"
                   value={formData.hero.monitorLabel}
                   onChange={(e) => setFormData({
                     ...formData,
                     hero: { ...formData.hero, monitorLabel: e.target.value }
                   })}
-                  placeholder="Live Monitoring Interface"
+                  placeholder="Core Engineering Divisions"
                 />
 
                 <Input
-                  label="CPU Load % Display"
+                  label="IP Handover % Display"
                   value={formData.hero.cpuLoad}
                   onChange={(e) => setFormData({
                     ...formData,
                     hero: { ...formData.hero, cpuLoad: e.target.value }
                   })}
-                  placeholder="74%"
+                  placeholder="100%"
                 />
 
                 <Input
-                  label="Uptime SLA Display"
+                  label="System Reliability Display"
                   value={formData.hero.uptime}
                   onChange={(e) => setFormData({
                     ...formData,
@@ -1443,6 +1590,8 @@ export default function AdminContent() {
           </div>
         )}
 
+        </fieldset>
+
         {/* Global Save Button in Panel Footer */}
         <div className="pt-8 mt-8 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2 text-xs text-slate-500">
@@ -1464,7 +1613,7 @@ export default function AdminContent() {
             <Button
               type="button"
               size="md"
-              disabled={saving}
+              disabled={saving || !isEditorUnlocked}
               onClick={() => handleSave()}
               className="flex items-center gap-2 text-white px-6"
               style={{ backgroundColor: primaryColor }}
@@ -1518,7 +1667,8 @@ export default function AdminContent() {
                 size="sm"
                 onClick={() => {
                   navigator.clipboard.writeText(jsonText);
-                  alert('Copied JSON to clipboard!');
+                  setSuccessMessage('Copied JSON configuration to clipboard.');
+                  setTimeout(() => setSuccessMessage(''), 3000);
                 }}
                 leftIcon={<Copy className="w-4 h-4" />}
               >

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Container } from '../components/ui/Container';
 import { CTASection } from '../components/ui/CTASection';
-import { ServicesSection } from '../components/Services';
+import { ServicesSection } from '../components/ServicesSection';
 import { ServiceSchema } from '../components/seo/ServiceSchema';
 import { ServiceFAQSection } from '../components/seo/FAQSchema';
 import { useWebsiteSettings } from '../contexts/WebsiteSettingsContext';

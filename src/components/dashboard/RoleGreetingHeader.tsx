@@ -12,7 +12,7 @@ export const ROLE_GREETINGS: Record<
   ADMIN: {
     title: 'Welcome back, Admin',
     subtitle:
-      'Real-time organizational telemetry, workforce operations, and active delivery pipelines.',
+      'Workforce operations, project delivery pipelines, and organizational management.',
   },
   MENTOR: {
     title: 'Welcome back, Mentor',

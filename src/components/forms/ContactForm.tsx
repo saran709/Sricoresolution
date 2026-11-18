@@ -256,43 +256,61 @@ export function ContactForm() {
 
       // 2. Dispatch email notification to company contact email
       const recipientEmail = settings?.contact?.primaryEmail || APP_CONFIG.company.contact.email;
+      const escapeHtmlField = (val: string) =>
+        val
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      const safeSubject = escapeHtmlField(fullForm.subject);
+      const safeRefId = escapeHtmlField(referenceId);
+      const safeName = escapeHtmlField(fullForm.fullName);
+      const safeEmail = escapeHtmlField(fullForm.email);
+      const safePhone = escapeHtmlField(fullForm.phone);
+      const safeCompany = escapeHtmlField(fullForm.company);
+      const safeServiceName = escapeHtmlField(activeService.name);
+      const safeSubServices = escapeHtmlField(selectedSubServices.join(', '));
+      const safeTimeline = escapeHtmlField(fullForm.timeline);
+      const safeMessage = escapeHtmlField(fullForm.message);
+
       const emailHtml = `
         <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;">
           <div style="background-color: #1e293b; color: #ffffff; padding: 24px; text-align: left; border-bottom: 3px solid #d97706;">
             <p style="margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #f59e0b; font-weight: bold;">New Client Service Inquiry</p>
-            <h2 style="margin: 6px 0 0; font-size: 20px;">${fullForm.subject}</h2>
-            <p style="margin: 4px 0 0; font-size: 12px; color: #94a3b8;">Ref ID: ${referenceId}</p>
+            <h2 style="margin: 6px 0 0; font-size: 20px;">${safeSubject}</h2>
+            <p style="margin: 4px 0 0; font-size: 12px; color: #94a3b8;">Ref ID: ${safeRefId}</p>
           </div>
           <div style="padding: 24px; background: #ffffff;">
             <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
               <tr>
                 <td style="padding: 8px 0; font-size: 13px; color: #64748b; width: 140px;"><strong>Client Name:</strong></td>
-                <td style="padding: 8px 0; font-size: 14px; color: #0f172a;">${fullForm.fullName}</td>
+                <td style="padding: 8px 0; font-size: 14px; color: #0f172a;">${safeName}</td>
               </tr>
               <tr>
                 <td style="padding: 8px 0; font-size: 13px; color: #64748b;"><strong>Email:</strong></td>
-                <td style="padding: 8px 0; font-size: 14px; color: #0f172a;"><a href="mailto:${fullForm.email}">${fullForm.email}</a></td>
+                <td style="padding: 8px 0; font-size: 14px; color: #0f172a;"><a href="mailto:${safeEmail}">${safeEmail}</a></td>
               </tr>
-              ${fullForm.phone ? `<tr><td style="padding: 8px 0; font-size: 13px; color: #64748b;"><strong>Phone:</strong></td><td style="padding: 8px 0; font-size: 14px; color: #0f172a;">${fullForm.phone}</td></tr>` : ''}
-              ${fullForm.company ? `<tr><td style="padding: 8px 0; font-size: 13px; color: #64748b;"><strong>Company:</strong></td><td style="padding: 8px 0; font-size: 14px; color: #0f172a;">${fullForm.company}</td></tr>` : ''}
+              ${safePhone ? `<tr><td style="padding: 8px 0; font-size: 13px; color: #64748b;"><strong>Phone:</strong></td><td style="padding: 8px 0; font-size: 14px; color: #0f172a;">${safePhone}</td></tr>` : ''}
+              ${safeCompany ? `<tr><td style="padding: 8px 0; font-size: 13px; color: #64748b;"><strong>Company:</strong></td><td style="padding: 8px 0; font-size: 14px; color: #0f172a;">${safeCompany}</td></tr>` : ''}
               <tr>
                 <td style="padding: 8px 0; font-size: 13px; color: #64748b;"><strong>Service Track:</strong></td>
-                <td style="padding: 8px 0; font-size: 14px; color: #d97706; font-weight: bold;">${activeService.name}</td>
+                <td style="padding: 8px 0; font-size: 14px; color: #d97706; font-weight: bold;">${safeServiceName}</td>
               </tr>
-              ${selectedSubServices.length > 0 ? `<tr><td style="padding: 8px 0; font-size: 13px; color: #64748b;"><strong>Target Areas:</strong></td><td style="padding: 8px 0; font-size: 13px; color: #0f172a;">${selectedSubServices.join(', ')}</td></tr>` : ''}
+              ${selectedSubServices.length > 0 ? `<tr><td style="padding: 8px 0; font-size: 13px; color: #64748b;"><strong>Target Areas:</strong></td><td style="padding: 8px 0; font-size: 13px; color: #0f172a;">${safeSubServices}</td></tr>` : ''}
               <tr>
                 <td style="padding: 8px 0; font-size: 13px; color: #64748b;"><strong>Timeline:</strong></td>
-                <td style="padding: 8px 0; font-size: 14px; color: #0f172a;">${fullForm.timeline}</td>
+                <td style="padding: 8px 0; font-size: 14px; color: #0f172a;">${safeTimeline}</td>
               </tr>
             </table>
 
             <div style="background-color: #f8fafc; border-left: 4px solid #d97706; padding: 16px; border-radius: 4px; margin-top: 15px;">
               <h4 style="margin: 0 0 8px; font-size: 13px; color: #334155;">Project Requirements & Message:</h4>
-              <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #1e293b; white-space: pre-wrap;">${fullForm.message}</p>
+              <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #1e293b; white-space: pre-wrap;">${safeMessage}</p>
             </div>
           </div>
           <div style="background-color: #f1f5f9; padding: 16px; text-align: center; font-size: 11px; color: #64748b;">
-            Sent automatically from ${APP_CONFIG.company.name} Client Portal.
+            Sent automatically from ${escapeHtmlField(APP_CONFIG.company.name)} Client Portal.
           </div>
         </div>
       `;

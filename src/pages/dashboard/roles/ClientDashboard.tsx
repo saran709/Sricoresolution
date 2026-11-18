@@ -19,7 +19,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
-import { DriveLinkInput, validateShareableLink } from '../../../components/ui/DriveLinkInput';
+import { DriveLinkInput, sanitizeSafeHttpUrl, validateShareableLink } from '../../../components/ui/DriveLinkInput';
 import { CheckoutButton } from '../../../components/payments/CheckoutButton';
 import { useClientDashboard } from '../../../hooks/useDashboardQueries';
 import { queryClient } from '../../../lib/queryClient';
@@ -509,11 +509,11 @@ export default function ClientDashboard() {
                       >
                         {payment.status === 'SUCCESS' ? 'Approved' : payment.status}
                       </span>
-                      {payment.proofUrl && (
+                      {sanitizeSafeHttpUrl(payment.proofUrl) && (
                         <a
-                          href={payment.proofUrl}
+                          href={sanitizeSafeHttpUrl(payment.proofUrl)}
                           target="_blank"
-                          rel="noreferrer"
+                          rel="noopener noreferrer"
                           className="text-sm text-amber-700 dark:text-amber-400 font-medium hover:underline inline-flex items-center gap-1"
                         >
                           <span>Open proof link</span>
@@ -647,9 +647,9 @@ export default function ClientDashboard() {
                         </p>
                       </div>
                     </div>
-                    {docItem.fileUrl ? (
+                    {sanitizeSafeHttpUrl(docItem.fileUrl) ? (
                       <a
-                        href={docItem.fileUrl}
+                        href={sanitizeSafeHttpUrl(docItem.fileUrl)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-md border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"

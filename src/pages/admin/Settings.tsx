@@ -4,8 +4,9 @@ import { db } from '../../lib/firebase';
 import { CompanySettings } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { Save, Building, QrCode, CheckCircle2 } from 'lucide-react';
+import { Save, Building, QrCode, CheckCircle2, Lock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useRBAC } from '../../contexts/RBACContext';
 import { logActivity } from '../../lib/activityLogger';
 import { DashboardSuspense } from '../../components/ui/DashboardSuspense';
 
@@ -16,10 +17,19 @@ const PermissionConfiguration = React.lazy(() =>
 );
 
 export default function AdminSettings() {
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile, isAdmin } = useAuth();
+  const { actualRole, simulatedRole } = useRBAC();
   const [, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
+  const isAuthorizedAdmin = Boolean(
+    currentUser &&
+      !currentUser.isAnonymous &&
+      userProfile?.uid === currentUser.uid &&
+      isAdmin &&
+      actualRole === 'ADMIN' &&
+      !simulatedRole
+  );
   const [settings, setSettings] = useState<CompanySettings>({
     companyName: 'Sricore Solutions',
     address: 'Namakkal - 637018, Tamil Nadu, India',
@@ -34,8 +44,12 @@ export default function AdminSettings() {
   });
 
   useEffect(() => {
-    fetchSettings();
-  }, []);
+    if (isAuthorizedAdmin) {
+      fetchSettings();
+    } else {
+      setLoading(false);
+    }
+  }, [isAuthorizedAdmin]);
 
   const fetchSettings = async () => {
     setLoading(true);
@@ -55,6 +69,10 @@ export default function AdminSettings() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAuthorizedAdmin) {
+      setErrorMessage('Administrator authorization is required to modify system settings.');
+      return;
+    }
     setSaving(true);
     setSuccess(false);
     setErrorMessage('');
@@ -77,6 +95,20 @@ export default function AdminSettings() {
       setSaving(false);
     }
   };
+
+  if (!isAuthorizedAdmin) {
+    return (
+      <div className="max-w-xl mx-auto mt-12 p-6 bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-800 rounded-2xl text-center space-y-3 shadow-sm">
+        <div className="w-12 h-12 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
+          <Lock className="w-6 h-6" />
+        </div>
+        <h2 className="text-lg font-bold text-slate-900 dark:text-white">Administrator Access Required</h2>
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          System configuration and permissions can only be viewed or modified by a verified Administrator account.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">

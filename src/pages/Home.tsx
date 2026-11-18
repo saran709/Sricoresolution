@@ -2,7 +2,8 @@ import React from 'react';
 import { Container } from '../components/ui/Container';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { Hero } from '../components/Hero';
-import { ServicesSection } from '../components/Services';
+import { HeroBanner } from '../components/HeroBanner';
+import { ServicesSection } from '../components/ServicesSection';
 import { FeaturedProjects } from '../components/FeaturedProjects';
 import { EnterpriseOperationsSection } from '../components/EnterpriseOperationsSection';
 import { FAQ } from '../components/FAQ';
@@ -76,7 +77,7 @@ export default function Home() {
                   Sign In to Your Workspace
                 </p>
                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                  Clients, Staff, Mentors, Interns & Admins
+                  Client projects, interns &amp; engineering team
                 </p>
               </div>
               <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-amber-600 shrink-0 transition-colors" />
@@ -115,6 +116,9 @@ export default function Home() {
           </Container>
         </section>
       )}
+
+      {/* Compelling Call-To-Action Banner */}
+      <HeroBanner />
 
       {/* Core Services Section (Software, Hardware/IoT, AI/ML, Research, Internships) */}
       <ServicesSection />
@@ -235,28 +239,49 @@ export default function Home() {
                   <ArrowRight className="ml-1.5 h-4 w-4" />
                 </Link>
               </div>
-              <div className="bg-slate-800 relative hidden lg:block">
+              <div className="bg-slate-800/80 relative p-6 md:p-8 flex flex-col justify-center border-t lg:border-t-0 lg:border-l border-slate-800">
                 <div
-                  className="absolute inset-0 opacity-20"
+                  className="absolute inset-0 opacity-15 pointer-events-none"
                   style={{
-                    backgroundImage: `radial-gradient(${primaryColor} 2px, transparent 2px)`,
-                    backgroundSize: '24px 24px',
+                    backgroundImage: `radial-gradient(${primaryColor} 1.5px, transparent 1.5px)`,
+                    backgroundSize: '20px 20px',
                   }}
                 />
-                <div className="absolute inset-0 flex items-center justify-center p-6">
-                  <div className="w-full h-full border border-slate-700 rounded-xl bg-slate-900/50 backdrop-blur-sm p-4 flex flex-col gap-2.5">
-                    <div className="h-2.5 w-1/3 bg-slate-700 rounded" />
-                    <div className="h-2.5 w-3/4 bg-slate-700 rounded" />
-                    <div className="h-2.5 w-2/3 bg-slate-700 rounded" />
-                    <div className="h-2.5 w-1/2 bg-slate-700 rounded" />
-                    <div className="mt-auto flex justify-between items-end">
-                      <div
-                        className="h-7 w-16 rounded"
-                        style={{ backgroundColor: primaryColor }}
-                      />
-                      <div className="h-7 w-7 bg-slate-700 rounded-full" />
-                    </div>
-                  </div>
+                <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[
+                    {
+                      title: 'Full-Stack Web & Cloud',
+                      meta: 'React · TypeScript · APIs',
+                      detail: '1 Month · 2+ Live Projects',
+                    },
+                    {
+                      title: 'Embedded Systems & IoT',
+                      meta: 'ESP32 · STM32 · MQTT',
+                      detail: '1 Month · Hardware Lab',
+                    },
+                    {
+                      title: 'AI & Computer Vision',
+                      meta: 'PyTorch · OpenCV · Edge',
+                      detail: '1 Month · Model Benchmarking',
+                    },
+                    {
+                      title: 'Python & Data Engineering',
+                      meta: 'FastAPI · ETL · Analytics',
+                      detail: '1 Month · Mentor Reviewed',
+                    },
+                  ].map((track) => (
+                    <Link
+                      key={track.title}
+                      to="/internships"
+                      className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-700/80 hover:border-amber-500/60 transition-colors"
+                    >
+                      <div className="text-xs font-bold text-white">{track.title}</div>
+                      <div className="text-[11px] font-mono mt-1" style={{ color: primaryColor }}>
+                        {track.meta}
+                      </div>
+                      <div className="text-[11px] text-slate-400 mt-1">{track.detail}</div>
+                    </Link>
+                  ))}
                 </div>
               </div>
             </div>

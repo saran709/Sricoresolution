@@ -17,11 +17,33 @@ async function startServer() {
   // Global security & baseline proxy headers (iframe-compatible for AI Studio preview)
   app.use((req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-XSS-Protection", "1; mode=block");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+
+    const origin = req.headers.origin;
+    const host = req.headers.host || "";
+    const isAllowedOrigin =
+      !origin ||
+      origin === `https://${host}` ||
+      origin === `http://${host}` ||
+      /^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/i.test(origin) ||
+      /^https:\/\/[a-z0-9-]+\.(?:sricoresolutions\.com|run\.app|web\.app|firebaseapp\.com)$/i.test(
+        origin
+      );
+
+    if (origin && isAllowedOrigin) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+      res.setHeader("Vary", "Origin");
+      res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    }
+
     if (req.method === "OPTIONS") {
+      if (origin && !isAllowedOrigin) {
+        return res.status(403).end();
+      }
       return res.status(204).end();
     }
     next();

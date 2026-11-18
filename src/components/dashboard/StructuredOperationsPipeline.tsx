@@ -471,7 +471,7 @@ export function StructuredOperationsPipeline({
                 ISO 9001:2015 Standard Operating Procedure
               </span>
               <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-400">
-                <Zap className="w-3 h-3" /> Zero-Lag Cached Pipeline
+                <Zap className="w-3 h-3" /> Standardized Operations Workflow
               </span>
             </div>
             <h2 className="text-sm sm:text-base font-bold text-white mt-1">

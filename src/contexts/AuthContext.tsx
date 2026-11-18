@@ -42,28 +42,57 @@ const AuthContext = createContext<AuthContextType>({
 export const useAuth = () => useContext(AuthContext);
 
 const ADMIN_EMAILS = ['saranramesh709@gmail.com'];
+const LEGACY_PROFILE_STORAGE_KEY = 'sricore_active_profile';
+
+function purgeLegacyProfileStorage(uid?: string) {
+  try {
+    localStorage.removeItem(LEGACY_PROFILE_STORAGE_KEY);
+    if (uid) {
+      localStorage.removeItem(`sricore_profile_${uid}`);
+    }
+    const keysToDelete: string[] = [];
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (key && (key === LEGACY_PROFILE_STORAGE_KEY || key.startsWith('sricore_profile_'))) {
+        keysToDelete.push(key);
+      }
+    }
+    keysToDelete.forEach((key) => localStorage.removeItem(key));
+  } catch {
+    // Ignore storage access restrictions
+  }
+}
+
+function isVerifiedBootstrapAdmin(user: FirebaseUser): boolean {
+  const normalizedEmail = (user.email || '').toLowerCase().trim();
+  const providerId = user.providerData?.[0]?.providerId;
+  const isTrustedProvider =
+    Boolean(user.emailVerified) || providerId === 'google.com';
+  return Boolean(
+    normalizedEmail &&
+      isTrustedProvider &&
+      !user.isAnonymous &&
+      ADMIN_EMAILS.includes(normalizedEmail)
+  );
+}
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(() => {
-    try {
-      const cached = localStorage.getItem('sricore_active_profile');
-      return cached ? JSON.parse(cached) : null;
-    } catch {
-      return null;
-    }
-  });
+  // Keep authorization state strictly in memory; never hydrate roles or overrides from localStorage
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(true);
 
-  const hydrateAndPersistProfile = useCallback((user: FirebaseUser, rawData: any) => {
-    const isConfiguredAdmin = Boolean(
-      user.email && ADMIN_EMAILS.includes(user.email.toLowerCase().trim())
-    );
+  useEffect(() => {
+    purgeLegacyProfileStorage();
+  }, []);
+
+  const hydrateProfile = useCallback((user: FirebaseUser, rawData: any) => {
+    const isConfiguredAdmin = isVerifiedBootstrapAdmin(user);
 
     const canonicalRole: CanonicalRole = isConfiguredAdmin
       ? 'ADMIN'
-      : normalizeToCanonicalRole(rawData?.role);
+      : normalizeToCanonicalRole(rawData?.canonicalRole || rawData?.role);
 
     // Keep backward-compatible role value while exposing canonicalRole
     const effectiveRole: UserRole =
@@ -71,21 +100,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ? 'ADMINISTRATOR'
         : (canonicalRole as UserRole);
 
+    const sanitizedOverrides =
+      rawData?.permissionOverrides && typeof rawData.permissionOverrides === 'object'
+        ? rawData.permissionOverrides
+        : undefined;
+    const sanitizedLimitOverrides =
+      rawData?.limitOverrides && typeof rawData.limitOverrides === 'object'
+        ? rawData.limitOverrides
+        : undefined;
+
     const profileData: UserProfile = {
-      uid: user.uid,
       ...rawData,
-      email: rawData?.email || user.email || '',
+      uid: user.uid,
+      email: user.email || rawData?.email || '',
       role: effectiveRole,
       canonicalRole,
-      isActive: rawData?.isActive !== false,
+      isActive: rawData?.isActive !== false && rawData?.status !== 'suspended',
+      ...(sanitizedOverrides ? { permissionOverrides: sanitizedOverrides } : {}),
+      ...(sanitizedLimitOverrides ? { limitOverrides: sanitizedLimitOverrides } : {}),
     };
 
     setUserProfile(profileData);
-    try {
-      localStorage.setItem(`sricore_profile_${user.uid}`, JSON.stringify(profileData));
-      localStorage.setItem('sricore_active_profile', JSON.stringify(profileData));
-    } catch {}
-
     return profileData;
   }, []);
 
@@ -124,12 +159,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const resolveMissingProfile = useCallback(
     async (user: FirebaseUser) => {
       let rawData: any = null;
-      if (user.email) {
+      const isConfiguredAdmin = isVerifiedBootstrapAdmin(user);
+
+      // Only copy pre-provisioned profile records if user's email is verified
+      if (user.email && user.emailVerified) {
         try {
           const q = query(collection(db, 'users'), where('email', '==', user.email.trim()));
           const querySnap = await getDocs(q);
           if (!querySnap.empty) {
-            rawData = querySnap.docs[0].data();
+            const candidateDoc = querySnap.docs[0].data();
+            const candidateCanonical = normalizeToCanonicalRole(
+              candidateDoc?.canonicalRole || candidateDoc?.role
+            );
+            // Never self-provision ADMIN from an unverified/legacy lookup unless verified bootstrap admin
+            const safeRole: CanonicalRole =
+              candidateCanonical === 'ADMIN' && !isConfiguredAdmin
+                ? 'INTERN_STUDENT'
+                : candidateCanonical;
+
+            rawData = {
+              firstName: candidateDoc?.firstName || '',
+              lastName: candidateDoc?.lastName || '',
+              phone: candidateDoc?.phone || '',
+              photoUrl: candidateDoc?.photoUrl || '',
+              email: user.email,
+              role: safeRole,
+              canonicalRole: safeRole,
+              isActive: candidateDoc?.isActive !== false,
+            };
+
             try {
               await setDoc(
                 doc(db, 'users', user.uid),
@@ -146,14 +204,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (rawData) {
-        const profileData = hydrateAndPersistProfile(user, rawData);
+        const profileData = hydrateProfile(user, rawData);
         syncSessionSideEffects(user, profileData);
         return;
       }
 
-      const isConfiguredAdmin = Boolean(
-        user.email && ADMIN_EMAILS.includes(user.email.toLowerCase().trim())
-      );
       const displayNameParts = (user.displayName || '').split(' ');
       const initialRole: CanonicalRole = isConfiguredAdmin ? 'ADMIN' : 'INTERN_STUDENT';
       const fallbackRaw = {
@@ -162,7 +217,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         firstName: displayNameParts[0] || 'User',
         lastName: displayNameParts.slice(1).join(' ') || '',
         role: isConfiguredAdmin ? 'ADMINISTRATOR' : 'INTERN_STUDENT',
+        canonicalRole: initialRole,
         isActive: true,
+        status: 'active',
       };
 
       if (isConfiguredAdmin) {
@@ -171,7 +228,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             doc(db, 'users', user.uid),
             {
               ...fallbackRaw,
-              canonicalRole: initialRole,
               createdAt: serverTimestamp(),
               updatedAt: serverTimestamp(),
             },
@@ -180,9 +236,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch {}
       }
 
-      hydrateAndPersistProfile(user, fallbackRaw);
+      hydrateProfile(user, fallbackRaw);
     },
-    [hydrateAndPersistProfile, syncSessionSideEffects]
+    [hydrateProfile, syncSessionSideEffects]
   );
 
   const refreshProfile = useCallback(async () => {
@@ -192,17 +248,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const snap = await getDoc(doc(db, 'users', user.uid));
       if (snap.exists()) {
-        const profileData = hydrateAndPersistProfile(user, snap.data());
+        const profileData = hydrateProfile(user, snap.data());
         syncSessionSideEffects(user, profileData);
       } else {
         await resolveMissingProfile(user);
       }
     } catch {
-      // Retain cached profile if offline
+      // Retain in-memory profile if transiently offline
     } finally {
       setProfileLoading(false);
     }
-  }, [hydrateAndPersistProfile, resolveMissingProfile, syncSessionSideEffects]);
+  }, [hydrateProfile, resolveMissingProfile, syncSessionSideEffects]);
 
   useEffect(() => {
     let profileUnsubscribe: (() => void) | null = null;
@@ -218,31 +274,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (!user) {
         setUserProfile(null);
-        try {
-          localStorage.removeItem('sricore_active_profile');
-        } catch {}
+        purgeLegacyProfileStorage();
         setProfileLoading(false);
         return;
       }
 
-      // Immediately hydrate per-user cached profile if present so workspaces do not block behind a spinner
-      let hasCachedProfile = false;
-      try {
-        const cachedStr = localStorage.getItem(`sricore_profile_${user.uid}`);
-        if (cachedStr) {
-          const cached = JSON.parse(cachedStr);
-          if (cached && cached.uid === user.uid) {
-            setUserProfile(cached);
-            hasCachedProfile = true;
-          }
-        }
-      } catch {}
-      setProfileLoading(!hasCachedProfile);
+      // Remove any legacy localStorage profile cache to prevent DevTools tampering
+      purgeLegacyProfileStorage(user.uid);
+      setProfileLoading(true);
 
       let initialized = false;
-      const isConfiguredAdmin = Boolean(
-        user.email && ADMIN_EMAILS.includes(user.email.toLowerCase().trim())
-      );
+      const isConfiguredAdmin = isVerifiedBootstrapAdmin(user);
 
       // Single real-time subscription delivers both initial read & live RBAC updates
       profileUnsubscribe = onSnapshot(
@@ -259,12 +301,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               ) {
                 setDoc(
                   doc(db, 'users', user.uid),
-                  { role: 'ADMIN', updatedAt: serverTimestamp() },
+                  { role: 'ADMIN', canonicalRole: 'ADMIN', updatedAt: serverTimestamp() },
                   { merge: true }
                 ).catch(() => {});
               }
 
-              const profileData = hydrateAndPersistProfile(user, rawData);
+              const profileData = hydrateProfile(user, rawData);
               if (!initialized) {
                 initialized = true;
                 syncSessionSideEffects(user, profileData);
@@ -289,7 +331,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         profileUnsubscribe();
       }
     };
-  }, [hydrateAndPersistProfile, resolveMissingProfile, syncSessionSideEffects]);
+  }, [hydrateProfile, resolveMissingProfile, syncSessionSideEffects]);
 
   const isAdmin = useMemo(
     () =>

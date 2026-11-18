@@ -10,6 +10,7 @@ import {
   setDoc 
 } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
+import { sanitizeSafeHttpUrl } from '../../components/ui/DriveLinkInput';
 import { 
   Project, 
   ProjectType, 
@@ -1106,10 +1107,10 @@ export default function AdminProjects() {
                   </div>
                 </div>
               )}
-              {viewingProject.repositoryUrl && (
+              {sanitizeSafeHttpUrl(viewingProject.repositoryUrl) && (
                 <div className="pt-1 flex items-center gap-1 text-blue-600">
                   <FolderGit2 className="w-3.5 h-3.5" />
-                  <a href={viewingProject.repositoryUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                  <a href={sanitizeSafeHttpUrl(viewingProject.repositoryUrl)} target="_blank" rel="noopener noreferrer" className="hover:underline">
                     {viewingProject.repositoryUrl}
                   </a>
                 </div>

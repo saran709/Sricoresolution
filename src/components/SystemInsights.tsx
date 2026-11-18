@@ -71,7 +71,7 @@ export const SystemInsights: React.FC = () => {
   const { data: enquiries = [] } = useAdminEnquiries(true);
   const loading = usersLoading && auditLoading;
 
-  // Build 30-day time-series dataset combining real Firestore timestamps + deterministic baseline telemetry
+  // Build 30-day time-series dataset strictly from real Firestore timestamps
   const thirtyDaySeries = useMemo<DailyInsightPoint[]>(() => {
     const today = startOfDay(new Date());
     const userDates = users
@@ -90,63 +90,33 @@ export const SystemInsights: React.FC = () => {
       .map((e) => parseFirestoreDate(e.createdAt))
       .filter((d): d is Date => d !== null);
 
-    const totalCurrentUsers = Math.max(users.length, 18);
-    // Count users created before the 30-day window
     const windowStart = subDays(today, 29);
     const priorUsersCount = userDates.filter((d) => d < windowStart).length;
-    let runningTotal =
-      priorUsersCount > 0 ? priorUsersCount : Math.max(8, totalCurrentUsers - 22);
+    const undatedUsersCount = users.length - userDates.length;
+    let runningTotal = Math.max(0, priorUsersCount + undatedUsersCount);
 
     const points: DailyInsightPoint[] = [];
 
     for (let i = 29; i >= 0; i--) {
       const targetDay = subDays(today, i);
-      const dayIndex = 29 - i;
-      const isWeekend = targetDay.getDay() === 0 || targetDay.getDay() === 6;
 
-      // Actual events recorded on this day in Firestore
-      const realRegs = userDates.filter((d) => isSameDay(d, targetDay)).length;
-      const realAudits = auditDates.filter((d) => isSameDay(d, targetDay)).length;
-      const realAttendance = attendanceDates.filter((d) =>
-        isSameDay(d, targetDay)
-      ).length;
-      const realEnquiries = enquiryDates.filter((d) =>
-        isSameDay(d, targetDay)
-      ).length;
-
-      // Deterministic baseline wave so the 30-day chart is always rich and informative even before bulk historical seeding
-      const wave = Math.sin(dayIndex * 0.45) * 0.5 + 0.5;
-      const baselineRegs = isWeekend
-        ? dayIndex % 3 === 0
-          ? 1
-          : 0
-        : Math.round(1 + wave * 2.2 + (dayIndex > 20 ? 1 : 0));
-
-      const newRegistrations = realRegs > 0 ? realRegs : baselineRegs;
+      const newRegistrations = userDates.filter((d) => isSameDay(d, targetDay)).length;
       runningTotal += newRegistrations;
 
-      const baselineActions = isWeekend
-        ? Math.round(6 + wave * 8)
-        : Math.round(18 + wave * 24 + dayIndex * 0.45);
-      const portalActions =
-        realAudits + realAttendance + realEnquiries > 0
-          ? realAudits * 2 + realAttendance * 3 + realEnquiries * 2 + baselineActions
-          : baselineActions;
+      const realAudits = auditDates.filter((d) => isSameDay(d, targetDay)).length;
+      const realAttendance = attendanceDates.filter((d) => isSameDay(d, targetDay)).length;
+      const realEnquiries = enquiryDates.filter((d) => isSameDay(d, targetDay)).length;
 
-      const baselineActive = isWeekend
-        ? Math.round(5 + wave * 6)
-        : Math.round(12 + wave * 14 + dayIndex * 0.25);
+      const portalActions = realAudits + realAttendance + realEnquiries;
       const activeEngagements = Math.min(
-        runningTotal,
-        realAttendance + realAudits > 0
-          ? Math.max(realAttendance + realAudits, baselineActive)
-          : baselineActive
+        runningTotal > 0 ? runningTotal : realAttendance + realAudits,
+        realAttendance + realAudits
       );
 
       const engagementRate =
         runningTotal > 0
-          ? Math.min(98, Math.round((activeEngagements / runningTotal) * 100))
-          : 68;
+          ? Math.min(100, Math.round((activeEngagements / runningTotal) * 100))
+          : 0;
 
       points.push({
         dateKey: format(targetDay, 'yyyy-MM-dd'),
@@ -156,7 +126,7 @@ export const SystemInsights: React.FC = () => {
         cumulativeUsers: runningTotal,
         activeEngagements,
         portalActions,
-        inquiries: realEnquiries || (dayIndex % 4 === 0 ? 2 : 1),
+        inquiries: realEnquiries,
         engagementRate,
       });
     }
@@ -168,7 +138,7 @@ export const SystemInsights: React.FC = () => {
     return thirtyDaySeries.slice(30 - timeWindow);
   }, [thirtyDaySeries, timeWindow]);
 
-  // 30-Day Summary KPI Metrics
+  // 30-Day Summary KPI Metrics computed solely from visible Firestore series
   const kpiMetrics = useMemo(() => {
     const totalNew30d = visibleSeries.reduce(
       (sum, d) => sum + d.newRegistrations,
@@ -187,7 +157,6 @@ export const SystemInsights: React.FC = () => {
         Math.max(1, visibleSeries.length)
     );
 
-    // Compare second half of window vs first half for growth %
     const half = Math.floor(visibleSeries.length / 2);
     const firstHalfRegs = visibleSeries
       .slice(0, half)
@@ -198,7 +167,7 @@ export const SystemInsights: React.FC = () => {
     const regGrowthPct =
       firstHalfRegs > 0
         ? Math.round(((secondHalfRegs - firstHalfRegs) / firstHalfRegs) * 100)
-        : 18;
+        : 0;
 
     const activeAccountsRatio =
       users.length > 0
@@ -206,7 +175,7 @@ export const SystemInsights: React.FC = () => {
             (users.filter((u) => u.isActive !== false).length / users.length) *
               100
           )
-        : avgEngagementRate;
+        : 0;
 
     return {
       totalNew30d,
@@ -240,7 +209,7 @@ export const SystemInsights: React.FC = () => {
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              30-day cohort onboarding velocity, daily active user sessions, and platform engagement telemetry
+              30-day cohort onboarding velocity, daily active user sessions, and platform engagement summary
             </p>
           </div>
         </div>
@@ -413,7 +382,7 @@ export const SystemInsights: React.FC = () => {
         {loading ? (
           <div
             role="status"
-            aria-label="Computing 30-day registration and engagement telemetry..."
+            aria-label="Computing 30-day registration and engagement metrics..."
             className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-center"
           >
             <div className="xl:col-span-8 space-y-3">

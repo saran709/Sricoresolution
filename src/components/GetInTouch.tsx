@@ -63,6 +63,7 @@ export function GetInTouch() {
     message: false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [submittedRecord, setSubmittedRecord] = useState<{
     referenceId: string;
     name: string;
@@ -137,6 +138,7 @@ export function GetInTouch() {
     }
 
     setIsSubmitting(true);
+    setSubmitError(null);
     const referenceId = `SRI-INQ-${Math.floor(100000 + Math.random() * 900000)}`;
 
     try {
@@ -150,21 +152,6 @@ export function GetInTouch() {
         status: 'NEW',
         createdAt: serverTimestamp(),
       });
-    } catch {
-      try {
-        const storedRaw = localStorage.getItem('sricore_contact_submissions');
-        const stored = storedRaw ? JSON.parse(storedRaw) : [];
-        stored.push({
-          referenceId,
-          ...values,
-          createdAt: new Date().toISOString(),
-        });
-        localStorage.setItem('sricore_contact_submissions', JSON.stringify(stored));
-      } catch {
-        // Ignore localStorage restrictions
-      }
-    } finally {
-      setIsSubmitting(false);
       setSubmittedRecord({
         referenceId,
         name: values.name.trim(),
@@ -174,6 +161,12 @@ export function GetInTouch() {
       setValues({ name: '', email: '', subject: '', message: '' });
       setTouched({ name: false, email: false, subject: false, message: false });
       setErrors({});
+    } catch {
+      setSubmitError(
+        `We could not record your inquiry online right now. Please email us directly at ${contactEmail}.`
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -472,6 +465,16 @@ export function GetInTouch() {
                       </p>
                     )}
                   </div>
+
+                  {submitError && (
+                    <div
+                      role="alert"
+                      className="p-3 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 flex items-start gap-2 text-xs text-red-700 dark:text-red-300"
+                    >
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <span>{submitError}</span>
+                    </div>
+                  )}
 
                   {/* Submit Action */}
                   <div className="pt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
