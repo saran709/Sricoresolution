@@ -8,73 +8,92 @@ import {
   DashboardErrorBoundary,
   DashboardModuleSkeleton,
 } from './components/ui/DashboardSuspense';
-import { useAdPolicyGuard } from './hooks/useAdPolicyGuard';
+
+function lazyWithRetry<T extends React.ComponentType<any>>(
+  factory: () => Promise<{ default: T }>,
+  fallbackTitle = 'Section Temporarily Unavailable'
+): React.LazyExoticComponent<T> {
+  return React.lazy(async () => {
+    try {
+      return await factory();
+    } catch (error) {
+      console.warn('Lazy module load fallback activated:', error);
+      const FallbackComponent = (() => (
+        <PagePlaceholder title={fallbackTitle} />
+      )) as unknown as T;
+      return { default: FallbackComponent };
+    }
+  });
+}
 
 const CookieBanner = React.lazy(() =>
-  import('./components/ui/CookieBanner').then((m) => ({ default: m.CookieBanner }))
+  import('./components/ui/CookieBanner')
+    .then((m) => ({ default: m.CookieBanner }))
+    .catch(() => ({ default: (() => null) as React.ComponentType }))
 );
 
 // Lazy-loaded Unified Workspace Layouts
-const AdminDashboardLayout = React.lazy(() =>
+const AdminDashboardLayout = lazyWithRetry(() =>
   import('./components/AdminDashboard').then((m) => ({ default: m.AdminDashboardLayout }))
 );
-const DashboardLayout = React.lazy(() =>
+const DashboardLayout = lazyWithRetry(() =>
   import('./components/layout/DashboardLayout').then((m) => ({ default: m.DashboardLayout }))
 );
 
+import Home from './pages/Home';
+
 // Main Pages
-const Home = React.lazy(() => import('./pages/Home'));
-const About = React.lazy(() => import('./pages/About'));
-const Enquiry = React.lazy(() => import('./pages/Enquiry'));
-const Contact = React.lazy(() => import('./pages/Contact'));
-const InternshipRegistration = React.lazy(() => import('./pages/InternshipRegistration'));
-const Services = React.lazy(() => import('./pages/Services'));
-const ResearchServices = React.lazy(() => import('./pages/services/Research'));
-const SoftwareSolutions = React.lazy(() => import('./pages/solutions/Software'));
-const HardwareSolutions = React.lazy(() => import('./pages/solutions/Hardware'));
-const AISolutions = React.lazy(() => import('./pages/solutions/AI'));
-const Internships = React.lazy(() => import('./pages/Internships'));
-const Projects = React.lazy(() => import('./pages/Projects'));
-const ProjectDetail = React.lazy(() => import('./pages/ProjectDetail'));
-const Careers = React.lazy(() => import('./pages/Careers'));
-const Privacy = React.lazy(() => import('./pages/Privacy'));
-const Terms = React.lazy(() => import('./pages/Terms'));
-const EditorialPolicy = React.lazy(() => import('./pages/EditorialPolicy'));
+const About = lazyWithRetry(() => import('./pages/About'));
+const Enquiry = lazyWithRetry(() => import('./pages/Enquiry'));
+const Contact = lazyWithRetry(() => import('./pages/Contact'));
+const InternshipRegistration = lazyWithRetry(() => import('./pages/InternshipRegistration'));
+const Services = lazyWithRetry(() => import('./pages/Services'));
+const ResearchServices = lazyWithRetry(() => import('./pages/services/Research'));
+const SoftwareSolutions = lazyWithRetry(() => import('./pages/solutions/Software'));
+const HardwareSolutions = lazyWithRetry(() => import('./pages/solutions/Hardware'));
+const AISolutions = lazyWithRetry(() => import('./pages/solutions/AI'));
+const Internships = lazyWithRetry(() => import('./pages/Internships'));
+const Projects = lazyWithRetry(() => import('./pages/Projects'));
+const ProjectDetail = lazyWithRetry(() => import('./pages/ProjectDetail'));
+const Careers = lazyWithRetry(() => import('./pages/Careers'));
+const Privacy = lazyWithRetry(() => import('./pages/Privacy'));
+const Terms = lazyWithRetry(() => import('./pages/Terms'));
+const EditorialPolicy = lazyWithRetry(() => import('./pages/EditorialPolicy'));
 
 // Auth Pages
-const Login = React.lazy(() => import('./pages/auth/Login'));
-const Register = React.lazy(() => import('./pages/auth/Register'));
-const Setup = React.lazy(() => import('./pages/auth/Setup'));
-const ForgotPassword = React.lazy(() => import('./pages/auth/ForgotPassword'));
-const Unauthorized = React.lazy(() => import('./pages/auth/Unauthorized'));
+const Login = lazyWithRetry(() => import('./pages/auth/Login'));
+const Register = lazyWithRetry(() => import('./pages/auth/Register'));
+const Setup = lazyWithRetry(() => import('./pages/auth/Setup'));
+const ForgotPassword = lazyWithRetry(() => import('./pages/auth/ForgotPassword'));
+const Unauthorized = lazyWithRetry(() => import('./pages/auth/Unauthorized'));
 
 // Dashboard
-const Dashboard = React.lazy(() => import('./pages/dashboard/Dashboard'));
+const Dashboard = lazyWithRetry(() => import('./pages/dashboard/Dashboard'));
 
 // Admin Pages
-const AdminDashboard = React.lazy(() => import('./pages/admin/Dashboard'));
-const AdminEmployees = React.lazy(() => import('./pages/admin/Employees'));
-const AdminEnquiries = React.lazy(() => import('./pages/admin/Enquiries'));
-const AdminProjects = React.lazy(() => import('./pages/admin/Projects'));
-const AdminInternships = React.lazy(() => import('./pages/admin/Internships'));
-const AdminClients = React.lazy(() => import('./pages/admin/Clients'));
-const AdminAudit = React.lazy(() => import('./pages/admin/Audit'));
-const AdminContent = React.lazy(() => import('./pages/admin/Content'));
-const AdminUsers = React.lazy(() => import('./pages/admin/Users'));
-const AdminDocuments = React.lazy(() => import('./pages/admin/Documents'));
-const AdminPayments = React.lazy(() => import('./pages/admin/Payments'));
-const AdminDepartments = React.lazy(() => import('./pages/admin/Departments'));
-const AdminMentors = React.lazy(() => import('./pages/admin/Mentors'));
-const AdminCandidates = React.lazy(() => import('./pages/admin/Candidates'));
-const AdminInterns = React.lazy(() => import('./pages/admin/Interns'));
-const AdminAttendance = React.lazy(() => import('./pages/admin/Attendance'));
-const AdminLeaves = React.lazy(() => import('./pages/admin/Leaves'));
-const AdminVendors = React.lazy(() => import('./pages/admin/Vendors'));
-const AdminAnnouncements = React.lazy(() => import('./pages/admin/Announcements'));
-const AdminNotifications = React.lazy(() => import('./pages/admin/Notifications'));
-const AdminReports = React.lazy(() => import('./pages/admin/Reports'));
-const AdminSettings = React.lazy(() => import('./pages/admin/Settings'));
-const AdminPermissions = React.lazy(() => import('./components/PermissionConfiguration'));
+const AdminDashboard = lazyWithRetry(() => import('./pages/admin/Dashboard'));
+const AdminEmployees = lazyWithRetry(() => import('./pages/admin/Employees'));
+const AdminEnquiries = lazyWithRetry(() => import('./pages/admin/Enquiries'));
+const AdminProjects = lazyWithRetry(() => import('./pages/admin/Projects'));
+const AdminInternships = lazyWithRetry(() => import('./pages/admin/Internships'));
+const AdminClients = lazyWithRetry(() => import('./pages/admin/Clients'));
+const AdminAudit = lazyWithRetry(() => import('./pages/admin/Audit'));
+const AdminContent = lazyWithRetry(() => import('./pages/admin/Content'));
+const AdminUsers = lazyWithRetry(() => import('./pages/admin/Users'));
+const AdminDocuments = lazyWithRetry(() => import('./pages/admin/Documents'));
+const AdminPayments = lazyWithRetry(() => import('./pages/admin/Payments'));
+const AdminDepartments = lazyWithRetry(() => import('./pages/admin/Departments'));
+const AdminMentors = lazyWithRetry(() => import('./pages/admin/Mentors'));
+const AdminCandidates = lazyWithRetry(() => import('./pages/admin/Candidates'));
+const AdminInterns = lazyWithRetry(() => import('./pages/admin/Interns'));
+const AdminAttendance = lazyWithRetry(() => import('./pages/admin/Attendance'));
+const AdminLeaves = lazyWithRetry(() => import('./pages/admin/Leaves'));
+const AdminVendors = lazyWithRetry(() => import('./pages/admin/Vendors'));
+const AdminAnnouncements = lazyWithRetry(() => import('./pages/admin/Announcements'));
+const AdminNotifications = lazyWithRetry(() => import('./pages/admin/Notifications'));
+const AdminReports = lazyWithRetry(() => import('./pages/admin/Reports'));
+const AdminSettings = lazyWithRetry(() => import('./pages/admin/Settings'));
+const AdminPermissions = lazyWithRetry(() => import('./components/PermissionConfiguration'));
 
 const PageLoader = () => (
   <div className="min-h-[60vh] bg-slate-50/50 dark:bg-slate-950/50 p-4 sm:p-6">
@@ -84,16 +103,10 @@ const PageLoader = () => (
   </div>
 );
 
-function AdPolicyWatcher() {
-  useAdPolicyGuard();
-  return null;
-}
-
 export function AppRouter() {
   return (
     <>
       <ScrollToTop />
-      <AdPolicyWatcher />
       <DashboardErrorBoundary moduleName="Application View">
         <Suspense fallback={<PageLoader />}>
           <Routes>

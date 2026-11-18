@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Container } from '../components/ui/Container';
 import { CTASection } from '../components/ui/CTASection';
-import { AdUnit } from '../components/ui/AdUnit';
+import { EditorialHighlightSlot as AdUnit } from '../components/ui/EditorialHighlightSlot';
 import { useWebsiteSettings } from '../contexts/WebsiteSettingsContext';
 import { 
   SELECTED_WORKS, 
@@ -487,9 +487,9 @@ export default function ProjectDetail() {
       )}
 
       {/* 3. NAVIGATION TABS */}
-      <section className="sticky top-16 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
+      <section className="sticky top-16 z-20 w-full max-w-full overflow-hidden bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
         <Container>
-          <div className="flex items-center gap-2 overflow-x-auto py-2.5 scrollbar-none">
+          <div className="flex items-center gap-2 overflow-x-auto py-2.5 scrollbar-none max-w-full">
             {[
               { id: 'overview', label: 'Executive Overview', icon: Layers },
               { id: 'architecture', label: 'Live Simulation & Architecture', icon: Activity },
@@ -665,9 +665,9 @@ export default function ProjectDetail() {
                   {/* Simulator Screen */}
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
                     {/* Visual Feed Box */}
-                    <div className="lg:col-span-7 bg-slate-950 rounded-xl p-5 text-white border border-slate-800 relative min-h-[300px] flex flex-col justify-between overflow-hidden">
+                    <div className="lg:col-span-7 bg-slate-950 rounded-xl p-4 sm:p-5 text-white border border-slate-800 relative min-h-[300px] flex flex-col justify-between overflow-hidden min-w-0">
                       {/* Top HUD */}
-                      <div className="flex justify-between items-center text-[11px] font-mono text-slate-400 z-10">
+                      <div className="flex flex-wrap justify-between items-center gap-1.5 text-[11px] font-mono text-slate-400 z-10">
                         <span className="flex items-center gap-1.5 text-emerald-400">
                           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
                           CAM_01: BASLER 4K @ 120 FPS
@@ -676,8 +676,8 @@ export default function ProjectDetail() {
                       </div>
 
                       {/* Mocked PCB Canvas with overlay */}
-                      <div className="my-auto py-6 flex items-center justify-center relative">
-                        <div className="w-72 h-44 bg-slate-900 border-2 border-emerald-500/40 rounded-lg relative shadow-inner p-3 flex flex-col justify-between">
+                      <div className="my-auto py-6 flex items-center justify-center relative w-full">
+                        <div className="w-full max-w-[18rem] h-44 bg-slate-900 border-2 border-emerald-500/40 rounded-lg relative shadow-inner p-3 flex flex-col justify-between">
                           {/* PCB Tracks pattern */}
                           <div className="absolute inset-0 opacity-20 bg-[linear-gradient(to_right,#10b981_1px,transparent_1px),linear-gradient(to_bottom,#10b981_1px,transparent_1px)] bg-[size:16px_16px]"></div>
                           
@@ -956,15 +956,15 @@ export default function ProjectDetail() {
                   </div>
 
                   {/* Terminal console output */}
-                  <div className="bg-slate-950 rounded-xl p-5 text-white border border-slate-800 font-mono text-xs">
-                    <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800 text-[11px] text-slate-400">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
-                        <span className="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
-                        <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span>
-                        <span className="ml-2 text-slate-300 font-bold">SMART-on-FHIR Gateway Terminal</span>
+                  <div className="bg-slate-950 rounded-xl p-4 sm:p-5 text-white border border-slate-800 font-mono text-xs min-w-0 max-w-full overflow-hidden">
+                    <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-3 border-b border-slate-800 text-[11px] text-slate-400">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-2.5 h-2.5 rounded-full bg-red-500 shrink-0"></span>
+                        <span className="w-2.5 h-2.5 rounded-full bg-yellow-500 shrink-0"></span>
+                        <span className="w-2.5 h-2.5 rounded-full bg-green-500 shrink-0"></span>
+                        <span className="ml-1 sm:ml-2 text-slate-300 font-bold truncate">SMART-on-FHIR Gateway Terminal</span>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
                         <span className="text-emerald-400 flex items-center gap-1">
                           <Lock className="w-3 h-3" /> mTLS 1.3 AES-256
                         </span>
@@ -978,7 +978,7 @@ export default function ProjectDetail() {
                         <span>Performing cryptographic zero-trust handshake...</span>
                       </div>
                     ) : (
-                      <pre className="text-slate-300 overflow-x-auto leading-relaxed max-h-64 scrollbar-thin">
+                      <pre className="text-slate-300 overflow-x-auto max-w-full leading-relaxed max-h-64 scrollbar-thin">
                         {selectedEndpoint === 'patient' && JSON.stringify({
                           resourceType: "Patient",
                           id: "PT-90218",

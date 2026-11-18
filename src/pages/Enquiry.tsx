@@ -5,6 +5,7 @@ import { SectionHeader } from '../components/ui/SectionHeader';
 import { Input } from '../components/ui/Input';
 import { Textarea } from '../components/ui/Textarea';
 import { Button } from '../components/ui/Button';
+import { DriveLinkInput, validateShareableLink } from '../components/ui/DriveLinkInput';
 import { APP_CONFIG } from '../config';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -17,6 +18,8 @@ export default function Enquiry() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [specLink, setSpecLink] = useState('');
+  const [openAccessConfirmed, setOpenAccessConfirmed] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -31,6 +34,26 @@ export default function Enquiry() {
     else if (serviceInterest === 'student_project') enquiryType = 'student';
     else if (serviceInterest === 'internship') enquiryType = 'internship';
 
+    const rawDetails = (formData.get('projectDetails') as string) || '';
+    let finalProjectDetails = rawDetails;
+
+    if (specLink.trim()) {
+      const linkCheck = validateShareableLink(specLink);
+      if (!linkCheck.isValid) {
+        setError(linkCheck.error || 'Please provide a valid shareable URL for your specification document.');
+        setIsSubmitting(false);
+        return;
+      }
+      if (!openAccessConfirmed) {
+        setError(
+          'Please enable "Anyone with the link can view" (Open to View) on your Google Drive specification link and check the confirmation box.'
+        );
+        setIsSubmitting(false);
+        return;
+      }
+      finalProjectDetails = `${rawDetails}\n\nShared Specification Link (Open to View): ${linkCheck.normalizedUrl}`;
+    }
+
     const data: Record<string, any> = {
       firstName: formData.get('firstName'),
       lastName: formData.get('lastName'),
@@ -38,7 +61,7 @@ export default function Enquiry() {
       phone: formData.get('phone'),
       company: formData.get('company'),
       serviceInterest,
-      projectDetails: formData.get('projectDetails'),
+      projectDetails: finalProjectDetails,
       createdAt: serverTimestamp(),
       status: 'NEW',
       enquiryType,
@@ -53,6 +76,8 @@ export default function Enquiry() {
       if (currentUser?.uid) {
         queryClient.invalidateQueries({ queryKey: ['client-dashboard', currentUser.uid] });
       }
+      setSpecLink('');
+      setOpenAccessConfirmed(false);
       setIsSuccess(true);
     } catch (err) {
       console.error('Error submitting enquiry:', err);
@@ -229,6 +254,17 @@ export default function Enquiry() {
                 required
                 placeholder="Please describe your requirements, challenges, and goals..."
                 className="min-h-[100px]"
+              />
+
+              <DriveLinkInput
+                label="Specification / Reference Document Link (Optional — Google Drive)"
+                value={specLink}
+                onChange={setSpecLink}
+                accessConfirmed={openAccessConfirmed}
+                onAccessConfirmedChange={setOpenAccessConfirmed}
+                required={false}
+                placeholder="https://drive.google.com/file/d/.../view?usp=sharing"
+                compact
               />
 
               <Button type="submit" isLoading={isSubmitting} fullWidth className="py-2.5 mt-2 text-xs">

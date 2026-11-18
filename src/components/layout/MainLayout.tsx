@@ -7,10 +7,10 @@ export function MainLayout() {
   const mainRef = useRef<HTMLElement | null>(null);
 
   return (
-    <div className="flex flex-col flex-grow w-full">
+    <div className="flex flex-col flex-grow w-full min-w-0 max-w-full overflow-x-clip">
       <ReadingProgressBar targetRef={mainRef} />
       <Breadcrumbs includeSchema={false} />
-      <main ref={mainRef} className="flex-grow flex flex-col relative w-full">
+      <main ref={mainRef} className="flex-grow flex flex-col relative w-full min-w-0 max-w-full overflow-x-clip">
         <Outlet />
       </main>
     </div>

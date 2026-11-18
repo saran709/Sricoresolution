@@ -1,22 +1,22 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useRBAC } from '../../../contexts/RBACContext';
 import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../../../lib/firebase';
+import { db } from '../../../lib/firebase';
 import {
   FileText,
   Clock,
   CheckCircle,
   FolderOpen,
   Bell,
-  Download,
-  Upload,
+  ExternalLink,
+  Link2,
   AlertCircle,
   CheckCircle2,
 } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Button } from '../../../components/ui/Button';
+import { DriveLinkInput, validateShareableLink } from '../../../components/ui/DriveLinkInput';
 import { useCandidateDashboard } from '../../../hooks/useDashboardQueries';
 import { queryClient } from '../../../lib/queryClient';
 import { logActivity } from '../../../lib/activityLogger';
@@ -32,7 +32,7 @@ const VALID_CANDIDATE_TABS: CandidateTab[] = [
 export default function CandidateDashboard() {
   const { userProfile } = useAuth();
   const { can, canAccessResource } = useRBAC();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const { data, isLoading: loading } = useCandidateDashboard(userProfile?.uid);
 
   const applications = data?.applications || [];
@@ -44,14 +44,18 @@ export default function CandidateDashboard() {
     queryTab && VALID_CANDIDATE_TABS.includes(queryTab) ? queryTab : 'applications'
   );
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const [showLinkForm, setShowLinkForm] = useState(false);
+  const [docTitle, setDocTitle] = useState('');
+  const [docType, setDocType] = useState<'resume' | 'certificate' | 'report' | 'other'>('resume');
+  const [docLink, setDocLink] = useState('');
+  const [openAccessConfirmed, setOpenAccessConfirmed] = useState(false);
+  const [isSubmittingLink, setIsSubmittingLink] = useState(false);
   const [statusBanner, setStatusBanner] = useState<{
     type: 'success' | 'error';
     message: string;
   } | null>(null);
 
-  const canUploadDocs = can('upload') && canAccessResource('documents', 'upload');
+  const canSubmitDocs = can('upload') && canAccessResource('documents', 'upload');
 
   useEffect(() => {
     if (queryTab && VALID_CANDIDATE_TABS.includes(queryTab)) {
@@ -61,60 +65,73 @@ export default function CandidateDashboard() {
     }
   }, [queryTab]);
 
-  const handleUploadResume = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !userProfile?.uid) return;
+  const handleSubmitResumeLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userProfile?.uid) return;
     setStatusBanner(null);
 
-    if (file.size > 10 * 1024 * 1024) {
+    const trimmedTitle = docTitle.trim();
+    if (!trimmedTitle) {
       setStatusBanner({
         type: 'error',
-        message: 'Document must be smaller than 10 MB.',
+        message: 'Please provide a title for your document link (e.g., Resume - Full Stack).',
       });
-      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
-    setIsUploading(true);
-    try {
-      const storageRef = ref(
-        storage,
-        `candidate_documents/${userProfile.uid}/${Date.now()}_${file.name}`
-      );
-      const uploadResult = await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(uploadResult.ref);
+    const linkCheck = validateShareableLink(docLink);
+    if (!linkCheck.isValid) {
+      setStatusBanner({
+        type: 'error',
+        message: linkCheck.error || 'Please enter a valid shareable URL.',
+      });
+      return;
+    }
 
+    if (!openAccessConfirmed) {
+      setStatusBanner({
+        type: 'error',
+        message: 'Please enable "Anyone with the link can view" (Open to View) on your Google Drive file and check the confirmation box.',
+      });
+      return;
+    }
+
+    setIsSubmittingLink(true);
+    try {
       const docRef = await addDoc(collection(db, 'documents'), {
         ownerId: userProfile.uid,
-        title: file.name,
-        fileUrl: downloadURL,
+        title: trimmedTitle,
+        fileUrl: linkCheck.normalizedUrl,
         accessLevel: 'own',
-        documentType: 'resume',
+        documentType: docType,
         createdAt: serverTimestamp(),
       });
 
       await logActivity(
-        'RESUME_UPLOADED',
+        'RESUME_LINK_SUBMITTED',
         userProfile.uid,
         docRef.id,
         'user',
-        `Intern/Student uploaded document: ${file.name}`
+        `Intern/Student submitted open-to-view document link: ${trimmedTitle}`
       );
 
       queryClient.invalidateQueries({ queryKey: ['candidate-dashboard', userProfile.uid] });
+      setDocTitle('');
+      setDocLink('');
+      setOpenAccessConfirmed(false);
+      setShowLinkForm(false);
       setStatusBanner({
         type: 'success',
-        message: `"${file.name}" saved to your workspace documents.`,
+        message: `"${trimmedTitle}" link saved to your workspace documents (Open to View).`,
       });
     } catch (err) {
-      console.error('Candidate upload error:', err);
+      console.error('Candidate link submission error:', err);
       setStatusBanner({
         type: 'error',
-        message: 'Could not upload document. Please check file format (PDF/DOC/Image) and try again.',
+        message: 'Could not save document link. Please try again.',
       });
     } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      setIsSubmittingLink(false);
     }
   };
 
@@ -281,34 +298,86 @@ export default function CandidateDashboard() {
           <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 flex flex-wrap justify-between items-center gap-3">
             <div>
               <h2 className="font-semibold text-slate-800 dark:text-white">
-                My Resume & Documents
+                My Resume &amp; Document Links
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Keep your resume, academic ID, or offer documents accessible (max 10 MB).
+                Submit Google Drive links with &ldquo;Anyone with the link can view&rdquo; (Open to View) access. Direct file uploads are disabled.
               </p>
             </div>
-            {canUploadDocs && (
-              <>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  className="hidden"
-                  onChange={handleUploadResume}
-                  accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
-                />
-                <Button
-                  size="sm"
-                  variant="outline"
-                  isLoading={isUploading}
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-2"
-                >
-                  <Upload className="w-4 h-4" />
-                  {isUploading ? 'Uploading...' : 'Upload Document'}
-                </Button>
-              </>
+            {canSubmitDocs && (
+              <Button
+                size="sm"
+                variant={showLinkForm ? 'outline' : 'primary'}
+                onClick={() => setShowLinkForm((prev) => !prev)}
+                className="flex items-center gap-2"
+              >
+                <Link2 className="w-4 h-4" />
+                {showLinkForm ? 'Cancel' : 'Submit Document Link'}
+              </Button>
             )}
           </div>
+
+          {showLinkForm && canSubmitDocs && (
+            <form
+              onSubmit={handleSubmitResumeLink}
+              className="p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/30 space-y-4"
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">
+                    Document Title <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g., Updated Resume - B.Tech CSE"
+                    value={docTitle}
+                    onChange={(e) => setDocTitle(e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">
+                    Document Category
+                  </label>
+                  <select
+                    value={docType}
+                    onChange={(e) => setDocType(e.target.value as any)}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="resume">Resume / CV Link</option>
+                    <option value="certificate">Academic ID / Certificate Link</option>
+                    <option value="report">Project Report / Deliverable Link</option>
+                    <option value="other">Other Shared Link</option>
+                  </select>
+                </div>
+              </div>
+
+              <DriveLinkInput
+                label="Google Drive / Cloud Share Link"
+                value={docLink}
+                onChange={setDocLink}
+                accessConfirmed={openAccessConfirmed}
+                onAccessConfirmedChange={setOpenAccessConfirmed}
+                placeholder="https://drive.google.com/file/d/.../view?usp=sharing"
+              />
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowLinkForm(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" size="sm" isLoading={isSubmittingLink}>
+                  Save Open-to-View Link
+                </Button>
+              </div>
+            </form>
+          )}
+
           <div className="p-0">
             {documents.length > 0 ? (
               <ul className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -326,7 +395,7 @@ export default function CandidateDashboard() {
                           {docItem.title}
                         </p>
                         <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-0.5">
-                          {docItem.documentType?.replace(/_/g, ' ') || 'document'}
+                          {docItem.documentType?.replace(/_/g, ' ') || 'document'} • Open-to-View Link
                         </p>
                       </div>
                     </div>
@@ -335,11 +404,10 @@ export default function CandidateDashboard() {
                         href={docItem.fileUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        download={docItem.title}
                         className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-md border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
                       >
-                        <Download className="w-4 h-4" />
-                        <span>Download</span>
+                        <ExternalLink className="w-4 h-4" />
+                        <span>Open Link</span>
                       </a>
                     ) : (
                       <span className="text-xs text-slate-400">Link unavailable</span>
@@ -351,20 +419,19 @@ export default function CandidateDashboard() {
               <div className="p-12 text-center text-slate-500 dark:text-slate-400">
                 <FolderOpen className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
-                  No documents uploaded yet
+                  No document links submitted yet
                 </h3>
-                <p className="text-sm mb-4">
-                  Upload your resume or student credentials so mentors and HR can review them.
+                <p className="text-sm mb-4 max-w-md mx-auto">
+                  Submit a Google Drive link to your resume or academic credentials with <strong>Anyone with the link can view</strong> enabled so mentors and HR can review them.
                 </p>
-                {canUploadDocs && (
+                {canSubmitDocs && !showLinkForm && (
                   <Button
                     variant="outline"
-                    isLoading={isUploading}
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => setShowLinkForm(true)}
                     className="inline-flex items-center gap-2"
                   >
-                    <Upload className="w-4 h-4" />
-                    Upload Resume or Document
+                    <Link2 className="w-4 h-4" />
+                    Submit Resume or Document Link
                   </Button>
                 )}
               </div>
@@ -452,3 +519,4 @@ export default function CandidateDashboard() {
     </div>
   );
 }
+

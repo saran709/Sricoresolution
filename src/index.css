@@ -317,7 +317,39 @@ body {
   border-color: rgba(16, 185, 129, 0.3);
 }
 
-/* Collapse and hide all unfilled, placeholder or inactive ad containers so no allocated blank gap is shown */
+/* Ensure root document containers always remain visible even when third-party ad-blocking cosmetic filters are active, and strictly prevent horizontal page overflow on mobile viewports */
+html,
+body,
+#root {
+  visibility: visible !important;
+  opacity: 1 !important;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: clip;
+}
+
+body {
+  display: block !important;
+  position: relative;
+}
+
+/* Prevent flex and grid children from expanding page width beyond 100vw when containing scrollable tables, code blocks, or filter strips */
+main,
+section,
+article,
+header,
+footer,
+.grid > *,
+.flex-col > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+pre {
+  max-width: 100%;
+}
+
+/* Collapse and hide unfilled or inactive ad elements without targeting body or structural containers */
 amp-ad:empty,
 amp-ad.amp-unfilled,
 amp-ad[data-ad-status="unfilled"],
@@ -325,11 +357,9 @@ amp-ad:not(:defined),
 ins.adsbygoogle[data-ad-status="unfilled"],
 ins.adsbygoogle[style*="display: none"],
 .google-auto-placed:empty,
-.adsbygoogle-noablate:empty,
 .amp-ad-slot-wrapper:has(amp-ad:empty),
 .amp-ad-slot-wrapper:has(amp-ad.amp-unfilled),
-.amp-ad-slot-wrapper:has(amp-ad[data-ad-status="unfilled"]),
-div:empty:has(> ins.adsbygoogle) {
+.amp-ad-slot-wrapper:has(amp-ad[data-ad-status="unfilled"]) {
   display: none !important;
   height: 0 !important;
   min-height: 0 !important;

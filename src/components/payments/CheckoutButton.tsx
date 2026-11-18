@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/Button';
+import { DriveLinkInput, validateShareableLink } from '../ui/DriveLinkInput';
 import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import { db, storage } from '../../lib/firebase';
+import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { Payment, CompanySettings } from '../../types';
 import { QrCode, X, CheckCircle2, Copy, Check, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
@@ -36,7 +36,8 @@ export function CheckoutButton({
   // Form submission state
   const [transactionRef, setTransactionRef] = useState('');
   const [notes, setNotes] = useState('');
-  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [proofLink, setProofLink] = useState('');
+  const [openAccessConfirmed, setOpenAccessConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submittedPaymentId, setSubmittedPaymentId] = useState<string | null>(null);
   const [copiedUpi, setCopiedUpi] = useState(false);
@@ -68,11 +69,9 @@ export function CheckoutButton({
   const payeeName = settings?.upiName || settings?.companyName || "Sricore Solutions";
 
   // Build standard UPI URI for QR code generation
-  // Format: upi://pay?pa=<UPI_ID>&pn=<NAME>&am=<AMOUNT>&cu=INR&tn=<NOTE>
   const cleanPurpose = purpose.replace(/[^a-zA-Z0-9 ]/g, ' ').substring(0, 30);
   const upiUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&am=${amount}&cu=INR&tn=${encodeURIComponent(cleanPurpose)}`;
 
-  // Quick online dynamic QR code URL
   const qrImageSrc = settings?.qrCodeUrl || 
     `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiUri)}`;
 
@@ -93,16 +92,15 @@ export function CheckoutButton({
       setError("Please enter your UPI Reference / UTR Number");
       return;
     }
-    if (!proofFile) {
-      setError("Please upload a payment screenshot or receipt.");
+
+    const linkCheck = validateShareableLink(proofLink);
+    if (!linkCheck.isValid) {
+      setError(linkCheck.error || "Please provide a valid Google Drive or cloud link for your payment receipt.");
       return;
     }
-    if (!['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].includes(proofFile.type)) {
-      setError("Upload a JPG, PNG, WebP, or PDF payment proof.");
-      return;
-    }
-    if (proofFile.size > 10 * 1024 * 1024) {
-      setError("Payment proof must be 10 MB or smaller.");
+
+    if (!openAccessConfirmed) {
+      setError('Please enable "Anyone with the link can view" (Open to View) on your Google Drive receipt link and check the confirmation box.');
       return;
     }
 
@@ -110,10 +108,6 @@ export function CheckoutButton({
     setError(null);
 
     try {
-      const proofRef = ref(storage, `payment-proofs/${userProfile.uid}/${Date.now()}-${proofFile.name}`);
-      const uploadResult = await uploadBytes(proofRef, proofFile);
-      const proofUrl = await getDownloadURL(uploadResult.ref);
-
       const paymentRecord: Omit<Payment, 'id'> = {
         clientId: userProfile.uid,
         amount,
@@ -128,8 +122,8 @@ export function CheckoutButton({
         updatedAt: serverTimestamp(),
         paymentType,
         notes: notes.trim() || undefined,
-        proofUrl,
-        proofFileName: proofFile.name
+        proofUrl: linkCheck.normalizedUrl,
+        proofFileName: 'Open-to-View Receipt Link',
       };
 
       if (referenceType === 'project') paymentRecord.projectId = referenceId;
@@ -151,7 +145,8 @@ export function CheckoutButton({
     setSubmittedPaymentId(null);
     setTransactionRef('');
     setNotes('');
-    setProofFile(null);
+    setProofLink('');
+    setOpenAccessConfirmed(false);
     setError(null);
   };
 
@@ -176,7 +171,7 @@ export function CheckoutButton({
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg leading-tight">UPI QR Code Payment</h3>
-                  <p className="text-xs text-blue-100">Scan & Pay securely via any UPI App</p>
+                  <p className="text-xs text-blue-100">Scan &amp; submit your Open-to-View receipt link</p>
                 </div>
               </div>
               <button 
@@ -194,10 +189,9 @@ export function CheckoutButton({
                 <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
                   <CheckCircle2 className="w-10 h-10" />
                 </div>
-                <h4 className="text-xl font-bold text-slate-900">Payment Submitted for Verification!</h4>
+                <h4 className="text-xl font-bold text-slate-900">Payment Link Submitted for Verification!</h4>
                 <p className="text-sm text-slate-600 max-w-sm mx-auto">
-                  Thank you! We received your UTR reference <span className="font-mono font-semibold text-slate-800">{transactionRef}</span>. 
-                  Our team will verify the payment proof and update the payment status shortly.
+                  Thank you! We received your UTR reference <span className="font-mono font-semibold text-slate-800">{transactionRef}</span> and your Open-to-View receipt link.
                 </p>
                 <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-left text-xs text-slate-600 space-y-1">
                   <p><span className="font-semibold">Amount:</span> ₹{amount.toLocaleString('en-IN')}</p>
@@ -213,7 +207,7 @@ export function CheckoutButton({
               </div>
             ) : (
               /* Payment instructions & QR code */
-              <div className="p-6 space-y-6">
+              <div className="p-6 space-y-5">
                 {/* Amount display */}
                 <div className="text-center bg-slate-50 border border-slate-200 rounded-xl p-4">
                   <p className="text-xs uppercase tracking-wider text-slate-500 font-semibold">Total Payable Amount</p>
@@ -225,14 +219,14 @@ export function CheckoutButton({
                 <div className="flex flex-col items-center">
                   <div className="p-3 bg-white border-2 border-dashed border-blue-300 rounded-2xl shadow-sm">
                     {loadingSettings ? (
-                      <div className="w-52 h-52 flex items-center justify-center bg-slate-50 rounded-lg">
+                      <div className="w-44 h-44 flex items-center justify-center bg-slate-50 rounded-lg">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                       </div>
                     ) : (
                       <img 
                         src={qrImageSrc} 
                         alt="Scan QR code to pay"
-                        className="w-52 h-52 object-contain rounded-lg"
+                        className="w-44 h-44 object-contain rounded-lg"
                       />
                     )}
                   </div>
@@ -249,19 +243,6 @@ export function CheckoutButton({
                     <p className="text-xs text-slate-500">{payeeName}</p>
                   </div>
 
-                  <div className="text-left">
-                    <label className="text-xs font-semibold text-slate-700 block mb-1">
-                      Payment Screenshot / Receipt <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="file"
-                      required
-                      accept="image/jpeg,image/png,image/webp,application/pdf"
-                      onChange={(e) => setProofFile(e.target.files?.[0] || null)}
-                      className="w-full text-sm border border-slate-300 rounded-lg file:mr-3 file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm"
-                    />
-                    <p className="text-[11px] text-slate-500 mt-1">JPG, PNG, WebP, or PDF up to 10 MB.</p>
-                  </div>
                   <Button 
                     type="button" 
                     variant="outline" 
@@ -283,7 +264,7 @@ export function CheckoutButton({
                   </Button>
                 </div>
 
-                {/* Proof submission form */}
+                {/* Proof link submission form */}
                 <form onSubmit={handleConfirmPayment} className="space-y-4 pt-2 border-t border-slate-200">
                   <div className="text-left">
                     <div className="flex items-center justify-between mb-1">
@@ -301,6 +282,16 @@ export function CheckoutButton({
                       className="w-full px-3 py-2 text-sm font-mono border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
+
+                  <DriveLinkInput
+                    label="Payment Screenshot / Receipt Link (Google Drive)"
+                    value={proofLink}
+                    onChange={setProofLink}
+                    accessConfirmed={openAccessConfirmed}
+                    onAccessConfirmedChange={setOpenAccessConfirmed}
+                    placeholder="https://drive.google.com/file/d/.../view?usp=sharing"
+                    compact
+                  />
 
                   <div className="text-left">
                     <label className="text-xs font-semibold text-slate-700 block mb-1">
@@ -324,7 +315,7 @@ export function CheckoutButton({
 
                   <div className="flex items-center gap-2 text-[11px] text-slate-500">
                     <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Your transaction will be verified by the admin team against the bank statement.</span>
+                    <span>Your UTR and Open-to-View receipt link will be verified by the finance team.</span>
                   </div>
 
                   <div className="flex gap-3 pt-2">
@@ -342,7 +333,7 @@ export function CheckoutButton({
                       isLoading={submitting}
                       className="flex-1 flex items-center justify-center gap-1.5"
                     >
-                      <span>I Have Paid</span>
+                      <span>Submit Payment Link</span>
                       <ArrowRight className="w-4 h-4" />
                     </Button>
                   </div>
@@ -355,3 +346,4 @@ export function CheckoutButton({
     </>
   );
 }
+

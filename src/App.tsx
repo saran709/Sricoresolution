@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { lazy, Suspense } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { HelmetProvider } from 'react-helmet-async';
 import { BrowserRouter } from 'react-router-dom';
@@ -16,21 +15,10 @@ import { RBACProvider } from './contexts/RBACContext';
 import { WebsiteSettingsProvider } from './contexts/WebsiteSettingsContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { TopProgressBar } from './components/ui/TopProgressBar';
-
-const Newsletter = lazy(() =>
-  import('./components/Newsletter').then((m) => ({ default: m.Newsletter }))
-);
-const Footer = lazy(() =>
-  import('./components/Footer').then((m) => ({ default: m.Footer }))
-);
-const ThemeToggle = lazy(() =>
-  import('./components/ThemeToggle').then((m) => ({ default: m.ThemeToggle }))
-);
-const QuickContactFAB = lazy(() =>
-  import('./components/forms/QuickContactFAB').then((m) => ({
-    default: m.QuickContactFAB,
-  }))
-);
+import { Newsletter } from './components/Newsletter';
+import { Footer } from './components/Footer';
+import { ThemeToggle } from './components/ThemeToggle';
+import { QuickContactFAB } from './components/forms/QuickContactFAB';
 
 export default function App() {
   return (
@@ -43,15 +31,13 @@ export default function App() {
                 <BrowserRouter>
                   <TopProgressBar />
                   <MetadataManager />
-                  <div className="flex flex-col min-h-screen">
+                  <div className="flex flex-col min-h-screen w-full max-w-[100vw] overflow-x-clip">
                     <Navbar />
                     <AppRouter />
-                    <Suspense fallback={null}>
-                      <Newsletter />
-                      <Footer />
-                      <QuickContactFAB />
-                      <ThemeToggle variant="fab" />
-                    </Suspense>
+                    <Newsletter />
+                    <Footer />
+                    <QuickContactFAB />
+                    <ThemeToggle variant="fab" />
                   </div>
                 </BrowserRouter>
               </ThemeProvider>

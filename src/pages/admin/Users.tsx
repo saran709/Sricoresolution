@@ -308,30 +308,24 @@ export default function Users() {
     return 'CANDIDATE';
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setCsvFileName(file.name);
+  const parseRawCsvText = (text: string, sourceLabel: string) => {
+    setCsvFileName(sourceLabel);
     setCsvError('');
     setIsParsing(true);
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const text = event.target?.result as string;
-        if (!text) {
-          setCsvError('The selected file is empty.');
-          setIsParsing(false);
-          return;
-        }
+    try {
+      if (!text || !text.trim()) {
+        setCsvError('The provided CSV content is empty.');
+        setIsParsing(false);
+        return;
+      }
 
-        const lines = text.split(/\r\n|\n|\r/).filter(line => line.trim().length > 0);
-        if (lines.length < 2) {
-          setCsvError('The CSV file must contain a header row and at least one user record.');
-          setIsParsing(false);
-          return;
-        }
+      const lines = text.split(/\r\n|\n|\r/).filter(line => line.trim().length > 0);
+      if (lines.length < 2) {
+        setCsvError('The CSV data must contain a header row and at least one user record.');
+        setIsParsing(false);
+        return;
+      }
 
         // Parse Header
         const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/[^a-z0-9]/g, ''));
@@ -413,12 +407,10 @@ export default function Users() {
         setParsedCandidates(candidates);
       } catch (err: any) {
         console.error("CSV Parse error:", err);
-        setCsvError('Failed to parse CSV file: ' + (err?.message || 'Invalid CSV format'));
+        setCsvError('Failed to parse CSV content: ' + (err?.message || 'Invalid CSV format'));
       } finally {
         setIsParsing(false);
       }
-    };
-    reader.readAsText(file);
   };
 
   // Toggle selection of a candidate
@@ -1054,28 +1046,28 @@ GreenAgro,Enterprises,contact@greenagrotech.sample.in,+91 94440 88990,CLIENT,Cli
             <div className="flex-1 overflow-y-auto py-4 space-y-5">
               {/* Upload Zone & Download Template */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="md:col-span-2 border-2 border-dashed border-slate-300 hover:border-blue-400 rounded-xl p-5 text-center bg-slate-50/50 hover:bg-blue-50/20 transition-all flex flex-col items-center justify-center">
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    accept=".csv,text/csv"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    id="csvFileInput"
+                <div className="md:col-span-2 border border-slate-300 rounded-xl p-4 bg-slate-50/50 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <label
+                      htmlFor="csvTextInput"
+                      className="text-xs font-bold text-slate-800 uppercase tracking-wider"
+                    >
+                      Paste CSV Rows from Shared Google Sheet (No File Upload)
+                    </label>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                      Link / Text Only
+                    </span>
+                  </div>
+                  <textarea
+                    id="csvTextInput"
+                    rows={4}
                     disabled={isImporting || isParsing}
+                    placeholder={'First Name,Last Name,Email,Phone,Role,Position,Department\nAarav,Sharma,aarav@sricore.com,+91 9876543210,EMPLOYEE,Senior Engineer,Software'}
+                    onChange={(e) => parseRawCsvText(e.target.value, 'Pasted Sheet Rows')}
+                    className="w-full p-2.5 text-xs font-mono rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                  <Upload className="w-8 h-8 text-blue-600 mb-2" />
-                  <label 
-                    htmlFor="csvFileInput" 
-                    className="text-sm font-semibold text-blue-600 hover:text-blue-700 cursor-pointer underline"
-                  >
-                    Click to select CSV file
-                  </label>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Accepts comma-delimited .csv files with headers
-                  </p>
                   {csvFileName && (
-                    <span className="inline-flex items-center gap-1.5 mt-3 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
                       <FileText className="w-3.5 h-3.5" />
                       {csvFileName}
                     </span>

@@ -236,7 +236,7 @@ export function UnifiedSidebarLayout({ children }: AdminDashboardProps) {
   })();
 
   return (
-    <div className="flex h-dvh lg:h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden">
+    <div className="flex h-dvh lg:h-screen w-full max-w-[100vw] bg-slate-50 dark:bg-slate-950 overflow-hidden">
       {/* Mobile Slide-Out Drawer Backdrop */}
       <div
         aria-hidden="true"
@@ -510,9 +510,9 @@ export function UnifiedSidebarLayout({ children }: AdminDashboardProps) {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 max-w-full overflow-hidden">
         {/* Top Workspace Header Bar */}
-        <header className="flex items-center justify-between gap-2 h-14 px-3 sm:px-6 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs z-20 transition-colors">
+        <header className="flex items-center justify-between gap-2 h-14 px-3 sm:px-6 w-full max-w-full min-w-0 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs z-20 transition-colors">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
               ref={mobileMenuTriggerRef}
@@ -727,9 +727,9 @@ export function UnifiedSidebarLayout({ children }: AdminDashboardProps) {
         {/* Scrollable Main Content Viewport */}
         <main
           ref={mainRef}
-          className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950/40 p-3 sm:p-4 lg:p-6 transition-colors"
+          className="flex-1 overflow-y-auto overflow-x-hidden min-w-0 max-w-full bg-slate-50 dark:bg-slate-950/40 p-3 sm:p-4 lg:p-6 transition-colors"
         >
-          <div className="max-w-7xl mx-auto space-y-6">
+          <div className="max-w-7xl mx-auto space-y-6 min-w-0 w-full">
             {/* Expandable Inline Profile Panel when toggled on Admin routes */}
             {showProfileDrawer && (
               <div className="bg-white dark:bg-slate-900 rounded-xl border border-amber-200 dark:border-amber-800/60 p-4 sm:p-6 shadow-xs">

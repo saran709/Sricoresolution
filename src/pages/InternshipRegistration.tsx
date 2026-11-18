@@ -165,13 +165,16 @@ export default function InternshipRegistration() {
             </div>
 
             {/* Quick Helper Box */}
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-amber-900 text-xs">
-              <h5 className="font-bold mb-1 flex items-center gap-1.5">
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-amber-900 text-xs space-y-2">
+              <h5 className="font-bold flex items-center gap-1.5">
                 <Clock className="w-4 h-4 text-amber-700" />
-                <span>Important Note on Offer Letters</span>
+                <span>Important Note on Offer Letters &amp; Resume Links</span>
               </h5>
               <p className="text-amber-800/90 leading-relaxed">
                 Ensure your Email Address and WhatsApp contact number are entered correctly in the Google Form. All credentials, project repositories, and offer letters are dispatched electronically.
+              </p>
+              <p className="text-amber-900 font-medium bg-white/80 p-2.5 rounded-xl border border-amber-200/80 leading-relaxed">
+                <strong>Link-Only Submission Policy:</strong> Direct file uploads are disabled across the portal. When submitting your Resume, Academic ID, or Project Deliverables, always paste a <strong>Google Drive link</strong> with sharing set to <strong>&ldquo;Anyone with the link &rarr; Viewer&rdquo; (Open to View access)</strong>.
               </p>
             </div>
           </div>

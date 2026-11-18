@@ -2,7 +2,11 @@ import React, { useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useLocation } from 'react-router-dom';
 import { useWebsiteSettings } from '../../contexts/WebsiteSettingsContext';
-import { FEATURED_CASE_STUDIES } from '../../data/featuredProjectsSummary';
+import {
+  FEATURED_CASE_STUDIES,
+  PUBLIC_PORTFOLIO_SHOWCASE_CATALOG,
+  INTERNSHIP_SHOWCASE_CATALOG,
+} from '../../data/featuredProjectsSummary';
 import { resolveEngineeringServiceSchemaByPath } from './ServiceSchema';
 import { resolveBreadcrumbsForPath } from '../ui/Breadcrumbs';
 
@@ -35,19 +39,19 @@ const FAQ_SCHEMA_ITEMS = [
     question:
       'How are Sricore Solutions internship and industrial training programs structured?',
     answer:
-      'Our internship cohorts are structured around hands-on engineering execution rather than passive lectures. Trainees select a specialized track—such as Full-Stack Web Development, Embedded Systems & IoT, Applied AI & Computer Vision, Cloud & DevOps, or Cybersecurity—and build production-grade modules with weekly code and architecture reviews from senior engineers.',
+      'Our internship cohorts are structured around hands-on engineering execution rather than passive lectures. Trainees select a specialized track—such as Full-Stack Web Development, Embedded Systems & IoT, Applied AI & Computer Vision, Python, Java, UI/UX Design, or Business Strategy—and build production-grade modules with weekly code and architecture reviews from senior engineers.',
   },
   {
     question:
       'Who is eligible to apply for the internship tracks, and what durations are available?',
     answer:
-      'Undergraduate (B.E./B.Tech/B.Sc/BCA) and postgraduate (M.E./M.Tech/MCA/M.Sc) students as well as recent graduates in Computer Science, Electronics, Electrical, Mechatronics, and allied disciplines are eligible. We offer flexible 4-week, 8-week, and 12-to-16-week semester capstone tracks in both hybrid and remote formats.',
+      'Undergraduate (B.E./B.Tech/B.Sc/BCA) and postgraduate (M.E./M.Tech/MCA/M.Sc/MBA) students as well as recent graduates in Computer Science, Electronics, Electrical, Mechatronics, and allied disciplines are eligible. We offer 1-month intensive industrial cohorts as well as 8-to-16-week semester capstone tracks.',
   },
   {
     question:
       'What credentials and portfolio outcomes do interns receive upon completing a cohort?',
     answer:
-      'Graduating interns receive an ISO-aligned Internship Completion Certificate with a unique verification ID, a detailed project evaluation report, and a documented GitHub/hardware capstone portfolio demonstrating real engineering deliverables to prospective employers.',
+      'Graduating interns receive an ISO 9001:2015-aligned Internship Completion Certificate with a unique verification ID, a performance-based Letter of Recommendation (LOR), and a documented GitHub/hardware capstone portfolio demonstrating 2+ real engineering deliverables.',
   },
   {
     question:
@@ -61,6 +65,8 @@ export interface RouteSeoMetadata {
   title: string;
   description: string;
   keywords: string[];
+  subject?: string;
+  category?: string;
   ogType?: 'website' | 'article';
   ogImage?: string;
   ogImageAlt?: string;
@@ -74,23 +80,48 @@ export interface RouteSeoMetadata {
     deliverables: string[];
   };
   includeFaqSchema?: boolean;
+  includeShowcaseCatalogSchema?: boolean;
+  includeInternshipCatalogSchema?: boolean;
 }
+
+const SHOWCASE_PROJECT_KEYWORDS = PUBLIC_PORTFOLIO_SHOWCASE_CATALOG.flatMap((p) => [
+  p.title,
+  p.category,
+  p.projectCode,
+]);
+
+const INTERNSHIP_TRACK_KEYWORDS = INTERNSHIP_SHOWCASE_CATALOG.map((i) => i.name);
 
 const DEFAULT_KEYWORDS = [
   'Sricore Solutions',
   'Sri core solutions',
+  'Sricore Solutions Pvt Ltd',
   'Enterprise Software Development',
   'Custom Web Application Development',
+  'React TypeScript Node.js Development',
   'Industrial IoT Solutions',
+  'IIoT Predictive Maintenance Dashboard',
   'Embedded Systems Engineering',
-  'STM32 ESP32 Firmware',
-  'PCB Design Services India',
+  'STM32 ESP32 FreeRTOS Firmware',
+  'Multi-Layer PCB Design Services India',
   'AI ML Solutions',
-  'Computer Vision Defect Detection',
-  'Applied Research and Development',
-  'IEEE Scopus Research Support',
-  'Engineering Internships Tamil Nadu',
-  'IT Consulting Chennai Namakkal',
+  'Computer Vision Defect Detection YOLOv8 TensorRT',
+  'Enterprise RAG & LLM Pipelines',
+  'Applied Research and Development Services',
+  'IEEE Scopus Springer Research Support',
+  'MATLAB Python NS-3 Simulation Benchmarking',
+  'Automated Quality Inspection System',
+  'Smart Factory IoT Dashboard',
+  'Healthcare Data Management FHIR R4 HL7 API',
+  'NexusHR Workforce Intelligence Platform',
+  'BioPrint AI 3D Printing Filament Extruder',
+  'EcoBinX Smart AI Dustbin',
+  'AI-Enabled 3L Bioreactor IoT Process Control',
+  'Thavam AI Skin Disease Scanner',
+  'Smart Helmet Detection & Ignition Interlock',
+  'Traffic Signal Communication V2X Green Corridor',
+  'Engineering Internships Tamil Nadu India',
+  'IT & R&D Consulting Namakkal Chennai',
 ];
 
 const ROUTE_METADATA_MAP: Record<string, RouteSeoMetadata> = {
@@ -98,10 +129,19 @@ const ROUTE_METADATA_MAP: Record<string, RouteSeoMetadata> = {
     title: 'Sricore Solutions – Software, IoT, AI & Research Experts',
     description:
       'Build scalable enterprise software, industrial IoT hardware, applied AI vision systems, and validated research prototypes with Sricore Solutions.',
-    keywords: DEFAULT_KEYWORDS,
+    keywords: [
+      ...DEFAULT_KEYWORDS,
+      ...SHOWCASE_PROJECT_KEYWORDS.slice(0, 18),
+      ...INTERNSHIP_TRACK_KEYWORDS,
+    ],
+    subject:
+      'Enterprise Software Development, Industrial IoT & Embedded Hardware, Applied AI/ML Computer Vision, Scientific R&D, and Mentored Engineering Internships',
+    category: 'Technology, Software Engineering, Industrial IoT, Artificial Intelligence & R&D',
     ogType: 'website',
     breadcrumbs: [{ name: 'Home', path: '/' }],
     includeFaqSchema: true,
+    includeShowcaseCatalogSchema: true,
+    includeInternshipCatalogSchema: true,
   },
   '/services': {
     title: 'Engineering & R&D Services | Sricore Solutions',
@@ -109,16 +149,22 @@ const ROUTE_METADATA_MAP: Record<string, RouteSeoMetadata> = {
       'Explore Sricore Solutions engineering services across custom software, embedded IoT hardware, applied AI/ML, scientific research, and mentored internships.',
     keywords: [
       ...DEFAULT_KEYWORDS,
-      'Engineering Services',
+      'Engineering Services India',
       'End-to-End Product Development',
       'Technical Consulting Services',
+      'Custom SaaS & Microservices Architecture',
+      'Altium KiCad PCB Prototyping',
+      'Edge AI TensorRT Deployment',
     ],
+    subject: 'Full-Lifecycle Software, Embedded Hardware, AI/ML & Scientific R&D Services',
+    category: 'Engineering & Technology Consulting Services',
     ogType: 'website',
     breadcrumbs: [
       { name: 'Home', path: '/' },
       { name: 'Services', path: '/services' },
     ],
-    includeFaqSchema: false,
+    includeFaqSchema: true,
+    includeShowcaseCatalogSchema: true,
   },
   '/solutions/software': {
     title: 'Custom Enterprise Software Development | Sricore Solutions',
@@ -127,12 +173,19 @@ const ROUTE_METADATA_MAP: Record<string, RouteSeoMetadata> = {
     keywords: [
       'Custom Software Development',
       'Enterprise Web Applications',
-      'React TypeScript Node.js Development',
-      'SaaS Architecture',
-      'Cloud Microservices',
-      'REST GraphQL API Engineering',
+      'React 19 TypeScript Node.js Development',
+      'Multi-Tenant SaaS Architecture',
+      'Cloud Microservices Docker Kubernetes',
+      'REST GraphQL gRPC API Engineering',
+      'Healthcare FHIR R4 HL7 API Development',
+      'NexusHR Enterprise HR Platform',
+      'Event Resource Allocation Software',
+      'Legacy Monolith Modernization',
+      'Zero-Trust RBAC Security Auditing',
       'Sricore Solutions Software',
     ],
+    subject: 'Custom Enterprise Web, Cloud Microservices, API & Mobile Software Engineering',
+    category: 'Software Engineering & Cloud Architecture',
     ogType: 'website',
     breadcrumbs: [
       { name: 'Home', path: '/' },
@@ -159,12 +212,19 @@ const ROUTE_METADATA_MAP: Record<string, RouteSeoMetadata> = {
     keywords: [
       'Industrial IoT Solutions',
       'Embedded Hardware Engineering',
-      'Multi-Layer PCB Design',
-      'STM32 ESP32 RTOS Firmware',
-      'Modbus MQTT LoRaWAN Gateways',
-      'Edge Telemetry Systems',
+      'Multi-Layer PCB Design Altium KiCad',
+      'STM32 ESP32 FreeRTOS Zephyr Firmware',
+      'Modbus RTU TCP MQTT LoRaWAN Gateways',
+      'Smart Factory IoT Telemetry Dashboard',
+      'AI-Enabled 3L Bioreactor IoT Control',
+      'BioPrint AI Extruder Hardware',
+      'Smart Helmet Alcohol Drowsiness Ignition Interlock',
+      'Traffic Signal V2X RF Communication',
+      'Automatic Water Tap IR Load Cell Controller',
       'Sricore Solutions Hardware',
     ],
+    subject: 'Embedded Systems, Multi-Layer PCB Layout, RTOS Firmware & Industrial IoT Gateways',
+    category: 'Hardware Engineering & Industrial IoT (IIoT)',
     ogType: 'website',
     breadcrumbs: [
       { name: 'Home', path: '/' },
@@ -190,13 +250,20 @@ const ROUTE_METADATA_MAP: Record<string, RouteSeoMetadata> = {
       'Deploy real-time computer vision inspection, predictive maintenance models, custom RAG workflows, and edge AI inference with Sricore Solutions.',
     keywords: [
       'AI and Machine Learning Services',
-      'Industrial Computer Vision',
-      'Automated Optical Defect Inspection',
-      'Edge AI TensorRT Inference',
-      'Custom LLM RAG Pipelines',
-      'Predictive Maintenance Analytics',
+      'Industrial Computer Vision YOLOv8 OpenCV',
+      'Automated Optical Defect Inspection System',
+      'Edge AI NVIDIA Jetson TensorRT Inference',
+      'Custom LLM & Enterprise RAG Pipelines',
+      'Predictive Maintenance LSTM XGBoost Analytics',
+      'Fake Review Detection NLP Deep Learning',
+      'EcoBinX Smart AI Waste Segregation Vision',
+      'Thavam AI Skin Disease CNN Scanner',
+      'Smart Helmet CCTV Detection YOLOv8',
+      'Heavy Metal Adsorption Linear Regression AI',
       'Sricore Solutions AI',
     ],
+    subject: 'Applied Artificial Intelligence, Edge Computer Vision, Predictive Analytics & RAG Systems',
+    category: 'Artificial Intelligence & Machine Learning',
     ogType: 'website',
     breadcrumbs: [
       { name: 'Home', path: '/' },
@@ -222,13 +289,19 @@ const ROUTE_METADATA_MAP: Record<string, RouteSeoMetadata> = {
       'Accelerate R&D with mathematical modeling, algorithm benchmarking, MATLAB/Python simulation, and IEEE/Scopus manuscript support from Sricore Solutions.',
     keywords: [
       'Research and Development Services',
-      'Scientific Prototyping',
-      'Algorithm Benchmarking',
-      'MATLAB Python NS3 Simulation',
-      'IEEE Scopus Research Documentation',
-      'Industrial R&D Partner India',
+      'Scientific Proof of Concept Prototyping',
+      'Algorithm Design & Complexity Benchmarking',
+      'MATLAB Python SciPy PyTorch NS-3 Simulation',
+      'IEEE ACM Springer Elsevier Scopus Manuscript Support',
+      'LaTeX Overleaf Technical Documentation',
+      'Patent Prior Art & Claim Drafting',
+      'Heavy Metal Adsorption Isotherm Modeling',
+      'Bioreactor Kalman Filter LSTM Process Control',
+      'Environmental & Epidemiological Risk Prediction',
       'Sricore Solutions Research',
     ],
+    subject: 'Scientific R&D, Mathematical Modeling, Simulation Benchmarking & Technical Documentation',
+    category: 'Scientific Research & Development (R&D)',
     ogType: 'website',
     breadcrumbs: [
       { name: 'Home', path: '/' },
@@ -255,17 +328,26 @@ const ROUTE_METADATA_MAP: Record<string, RouteSeoMetadata> = {
     keywords: [
       'Engineering Internships India',
       'Full Stack Web Development Internship',
-      'Embedded Systems IoT Internship',
-      'AI Machine Learning Internship',
-      'Industrial Training Programs Tamil Nadu',
-      'ISO Certified Tech Internship',
+      'Embedded Systems & IoT Engineering Internship',
+      'Artificial Intelligence & Machine Learning Internship',
+      'Python Programming Internship',
+      'Java Programming Internship',
+      'Frontend React Development Internship',
+      'Backend Node.js API Internship',
+      'UI UX Figma Design Internship',
+      'Business & Marketing Strategy Internship',
+      '1 Month Industrial Training Certificate Tamil Nadu',
+      'ISO 9001:2015 Certified Tech Internship',
       'Sricore Solutions Internships',
     ],
+    subject: 'Mentored Industrial Engineering Internships & Live Capstone Training Cohorts',
+    category: 'Technical Education, Industrial Training & Engineering Internships',
     ogType: 'website',
     breadcrumbs: [
       { name: 'Home', path: '/' },
       { name: 'Internships', path: '/internships' },
     ],
+    includeInternshipCatalogSchema: true,
     serviceSchema: {
       name: 'Industrial Engineering Internship & Training Programs',
       serviceType: 'Mentored Technical Cohorts & Capstone Training',
@@ -285,15 +367,19 @@ const ROUTE_METADATA_MAP: Record<string, RouteSeoMetadata> = {
       'Submit your application for Sricore Solutions hands-on engineering internships in Software Development, IoT, Embedded Systems, and AI/ML.',
     keywords: [
       'Apply Engineering Internship',
-      'Sricore Internship Registration',
+      'Sricore Internship Registration Portal',
       'Student Industrial Training Application',
+      ...INTERNSHIP_TRACK_KEYWORDS,
     ],
+    subject: 'Online Registration for Sricore Solutions Engineering Internship Cohorts',
+    category: 'Engineering Internship Registration',
     ogType: 'website',
     breadcrumbs: [
       { name: 'Home', path: '/' },
       { name: 'Internships', path: '/internships' },
       { name: 'Apply', path: '/internships/apply' },
     ],
+    includeInternshipCatalogSchema: true,
   },
   '/projects': {
     title: 'Engineering Case Studies & Portfolio | Sricore Solutions',
@@ -301,16 +387,21 @@ const ROUTE_METADATA_MAP: Record<string, RouteSeoMetadata> = {
       'Review verified Sricore Solutions engineering case studies across enterprise software, industrial IoT telemetry, and edge AI computer vision deployments.',
     keywords: [
       'Engineering Case Studies',
-      'Software Portfolio',
+      'Sricore Solutions Project Portfolio',
+      'Software & AI Showcase',
       'Industrial IoT Deployments',
-      'Computer Vision Case Study',
-      'Sricore Solutions Projects',
+      'Computer Vision Defect Detection Case Study',
+      ...SHOWCASE_PROJECT_KEYWORDS,
     ],
+    subject:
+      'Verified Production Case Studies & R&D Prototypes in Software, Industrial IoT, Embedded Hardware, and AI/ML',
+    category: 'Engineering Portfolio & Technical Case Studies',
     ogType: 'website',
     breadcrumbs: [
       { name: 'Home', path: '/' },
       { name: 'Case Studies', path: '/projects' },
     ],
+    includeShowcaseCatalogSchema: true,
   },
   '/about': {
     title: 'About Us – Engineering & R&D Partner | Sricore Solutions',
@@ -318,10 +409,13 @@ const ROUTE_METADATA_MAP: Record<string, RouteSeoMetadata> = {
       'Learn how Sricore Solutions bridges academic research and industrial engineering across custom software, embedded hardware, and applied AI.',
     keywords: [
       'About Sricore Solutions',
-      'Technology Partner India',
-      'Engineering Leadership',
-      'Software Hardware AI Company',
+      'Sri core solutions Company Profile',
+      'Technology & R&D Partner India',
+      'Engineering Leadership Namakkal Chennai',
+      'Software Hardware AI Company Tamil Nadu',
     ],
+    subject: 'About Sricore Solutions Pvt Ltd – Multidisciplinary Engineering & R&D Organization',
+    category: 'Corporate Profile & Engineering Governance',
     ogType: 'website',
     breadcrumbs: [
       { name: 'Home', path: '/' },
@@ -334,15 +428,19 @@ const ROUTE_METADATA_MAP: Record<string, RouteSeoMetadata> = {
       'Build your career at Sricore Solutions. Explore open engineering roles, research fellowships, and mentored industrial internship cohorts.',
     keywords: [
       'Sricore Solutions Careers',
-      'Software Engineer Jobs Tamil Nadu',
-      'Embedded Systems Jobs',
-      'AI Engineer Careers',
+      'Full-Stack Software Engineer Jobs Tamil Nadu',
+      'Embedded Systems & IoT Engineer Jobs',
+      'AI ML Computer Vision Engineer Careers',
+      ...INTERNSHIP_TRACK_KEYWORDS,
     ],
+    subject: 'Full-Time Engineering Careers & Mentored Industrial Internships at Sricore Solutions',
+    category: 'Technology Careers & Recruitment',
     ogType: 'website',
     breadcrumbs: [
       { name: 'Home', path: '/' },
       { name: 'Careers', path: '/careers' },
     ],
+    includeInternshipCatalogSchema: true,
   },
   '/contact': {
     title: 'Contact Our Engineering Desk | Sricore Solutions',
@@ -350,9 +448,12 @@ const ROUTE_METADATA_MAP: Record<string, RouteSeoMetadata> = {
       'Connect with Sricore Solutions architects in Namakkal and Chennai for custom software, industrial IoT, AI solutions, or research collaborations.',
     keywords: [
       'Contact Sricore Solutions',
-      'Engineering Consultation',
-      'Software IoT AI Quote India',
+      'Engineering Consultation India',
+      'Software IoT AI Quote Namakkal Chennai',
+      'Technical Discovery Call',
     ],
+    subject: 'Contact Sricore Solutions Engineering & R&D Desk',
+    category: 'Customer Support & Technical Consultation',
     ogType: 'website',
     breadcrumbs: [
       { name: 'Home', path: '/' },
@@ -364,11 +465,14 @@ const ROUTE_METADATA_MAP: Record<string, RouteSeoMetadata> = {
     description:
       'Submit your technical requirements to Sricore Solutions and receive a feasibility assessment and architecture proposal within 24 hours.',
     keywords: [
-      'Request Software Quote',
+      'Request Custom Software Quote',
       'IoT Hardware Prototyping Enquiry',
-      'AI Project Consultation',
+      'AI & Computer Vision Project Consultation',
+      'R&D Simulation Proposal',
       'Sricore Solutions Enquiry',
     ],
+    subject: 'Custom Engineering Project Quote & Architecture Feasibility Request',
+    category: 'Project Proposal & Technical Enquiry',
     ogType: 'website',
     breadcrumbs: [
       { name: 'Home', path: '/' },
@@ -379,7 +483,9 @@ const ROUTE_METADATA_MAP: Record<string, RouteSeoMetadata> = {
     title: 'Privacy Policy & Data Protection | Sricore Solutions',
     description:
       'Read Sricore Solutions privacy policy detailing how we safeguard client intellectual property, personal data, and session security.',
-    keywords: ['Privacy Policy', 'Data Protection', 'Sricore Solutions Privacy'],
+    keywords: ['Privacy Policy', 'Data Protection', 'NDA & IP Security', 'Sricore Solutions Privacy'],
+    subject: 'Data Privacy, Security & Intellectual Property Protection Policy',
+    category: 'Legal & Compliance',
     ogType: 'website',
     breadcrumbs: [
       { name: 'Home', path: '/' },
@@ -390,7 +496,9 @@ const ROUTE_METADATA_MAP: Record<string, RouteSeoMetadata> = {
     title: 'Terms & Conditions of Service | Sricore Solutions',
     description:
       'Review the terms and conditions governing Sricore Solutions commercial software, hardware engineering, research services, and training cohorts.',
-    keywords: ['Terms and Conditions', 'Service Agreement', 'Sricore Solutions Terms'],
+    keywords: ['Terms and Conditions', 'Master Service Agreement', 'Sricore Solutions Terms'],
+    subject: 'Terms and Conditions of Service & Intellectual Property Assignment',
+    category: 'Legal & Compliance',
     ogType: 'website',
     breadcrumbs: [
       { name: 'Home', path: '/' },
@@ -401,7 +509,14 @@ const ROUTE_METADATA_MAP: Record<string, RouteSeoMetadata> = {
     title: 'Technical Editorial & Quality Policy | Sricore Solutions',
     description:
       'Examine Sricore Solutions editorial standards, peer-review workflow, and empirical verification practices for published case studies and documentation.',
-    keywords: ['Editorial Policy', 'Engineering Documentation Standards', 'Sricore Solutions'],
+    keywords: [
+      'Editorial Policy',
+      'Engineering Documentation Standards',
+      'Peer Review & Verification',
+      'Sricore Solutions',
+    ],
+    subject: 'Technical Editorial Standards, Architecture Peer Review & Empirical Verification Policy',
+    category: 'Editorial Governance & Quality Assurance',
     ogType: 'website',
     breadcrumbs: [
       { name: 'Home', path: '/' },
@@ -429,6 +544,21 @@ function isPrivateOrAuthPath(pathname: string): boolean {
   );
 }
 
+function findShowcaseEntry(slugOrId: string) {
+  const clean = slugOrId.trim().toLowerCase();
+  return (
+    PUBLIC_PORTFOLIO_SHOWCASE_CATALOG.find(
+      (p) =>
+        p.slug.toLowerCase() === clean ||
+        p.id.toLowerCase() === clean ||
+        p.projectCode.toLowerCase() === clean
+    ) ||
+    PUBLIC_PORTFOLIO_SHOWCASE_CATALOG.find(
+      (p) => p.slug.includes(clean) || clean.includes(p.slug)
+    )
+  );
+}
+
 export function resolveRouteMetadata(pathname: string): RouteSeoMetadata {
   const normalized = normalizePath(pathname);
 
@@ -436,33 +566,39 @@ export function resolveRouteMetadata(pathname: string): RouteSeoMetadata {
     return ROUTE_METADATA_MAP[normalized];
   }
 
-  // Dynamic Project Case Study Route (/projects/:slug)
+  // Dynamic Project Case Study Route (/projects/:slug) across all 18 showcase projects
   if (normalized.startsWith('/projects/')) {
     const slug = normalized.replace('/projects/', '').trim();
-    const matched = FEATURED_CASE_STUDIES.find((p) => p.slug === slug);
+    const matched = findShowcaseEntry(slug);
     if (matched) {
-      const stackKeywords =
-        matched.technologyStack?.flatMap((group) => group.items) || [];
+      const conciseTitle =
+        matched.title.length > 44
+          ? `${matched.title.split('—')[0].trim()} | Sricore Solutions`
+          : `${matched.title} – Case Study | Sricore Solutions`;
       return {
-        title: `${matched.title} – Case Study | Sricore Solutions`,
+        title: conciseTitle,
         description:
           matched.summary.length > 158
             ? `${matched.summary.slice(0, 155)}...`
             : matched.summary,
         keywords: [
           matched.title,
+          matched.projectCode,
           matched.category,
           matched.domain,
           'Sricore Solutions Case Study',
-          ...stackKeywords,
+          'Engineering Architecture Blueprint',
+          ...matched.technologies,
         ],
+        subject: `${matched.title} (${matched.projectCode}) – ${matched.domain}`,
+        category: matched.category,
         ogType: 'article',
         ogImage: matched.imageUrl,
         ogImageAlt: `${matched.title} – Sricore Solutions Engineering Case Study`,
         breadcrumbs: [
           { name: 'Home', path: '/' },
           { name: 'Case Studies', path: '/projects' },
-          { name: matched.title, path: normalized },
+          { name: matched.title, path: `/projects/${matched.slug}` },
         ],
       };
     }
@@ -476,6 +612,8 @@ export function resolveRouteMetadata(pathname: string): RouteSeoMetadata {
       description:
         'Explore full architecture specifications, technical stack benchmarks, and deployment metrics for this Sricore Solutions engineering case study.',
       keywords: [formattedSlug, 'Engineering Case Study', ...DEFAULT_KEYWORDS],
+      subject: `${formattedSlug} – Sricore Solutions Engineering Case Study`,
+      category: 'Engineering Case Study',
       ogType: 'article',
       breadcrumbs: [
         { name: 'Home', path: '/' },
@@ -498,6 +636,8 @@ export function resolveRouteMetadata(pathname: string): RouteSeoMetadata {
       description:
         'Secure role-based engineering workspace and project management portal for Sricore Solutions clients, staff, mentors, and interns.',
       keywords: ['Sricore Solutions Portal', 'Engineering Workspace'],
+      subject: 'Sricore Solutions Internal Operations Workspace',
+      category: 'Enterprise Portal',
       ogType: 'website',
       noIndex: true,
       breadcrumbs: [{ name: 'Home', path: '/' }],
@@ -539,6 +679,13 @@ export function MetadataManager() {
   const robotsContent = meta.noIndex
     ? 'noindex, nofollow'
     : 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1';
+
+  const subjectContent =
+    meta.subject ||
+    'Enterprise Software Development, Hardware & Industrial IoT, Applied AI/ML, Scientific R&D & Engineering Internships';
+  const categoryContent =
+    meta.category ||
+    'Technology Solutions, Software Engineering, Industrial IoT, Artificial Intelligence & Research';
 
   const structuredDataGraph = useMemo(() => {
     const orgId = `${origin}/#organization`;
@@ -639,7 +786,7 @@ export function MetadataManager() {
         '@id': orgId,
         name: brandName,
         legalName: 'Sricore Solutions Pvt Ltd',
-        alternateName: ['Sri core solutions', 'Sricore'],
+        alternateName: ['Sri core solutions', 'Sricore', 'Sricore Engineering & R&D'],
         url: origin,
         logo: {
           '@type': 'ImageObject',
@@ -648,7 +795,7 @@ export function MetadataManager() {
         image: socialImage,
         description:
           settings?.brandDescription ||
-          'Sricore Solutions is a premier engineering and applied research company specializing in custom enterprise software development, industrial IoT hardware, AI/ML computer vision, and mentored internship cohorts.',
+          'Sricore Solutions is a premier engineering and applied research company specializing in custom enterprise software development, industrial IoT hardware, AI/ML computer vision, scientific R&D, and mentored internship cohorts.',
         email: contactEmail,
         telephone: contactPhone,
         priceRange: '$$',
@@ -693,13 +840,15 @@ export function MetadataManager() {
         ],
         knowsAbout: [
           'Enterprise Software Architecture',
-          'Full-Stack Web Development',
-          'Industrial Internet of Things (IIoT)',
-          'Embedded Systems & PCB Layout',
-          'Artificial Intelligence & Machine Learning',
-          'Computer Vision Quality Inspection',
-          'Scientific Research & Simulation Benchmarking',
-          'Industrial Engineering Internships',
+          'Full-Stack React, TypeScript & Node.js Development',
+          'Industrial Internet of Things (IIoT) & Edge Gateways',
+          'Embedded Systems, STM32/ESP32 Firmware & Multi-Layer PCB Layout',
+          'Artificial Intelligence, Machine Learning & Deep Learning',
+          'Computer Vision Automated Optical Inspection (YOLOv8 / TensorRT)',
+          'Retrieval-Augmented Generation (RAG) & Custom LLM Pipelines',
+          'HL7 v2 & FHIR R4 Healthcare Interoperability APIs',
+          'Scientific Research, MATLAB/Python/NS-3 Simulation & IEEE/Scopus Documentation',
+          'Industrial Engineering Internships & Technical Mentorship',
         ],
         hasOfferCatalog: {
           '@type': 'OfferCatalog',
@@ -714,6 +863,7 @@ export function MetadataManager() {
         '@id': websiteId,
         url: origin,
         name: brandName,
+        alternateName: 'Sri core solutions',
         publisher: { '@id': orgId },
         inLanguage: 'en-IN',
         potentialAction: {
@@ -728,7 +878,7 @@ export function MetadataManager() {
       {
         '@type': 'WebApplication',
         '@id': webAppId,
-        name: `${brandName} Engineering Portal`,
+        name: `${brandName} Engineering & R&D Portal`,
         url: origin,
         applicationCategory: 'BusinessApplication',
         operatingSystem: 'All',
@@ -742,16 +892,19 @@ export function MetadataManager() {
         },
       },
       {
-        '@type': 'WebPage',
+        '@type': normalizedPath === '/projects' ? ['WebPage', 'CollectionPage'] : 'WebPage',
         '@id': webpageId,
         url: canonicalUrl,
         name: meta.title,
         description: meta.description,
+        keywords: meta.keywords.join(', '),
         isPartOf: { '@id': websiteId },
         about: { '@id': orgId },
         ...(resolveEngineeringServiceSchemaByPath(normalizedPath)
           ? { mainEntity: { '@id': `${canonicalUrl}#engineering-service` } }
-          : {}),
+          : normalizedPath === '/projects'
+            ? { mainEntity: { '@id': `${origin}/#project-showcase-catalog` } }
+            : {}),
         inLanguage: 'en-IN',
       },
       {
@@ -791,6 +944,71 @@ export function MetadataManager() {
       });
     }
 
+    // Emit the full 18-project showcase ItemList on Home, Projects, and Services pages
+    if (meta.includeShowcaseCatalogSchema) {
+      graphNodes.push({
+        '@type': 'ItemList',
+        '@id': `${origin}/#project-showcase-catalog`,
+        name: 'Sricore Solutions Verified Engineering Case Studies & Project Showcase',
+        description:
+          'Complete portfolio of production software platforms, industrial IoT telemetry systems, embedded hardware prototypes, and applied AI/ML case studies engineered by Sricore Solutions.',
+        numberOfItems: PUBLIC_PORTFOLIO_SHOWCASE_CATALOG.length,
+        itemListElement: PUBLIC_PORTFOLIO_SHOWCASE_CATALOG.map((proj, index) => ({
+          '@type': 'ListItem',
+          position: index + 1,
+          url: `${origin}/projects/${proj.slug}`,
+          item: {
+            '@type': 'TechArticle',
+            '@id': `${origin}/projects/${proj.slug}#case-study`,
+            headline: proj.title,
+            name: proj.title,
+            identifier: proj.projectCode,
+            articleSection: proj.category,
+            about: proj.domain,
+            description: proj.summary,
+            image: proj.imageUrl,
+            url: `${origin}/projects/${proj.slug}`,
+            author: { '@id': orgId },
+            publisher: { '@id': orgId },
+            keywords: proj.technologies.join(', '),
+          },
+        })),
+      });
+    }
+
+    // Emit the full 9-track Internship & Industrial Training ItemList on Home, Internships, and Careers pages
+    if (meta.includeInternshipCatalogSchema) {
+      graphNodes.push({
+        '@type': 'ItemList',
+        '@id': `${origin}/#internship-programs-catalog`,
+        name: 'Sricore Solutions Mentored Engineering Internship & Industrial Training Tracks',
+        description:
+          'Official 1-month and semester capstone industrial internship tracks across Software, Full-Stack Web, Embedded Systems & IoT, Artificial Intelligence & ML, UI/UX Design, and Business Strategy.',
+        numberOfItems: INTERNSHIP_SHOWCASE_CATALOG.length,
+        itemListElement: INTERNSHIP_SHOWCASE_CATALOG.map((track, index) => ({
+          '@type': 'ListItem',
+          position: index + 1,
+          url: `${origin}/internships#${track.id}`,
+          item: {
+            '@type': 'Course',
+            '@id': `${origin}/internships#${track.id}`,
+            name: track.name,
+            courseCode: track.id.toUpperCase(),
+            description: track.description,
+            provider: { '@id': orgId },
+            educationalCredentialAwarded:
+              'ISO 9001:2015 Aligned Internship Completion Certificate & Performance LOR',
+            teaches: track.technologies,
+            hasCourseInstance: {
+              '@type': 'CourseInstance',
+              courseMode: ['online', 'blended'],
+              courseWorkload: 'P1M',
+            },
+          },
+        })),
+      });
+    }
+
     if (meta.includeFaqSchema && FAQ_SCHEMA_ITEMS.length > 0) {
       graphNodes.push({
         '@type': 'FAQPage',
@@ -808,21 +1026,28 @@ export function MetadataManager() {
 
     if (normalizedPath.startsWith('/projects/')) {
       const slug = normalizedPath.replace('/projects/', '').trim();
-      const matched = FEATURED_CASE_STUDIES.find((p) => p.slug === slug);
+      const matched =
+        findShowcaseEntry(slug) ||
+        FEATURED_CASE_STUDIES.find((p) => p.slug === slug);
       if (matched) {
+        const keywordsList =
+          'technologies' in matched
+            ? matched.technologies
+            : matched.technologyStack?.flatMap((g) => g.items) || [];
         graphNodes.push({
-          '@type': 'TechArticle',
+          '@type': ['TechArticle', 'CreativeWork'],
           '@id': `${canonicalUrl}#article`,
           headline: matched.title,
+          name: matched.title,
+          identifier: matched.projectCode,
+          articleSection: matched.category,
           description: matched.summary,
           image: matched.imageUrl || socialImage,
           author: { '@id': orgId },
           publisher: { '@id': orgId },
           mainEntityOfPage: { '@id': webpageId },
           about: matched.domain,
-          keywords: matched.technologyStack
-            ?.flatMap((g) => g.items)
-            .join(', '),
+          keywords: keywordsList.join(', '),
         });
       }
     }
@@ -858,12 +1083,25 @@ export function MetadataManager() {
       <meta name="title" content={meta.title} />
       <meta name="description" content={meta.description} />
       <meta name="keywords" content={meta.keywords.join(', ')} />
+      <meta name="subject" content={subjectContent} />
+      <meta name="topic" content={subjectContent} />
+      <meta name="summary" content={meta.description} />
+      <meta name="Classification" content={categoryContent} />
+      <meta name="category" content={categoryContent} />
       <meta name="author" content={brandName} />
       <meta name="publisher" content={brandName} />
+      <meta name="copyright" content={`© ${new Date().getFullYear()} ${brandName} Pvt Ltd`} />
       <meta name="application-name" content={brandName} />
       <meta name="robots" content={robotsContent} />
       <meta name="googlebot" content={robotsContent} />
       <meta name="bingbot" content={robotsContent} />
+      <meta name="slurp" content={robotsContent} />
+      <meta name="duckduckbot" content={robotsContent} />
+      <meta name="coverage" content="Worldwide" />
+      <meta name="distribution" content="Global" />
+      <meta name="target" content="all" />
+      <meta name="HandheldFriendly" content="True" />
+      <meta name="MobileOptimized" content="320" />
       <meta name="format-detection" content="telephone=yes, email=yes, address=yes" />
 
       {/* Geographic & Local Search Discovery Tags */}
@@ -872,8 +1110,18 @@ export function MetadataManager() {
       <meta name="geo.position" content="11.2189;78.1674" />
       <meta name="ICBM" content="11.2189, 78.1674" />
       <meta name="language" content="English" />
-      <meta name="revisit-after" content="7 days" />
+      <meta name="revisit-after" content="3 days" />
       <meta name="rating" content="General" />
+
+      {/* Dublin Core Academic & R&D Indexing Meta Tags */}
+      <meta name="DC.title" content={meta.title} />
+      <meta name="DC.description" content={meta.description} />
+      <meta name="DC.subject" content={subjectContent} />
+      <meta name="DC.creator" content={brandName} />
+      <meta name="DC.publisher" content={brandName} />
+      <meta name="DC.type" content={meta.ogType === 'article' ? 'Text.Article' : 'InteractiveResource'} />
+      <meta name="DC.language" content="en-IN" />
+      <meta name="DC.coverage" content="Namakkal, Chennai, Tamil Nadu, India & Global" />
 
       {/* Canonical & Language Alternates */}
       <link rel="canonical" href={canonicalUrl} />
@@ -886,24 +1134,40 @@ export function MetadataManager() {
       <meta property="og:site_name" content={brandName} />
       <meta property="og:locale" content="en_IN" />
       <meta property="og:locale:alternate" content="en_US" />
+      <meta property="og:locale:alternate" content="en_GB" />
       <meta property="og:url" content={canonicalUrl} />
       <meta property="og:title" content={meta.title} />
       <meta property="og:description" content={meta.description} />
       <meta property="og:image" content={socialImage} />
       <meta property="og:image:secure_url" content={socialImage} />
+      <meta property="og:image:type" content="image/jpeg" />
       <meta property="og:image:alt" content={socialImageAlt} />
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
+      {meta.ogType === 'article' && (
+        <>
+          <meta property="article:publisher" content={origin} />
+          <meta property="article:section" content={categoryContent} />
+          {meta.keywords.slice(0, 6).map((kw) => (
+            <meta key={kw} property="article:tag" content={kw} />
+          ))}
+        </>
+      )}
 
       {/* Twitter / X Large Summary Cards */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:site" content="@sricoresolutions" />
       <meta name="twitter:creator" content="@sricoresolutions" />
+      <meta name="twitter:domain" content="sricoresolutions.com" />
       <meta name="twitter:url" content={canonicalUrl} />
       <meta name="twitter:title" content={meta.title} />
       <meta name="twitter:description" content={meta.description} />
       <meta name="twitter:image" content={socialImage} />
       <meta name="twitter:image:alt" content={socialImageAlt} />
+      <meta name="twitter:label1" content="Practice Areas" />
+      <meta name="twitter:data1" content="Software, Industrial IoT, AI/ML & R&D" />
+      <meta name="twitter:label2" content="Headquarters" />
+      <meta name="twitter:data2" content="Namakkal & Chennai, Tamil Nadu, India" />
 
       {/* Comprehensive Schema.org JSON-LD Structured Data */}
       <script type="application/ld+json">{JSON.stringify(structuredDataGraph)}</script>

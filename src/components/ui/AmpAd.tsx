@@ -1,9 +1,25 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { isRouteEligibleForAds } from '../../lib/adEligibility';
 
 interface AmpAdProps {
   className?: string;
+}
+
+const ALLOWED_AMP_PATHS = new Set([
+  '/solutions/software',
+  '/solutions/hardware',
+  '/solutions/ai-ml',
+  '/services/research',
+]);
+
+function checkAmpRouteEligible(pathname: string): boolean {
+  if (!pathname) return false;
+  const clean =
+    pathname.length > 1 && pathname.endsWith('/')
+      ? pathname.slice(0, -1).toLowerCase()
+      : pathname.toLowerCase();
+  if (ALLOWED_AMP_PATHS.has(clean)) return true;
+  return /^\/projects\/[a-z0-9-]+$/i.test(clean);
 }
 
 /**
@@ -13,7 +29,7 @@ interface AmpAdProps {
  */
 export function AmpAd({ className = '' }: AmpAdProps) {
   const location = useLocation();
-  const isEligible = isRouteEligibleForAds(location.pathname);
+  const isEligible = checkAmpRouteEligible(location.pathname);
   const containerRef = useRef<HTMLDivElement>(null);
   const [hasAdContent, setHasAdContent] = useState<boolean>(false);
 

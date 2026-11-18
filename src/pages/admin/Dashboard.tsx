@@ -38,6 +38,9 @@ const UserActivity = React.lazy(() =>
 const UserManagement = React.lazy(() =>
   import('../../components/UserManagement').then((m) => ({ default: m.UserManagement }))
 );
+const ProjectTracker = React.lazy(() =>
+  import('../../components/dashboard/ProjectTracker').then((m) => ({ default: m.ProjectTracker }))
+);
 
 export default function AdminDashboard() {
   const { currentUser, userProfile } = useAuth();
@@ -283,6 +286,13 @@ export default function AdminDashboard() {
           ))}
         </div>
       )}
+
+      {/* Real-Time Project Tracker (Statuses, Milestones, and Deadlines) */}
+      <div className="mt-8">
+        <DashboardSuspense variant="table" moduleName="Project Tracker">
+          <ProjectTracker maxItems={6} />
+        </DashboardSuspense>
+      </div>
 
       {/* Centralized Five-Role RBAC, Permission Engine & Dynamic Limits Management */}
       <div className="mt-8">

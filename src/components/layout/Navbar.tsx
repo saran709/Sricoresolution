@@ -47,21 +47,21 @@ export function Navbar() {
         </div>
       )}
 
-      <header className="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md transition-colors">
+      <header className="sticky top-0 left-0 right-0 z-50 w-full max-w-[100vw] border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md transition-colors">
         <Container>
-          <div className="flex h-14 items-center justify-between">
-            <div className="flex items-center">
-              <Link to="/" className="flex items-center gap-2" onClick={closeMobileMenu}>
+          <div className="flex h-14 items-center justify-between gap-2 sm:gap-4 min-w-0">
+            <div className="flex items-center min-w-0 flex-1 md:flex-initial">
+              <Link to="/" className="flex items-center gap-2 min-w-0" onClick={closeMobileMenu}>
                 <img 
                   src={settings?.logoUrl || "/logo.png"} 
                   alt={settings?.brandName || "Sri core solutions Logo"} 
-                  className="h-10 w-auto object-contain" 
+                  className="h-8 sm:h-10 w-auto object-contain shrink-0" 
                   onError={(e) => {
                     // Fallback if logo fails
                     (e.target as HTMLElement).style.display = 'none';
                   }}
                 />
-                <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white flex items-baseline gap-1">
+                <span className="text-base sm:text-lg md:text-xl font-bold tracking-tight text-slate-900 dark:text-white flex items-baseline gap-1 min-w-0 truncate">
                   {(() => {
                     const raw = (settings?.brandName || 'Sricore Solutions').trim();
                     const normalized = /^sri\s*core\s*solutions$/i.test(raw)
@@ -72,9 +72,9 @@ export function Navbar() {
                     const accent = parts.slice(1).join(' ');
                     return (
                       <>
-                        <span>{primary}</span>
+                        <span className="truncate">{primary}</span>
                         {accent && (
-                          <span style={{ color: primaryColor }}>{accent}</span>
+                          <span className="truncate" style={{ color: primaryColor }}>{accent}</span>
                         )}
                       </>
                     );
@@ -179,10 +179,12 @@ export function Navbar() {
             </div>
 
             {/* Mobile actions & menu button */}
-            <div className="flex md:hidden items-center gap-1.5">
+            <div className="flex md:hidden items-center gap-1.5 shrink-0 ml-auto">
               <button
                 onClick={toggleMobileMenu}
-                className="inline-flex items-center justify-center p-2 rounded-md text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none"
+                aria-expanded={isMobileMenuOpen}
+                aria-label="Toggle navigation menu"
+                className="inline-flex items-center justify-center min-h-[42px] min-w-[42px] p-2 rounded-lg border border-slate-200/80 dark:border-slate-700/80 text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none transition-colors"
               >
                 {isMobileMenuOpen ? (
                   <X className="h-6 w-6" aria-hidden="true" />

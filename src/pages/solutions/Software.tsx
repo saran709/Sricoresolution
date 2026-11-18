@@ -2,7 +2,7 @@ import React from 'react';
 import { Container } from '../../components/ui/Container';
 import { SectionHeader } from '../../components/ui/SectionHeader';
 import { CTASection } from '../../components/ui/CTASection';
-import { AdUnit } from '../../components/ui/AdUnit';
+import { EditorialHighlightSlot as AdUnit } from '../../components/ui/EditorialHighlightSlot';
 import { ServiceSchema } from '../../components/seo/ServiceSchema';
 import { ServiceFAQSection } from '../../components/seo/FAQSchema';
 import { 

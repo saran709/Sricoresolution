@@ -216,6 +216,7 @@ export function gzipCompressionMiddleware(req: Request, res: Response, next: Nex
     statusMessageOrHeaders?: unknown,
     maybeHeaders?: unknown
   ): Response {
+    res.statusCode = statusCode;
     const headersObj =
       typeof statusMessageOrHeaders === 'object' && statusMessageOrHeaders !== null
         ? (statusMessageOrHeaders as Record<string, string | string[] | number>)

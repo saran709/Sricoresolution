@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { Textarea } from '../../../components/ui/Textarea';
+import { DriveLinkInput, validateShareableLink } from '../../../components/ui/DriveLinkInput';
 import { logActivity } from '../../../lib/activityLogger';
 import { useInternDashboard } from '../../../hooks/useDashboardQueries';
 import { DashboardModuleSkeleton } from '../../../components/ui/DashboardSuspense';
@@ -46,6 +47,8 @@ export default function InternDashboard() {
 
   const [submittingTaskId, setSubmittingTaskId] = useState<string | null>(null);
   const [submittingWork, setSubmittingWork] = useState(false);
+  const [submissionLink, setSubmissionLink] = useState('');
+  const [openAccessConfirmed, setOpenAccessConfirmed] = useState(false);
   const [submissionNote, setSubmissionNote] = useState('');
   const [statusBanner, setStatusBanner] = useState<{
     type: 'success' | 'error';
@@ -73,26 +76,40 @@ export default function InternDashboard() {
 
   const handleSubmitAssignment = async (taskId: string) => {
     setStatusBanner(null);
-    const trimmed = submissionNote.trim();
-    if (!trimmed) {
+
+    const linkCheck = validateShareableLink(submissionLink);
+    if (!linkCheck.isValid) {
       setStatusBanner({
         type: 'error',
-        message: 'Add a short note or link to your completed work before submitting.',
+        message: linkCheck.error || 'Please provide a valid Google Drive or GitHub link for your assignment deliverable.',
       });
       return;
     }
+
+    if (!openAccessConfirmed) {
+      setStatusBanner({
+        type: 'error',
+        message: 'Please enable "Anyone with the link can view" (Open to View) on your Google Drive / deliverable link and check the confirmation box.',
+      });
+      return;
+    }
+
+    const trimmedNote = submissionNote.trim();
+    const combinedSubmission = trimmedNote
+      ? `Deliverable Link (Open to View): ${linkCheck.normalizedUrl}\n\nSummary: ${trimmedNote}`
+      : `Deliverable Link (Open to View): ${linkCheck.normalizedUrl}`;
 
     setSubmittingWork(true);
     try {
       await updateDoc(doc(db, 'projectTasks', taskId), {
         status: 'REVIEW',
-        submissionNote: trimmed,
+        submissionNote: combinedSubmission,
         submittedAt: serverTimestamp(),
       });
 
       setLocalTasks(
         tasks.map((t) =>
-          t.id === taskId ? { ...t, status: 'REVIEW', submissionNote: trimmed } : t
+          t.id === taskId ? { ...t, status: 'REVIEW', submissionNote: combinedSubmission } : t
         )
       );
 
@@ -102,22 +119,24 @@ export default function InternDashboard() {
           userProfile.uid,
           taskId,
           'task',
-          `Intern submitted task for review: ${taskId}`
+          `Intern submitted open-to-view deliverable link for task: ${taskId}`
         );
         queryClient.invalidateQueries({ queryKey: ['intern-dashboard', userProfile.uid] });
       }
 
       setSubmittingTaskId(null);
+      setSubmissionLink('');
+      setOpenAccessConfirmed(false);
       setSubmissionNote('');
       setStatusBanner({
         type: 'success',
-        message: 'Assignment submitted. Your mentor can now review it and leave feedback.',
+        message: 'Assignment link submitted (Open to View). Your mentor can now review it and leave feedback.',
       });
     } catch (error) {
       console.error('Failed to submit task', error);
       setStatusBanner({
         type: 'error',
-        message: 'Failed to submit assignment. Please try again.',
+        message: 'Failed to submit assignment link. Please try again.',
       });
     } finally {
       setSubmittingWork(false);
@@ -276,12 +295,20 @@ export default function InternDashboard() {
                       <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
                         {submittingTaskId === task.id ? (
                           <div className="space-y-3">
+                            <DriveLinkInput
+                              label="Deliverable / Google Drive / GitHub Link"
+                              value={submissionLink}
+                              onChange={setSubmissionLink}
+                              accessConfirmed={openAccessConfirmed}
+                              onAccessConfirmedChange={setOpenAccessConfirmed}
+                              placeholder="https://drive.google.com/file/d/.../view?usp=sharing"
+                              compact
+                            />
                             <Textarea
-                              label="Submission Summary / Project Link"
-                              placeholder="Paste your GitHub repository, Google Drive link, or summary of completed work..."
+                              label="Optional Implementation Summary"
+                              placeholder="Briefly describe what you built or key highlights for your mentor..."
                               value={submissionNote}
                               onChange={(e) => setSubmissionNote(e.target.value)}
-                              required
                             />
                             <div className="flex gap-2">
                               <Button
@@ -289,13 +316,15 @@ export default function InternDashboard() {
                                 isLoading={submittingWork}
                                 onClick={() => handleSubmitAssignment(task.id!)}
                               >
-                                Submit Work
+                                Submit Deliverable Link
                               </Button>
                               <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() => {
                                   setSubmittingTaskId(null);
+                                  setSubmissionLink('');
+                                  setOpenAccessConfirmed(false);
                                   setSubmissionNote('');
                                 }}
                               >
@@ -309,7 +338,7 @@ export default function InternDashboard() {
                             variant="outline"
                             onClick={() => setSubmittingTaskId(task.id!)}
                           >
-                            Submit Assignment
+                            Submit Assignment Link
                           </Button>
                         )}
                       </div>

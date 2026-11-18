@@ -277,9 +277,9 @@ export default function Careers({ defaultTab }: { defaultTab?: 'all' | 'jobs' | 
       </div>
 
       {/* 2. SEARCH & DISCOVERY CENTERPIECE */}
-      <div id="search-section" className="scroll-mt-20 py-8 bg-white border-b border-slate-200 shadow-sm sticky top-14 z-40">
+      <div id="search-section" className="scroll-mt-20 py-6 md:py-8 bg-white border-b border-slate-200 shadow-sm md:sticky md:top-16 z-30 w-full max-w-full overflow-hidden">
         <Container>
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 min-w-0">
             
             {/* Search Input Box */}
             <div className="relative">
@@ -494,7 +494,7 @@ export default function Careers({ defaultTab }: { defaultTab?: 'all' | 'jobs' | 
                 >
                   {/* Top Bar with Badge & Category */}
                   <div className="p-5 sm:p-6 pb-4">
-                    <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex flex-wrap items-start justify-between gap-2 sm:gap-3 mb-3">
                       <div className="flex flex-wrap items-center gap-2">
                         {isJob ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200/80">
@@ -639,7 +639,7 @@ export default function Careers({ defaultTab }: { defaultTab?: 'all' | 'jobs' | 
                   </div>
 
                   {/* Card Action Buttons */}
-                  <div className="px-5 sm:px-6 py-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-3">
+                  <div className="px-5 sm:px-6 py-3.5 bg-slate-50 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
                     <button
                       type="button"
                       onClick={() => toggleExpand(opp.id)}

@@ -44,6 +44,11 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, AppErrorBounda
   }
 }
 
+if (typeof document !== 'undefined' && document.body) {
+  document.body.classList.remove('adsbygoogle-noablate');
+  document.body.removeAttribute('data-google-ad-ignore');
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AppErrorBoundary>
@@ -53,3 +58,4 @@ createRoot(document.getElementById('root')!).render(
 );
 
 (window as { __SRICORE_CLEAR_BOOT_GUARD__?: () => void }).__SRICORE_CLEAR_BOOT_GUARD__?.();
+

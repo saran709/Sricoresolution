@@ -187,7 +187,7 @@ export function getRoleSidebarCategories(
             { name: 'Dashboard', tab: 'overview', icon: LayoutDashboard, requiredPermission: 'view' },
             { name: 'My Tasks', tab: 'tasks', icon: ListChecks, requiredPermission: 'view', requiredResource: { resourceKey: 'tasks', action: 'read' } },
             { name: 'Assigned Projects', tab: 'projects', icon: FolderKanban, requiredPermission: 'view', requiredResource: { resourceKey: 'projects', action: 'read' } },
-            { name: 'Project Workspace', tab: 'portfolio', icon: Compass, requiredPermission: 'view', requiredResource: { resourceKey: 'projects', action: 'read' } },
+            { name: 'Project Tracker', tab: 'portfolio', icon: Compass, requiredPermission: 'view', requiredResource: { resourceKey: 'projects', action: 'read' } },
           ],
         },
         {
@@ -212,6 +212,7 @@ export function getRoleSidebarCategories(
             { name: 'Dashboard', tab: 'overview', icon: LayoutDashboard, requiredPermission: 'view' },
             { name: 'Intern Management', tab: 'interns', icon: BookOpenCheck, requiredPermission: 'view', requiredResource: { resourceKey: 'internships', action: 'read' } },
             { name: 'Pending Evaluations', tab: 'evaluations', icon: ClipboardCheck, requiredPermission: 'review', requiredResource: { resourceKey: 'internships', action: 'approve' } },
+            { name: 'Project Tracker', tab: 'portfolio', icon: Compass, requiredPermission: 'view', requiredResource: { resourceKey: 'projects', action: 'read' } },
           ],
         },
         {
@@ -229,6 +230,7 @@ export function getRoleSidebarCategories(
           items: [
             { name: 'Dashboard', tab: 'overview', icon: LayoutDashboard, requiredPermission: 'view' },
             { name: 'My Assignments', tab: 'assignments', icon: Target, requiredPermission: 'view', requiredResource: { resourceKey: 'tasks', action: 'read' } },
+            { name: 'Project Tracker', tab: 'portfolio', icon: Compass, requiredPermission: 'view', requiredResource: { resourceKey: 'projects', action: 'read' } },
             { name: 'Feedback & Evals', tab: 'feedback', icon: MessageSquareQuote, requiredPermission: 'view', requiredResource: { resourceKey: 'auditLogs', action: 'read' } },
             { name: 'Certificates', tab: 'certificates', icon: FileBadge, requiredPermission: 'download', requiredResource: { resourceKey: 'internships', action: 'download' } },
           ],

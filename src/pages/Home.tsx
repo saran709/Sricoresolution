@@ -1,36 +1,15 @@
-import React, { Suspense } from 'react';
+import React from 'react';
 import { Container } from '../components/ui/Container';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { Hero } from '../components/Hero';
 import { ServicesSection } from '../components/Services';
+import { FeaturedProjects } from '../components/FeaturedProjects';
+import { EnterpriseOperationsSection } from '../components/EnterpriseOperationsSection';
+import { FAQ } from '../components/FAQ';
+import { GetInTouch } from '../components/GetInTouch';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useWebsiteSettings } from '../contexts/WebsiteSettingsContext';
-
-const FeaturedProjects = React.lazy(() => import('../components/FeaturedProjects'));
-const EnterpriseOperationsSection = React.lazy(
-  () => import('../components/EnterpriseOperationsSection')
-);
-const FAQ = React.lazy(() => import('../components/FAQ'));
-const GetInTouch = React.lazy(() => import('../components/GetInTouch'));
-
-function SectionShimmerFallback({ minHeightClass = 'min-h-[360px]' }: { minHeightClass?: string }) {
-  return (
-    <div className={`${minHeightClass} py-12 bg-slate-50/70 dark:bg-slate-900/40 border-y border-slate-200 dark:border-slate-800`}>
-      <Container>
-        <div className="space-y-4">
-          <div className="h-4 w-40 rounded skeleton-shimmer" />
-          <div className="h-8 w-72 max-w-full rounded skeleton-shimmer" />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-            <div className="h-48 rounded-xl skeleton-shimmer" />
-            <div className="h-48 rounded-xl skeleton-shimmer" />
-            <div className="h-48 rounded-xl skeleton-shimmer" />
-          </div>
-        </div>
-      </Container>
-    </div>
-  );
-}
 
 export default function Home() {
   const { settings } = useWebsiteSettings();
@@ -141,9 +120,7 @@ export default function Home() {
       <ServicesSection />
 
       {/* Featured Projects Carousel & Case Study Grid */}
-      <Suspense fallback={<SectionShimmerFallback minHeightClass="min-h-[520px]" />}>
-        <FeaturedProjects />
-      </Suspense>
+      <FeaturedProjects />
 
       {/* Why Choose Us Section */}
       <section className="content-visibility-auto py-10 md:py-14 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 transition-colors">
@@ -288,19 +265,13 @@ export default function Home() {
       </section>
 
       {/* Structured Corporate Operations & Organizational Member Portals */}
-      <Suspense fallback={<SectionShimmerFallback minHeightClass="min-h-[420px]" />}>
-        <EnterpriseOperationsSection />
-      </Suspense>
+      <EnterpriseOperationsSection />
 
       {/* Frequently Asked Questions (Services & Internship Programs) */}
-      <Suspense fallback={<SectionShimmerFallback minHeightClass="min-h-[420px]" />}>
-        <FAQ />
-      </Suspense>
+      <FAQ />
 
       {/* Get In Touch Contact Section */}
-      <Suspense fallback={<SectionShimmerFallback minHeightClass="min-h-[460px]" />}>
-        <GetInTouch />
-      </Suspense>
+      <GetInTouch />
     </div>
   );
 }

@@ -12,6 +12,32 @@ export default defineConfig(() => {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    optimizeDeps: {
+      entries: ['index.html', 'src/**/*.{ts,tsx}'],
+      include: [
+        'react',
+        'react-dom',
+        'react-dom/client',
+        'react/jsx-runtime',
+        'react/jsx-dev-runtime',
+        'react-router-dom',
+        '@tanstack/react-query',
+        'react-helmet-async',
+        'lucide-react',
+        'clsx',
+        'tailwind-merge',
+        'date-fns',
+        'nprogress',
+        'recharts',
+        'jspdf',
+        'jspdf-autotable',
+        'zod',
+        'firebase/app',
+        'firebase/auth',
+        'firebase/firestore',
+        'firebase/storage',
+      ],
+    },
     build: {
       chunkSizeWarningLimit: 650,
       rollupOptions: {
@@ -25,6 +51,9 @@ export default defineConfig(() => {
           warn(warning);
         },
         output: {
+          entryFileNames: 'assets/app-[hash].js',
+          chunkFileNames: 'assets/chunk-[hash].js',
+          assetFileNames: 'assets/asset-[hash][extname]',
           manualChunks(id) {
             if (!id.includes('node_modules')) return;
             if (id.includes('/@firebase/firestore') || id.includes('/firebase/firestore')) {

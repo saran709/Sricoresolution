@@ -27,7 +27,11 @@ async function startServer() {
     next();
   });
 
-  app.use(gzipCompressionMiddleware);
+  if (process.env.NODE_ENV === "production") {
+    app.use(gzipCompressionMiddleware);
+  } else {
+    app.use("/api", gzipCompressionMiddleware);
+  }
   app.use(express.json({ limit: "1mb" }));
 
   // Register unified API handlers shared with Vercel serverless entrypoints

@@ -18,8 +18,8 @@ const CandidateDashboard = React.lazy(() => import('./roles/CandidateDashboard')
 const UserProfile = React.lazy(() =>
   import('../../components/user/UserProfile').then((m) => ({ default: m.UserProfile }))
 );
-const MyProjects = React.lazy(() =>
-  import('../../components/dashboard/MyProjects').then((m) => ({ default: m.MyProjects }))
+const ProjectTracker = React.lazy(() =>
+  import('../../components/dashboard/ProjectTracker').then((m) => ({ default: m.ProjectTracker }))
 );
 const WorkspaceGuide = React.lazy(() =>
   import('../../components/dashboard/WorkspaceGuide').then((m) => ({ default: m.WorkspaceGuide }))
@@ -108,7 +108,7 @@ export default function Dashboard() {
         </DashboardSuspense>
       ) : activeTab === 'portfolio' ? (
         <DashboardSuspense variant="table" moduleName="Project Tracker">
-          <MyProjects />
+          <ProjectTracker />
         </DashboardSuspense>
       ) : (
         <div className="space-y-6">
@@ -117,15 +117,14 @@ export default function Dashboard() {
             {renderRoleDashboard()}
           </DashboardSuspense>
 
-          {/* Show Project Tracker summary on Overview for Clients & Employees */}
-          {(!activeTab || activeTab === 'overview') &&
-            (activeRole === 'CLIENT' || activeRole === 'EMPLOYEE') && (
-              <div className="pt-2">
-                <DashboardSuspense variant="table" moduleName="Project Tracker">
-                  <MyProjects />
-                </DashboardSuspense>
-              </div>
-            )}
+          {/* Show Real-Time Project Tracker on Overview for Organizational Members & Clients */}
+          {(!activeTab || activeTab === 'overview') && (
+            <div className="pt-2">
+              <DashboardSuspense variant="table" moduleName="Project Tracker">
+                <ProjectTracker />
+              </DashboardSuspense>
+            </div>
+          )}
         </div>
       )}
     </div>
