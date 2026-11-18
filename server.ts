@@ -1,6 +1,6 @@
 import express from "express";
+import fs from "fs";
 import path from "path";
-import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
 import { registerApiRoutes } from "./src/server/apiRoutes";
 import { gzipCompressionMiddleware } from "./src/server/apiMiddleware";
@@ -38,15 +38,28 @@ async function startServer() {
   registerApiRoutes(app);
 
   // Vite middleware for development vs immutable static asset serving in production
-  if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), "dist");
+  const distPath = path.join(process.cwd(), "dist");
+  let useViteDevMiddleware = process.env.NODE_ENV !== "production";
 
+  if (useViteDevMiddleware) {
+    try {
+      const { createServer: createViteServer } = await import("vite");
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: "spa",
+      });
+      app.use(vite.middlewares);
+    } catch (viteError) {
+      if (fs.existsSync(path.join(distPath, "index.html"))) {
+        console.warn("Vite package unavailable; serving prebuilt dist assets instead.", viteError);
+        useViteDevMiddleware = false;
+      } else {
+        throw viteError;
+      }
+    }
+  }
+
+  if (!useViteDevMiddleware) {
     app.use(
       "/assets",
       express.static(path.join(distPath, "assets"), {
